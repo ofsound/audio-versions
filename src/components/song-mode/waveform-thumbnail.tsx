@@ -48,7 +48,7 @@ export function WaveformThumbnail({
 		>
 			<div
 				ref={surfaceRef}
-				className="waveform-surface relative h-12 min-h-0 w-full sm:h-14"
+				className="waveform-surface relative aspect-[5/1] min-h-16 w-full sm:min-h-20"
 			>
 				<canvas ref={canvasRef} className="block w-full" />
 				<div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
