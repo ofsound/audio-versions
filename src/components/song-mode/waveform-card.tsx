@@ -12,7 +12,7 @@ import type {
 	CreateAnnotationInput,
 } from "#/lib/song-mode/types";
 import { normalizeWaveformData } from "#/lib/song-mode/waveform";
-import { useObjectUrl } from "./use-object-url";
+import { useAudioSource } from "./use-audio-source";
 import { useWaveformAudioGraph } from "./use-waveform-audio-graph";
 import { useWaveformCanvas } from "./use-waveform-canvas";
 import { useWaveformCardAnnotations } from "./use-waveform-card-annotations";
@@ -89,7 +89,7 @@ export function WaveformCard({
 	onDragEnd,
 	onDrop,
 }: WaveformCardProps) {
-	const objectUrl = useObjectUrl(blob);
+	const objectUrl = useAudioSource(audioFile.id, blob, audioFile.remoteMedia);
 	const articleRef = useRef<HTMLElement | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);

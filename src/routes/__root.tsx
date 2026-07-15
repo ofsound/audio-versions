@@ -5,12 +5,14 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { SongModeChrome } from "#/components/song-mode/app-chrome";
+import { AuthScreen } from "#/components/song-mode/auth-screen";
 import { SongModeDevtools } from "#/components/song-mode/song-mode-devtools";
 import {
 	buildUiSettingsBootstrapScript,
 	UI_SETTINGS_STORAGE_KEY,
 } from "#/lib/song-mode/ui-settings";
 import { THEME_STORAGE_KEY } from "#/lib/theme";
+import { AuthProvider, useAuth } from "#/providers/auth-provider";
 import { SongModeProvider } from "#/providers/song-mode-provider";
 import { SongModeUiSettingsSync } from "#/providers/song-mode-ui-settings-sync";
 import { ThemeProvider } from "#/providers/theme-provider";
@@ -55,14 +57,36 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<ThemeProvider>
-					<SongModeProvider>
-						<SongModeUiSettingsSync />
-						<SongModeChrome>{children}</SongModeChrome>
-						<SongModeDevtools />
-					</SongModeProvider>
+					<AuthProvider>
+						<AuthenticatedShell>{children}</AuthenticatedShell>
+					</AuthProvider>
 				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>
+	);
+}
+
+function AuthenticatedShell({ children }: { children: React.ReactNode }) {
+	const { cloudAvailable, ready, user } = useAuth();
+
+	if (!ready) {
+		return (
+			<div className="flex min-h-dvh items-center justify-center text-sm text-text-muted">
+				Loading Song Mode…
+			</div>
+		);
+	}
+
+	if (cloudAvailable && !user) {
+		return <AuthScreen />;
+	}
+
+	return (
+		<SongModeProvider>
+			<SongModeUiSettingsSync />
+			<SongModeChrome>{children}</SongModeChrome>
+			<SongModeDevtools />
+		</SongModeProvider>
 	);
 }

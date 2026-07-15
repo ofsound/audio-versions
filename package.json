@@ -24,12 +24,14 @@
     "verify": "npm run check && npm run typecheck && npm run test && npm run knip"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.6",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-router": "1.168.22",
     "@tanstack/react-start": "1.167.41",
     "@tiptap/extension-link": "^3.22.3",
     "@tiptap/react": "^3.22.3",
     "@tiptap/starter-kit": "^3.22.3",
+    "@vercel/blob": "^2.6.1",
     "idb": "^8.0.3",
     "lucide-react": "^0.545.0",
     "nitro": "3.0.260415-beta",
@@ -61,6 +63,14 @@
   "build": {
     "appId": "com.songmode.app",
     "productName": "Song Mode",
+    "protocols": [
+      {
+        "name": "Song Mode authentication",
+        "schemes": [
+          "song-mode"
+        ]
+      }
+    ],
     "icon": "build/icon.icns",
     "directories": {
       "output": "dist/electron"

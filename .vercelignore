@@ -1,0 +1,8 @@
+.git
+.output
+.tanstack
+.vercel
+dist
+node_modules
+*.local
+.env*

@@ -46,6 +46,12 @@ export interface AudioFileRecord {
 	volumeDb: number;
 	durationMs: number;
 	waveform: WaveformData;
+	remoteMedia?: {
+		pathname: string;
+		contentType: string;
+		size: number;
+		originalName: string;
+	};
 	createdAt: string;
 	updatedAt: string;
 }

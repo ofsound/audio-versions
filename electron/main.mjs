@@ -28,6 +28,34 @@ const SERVER_READY_POLL_MS = 250;
 
 /** @type {Promise<void> | null} */
 let productionServerPromise = null;
+/** @type {BrowserWindow | null} */
+let mainWindow = null;
+/** @type {string | null} */
+let pendingAuthCallbackUrl = null;
+
+app.setAsDefaultProtocolClient("song-mode");
+
+function getRendererUrl() {
+	return shouldUseProductionServer()
+		? getProductionServerUrl()
+		: DEV_SERVER_URL;
+}
+
+function buildAuthCallbackUrl(callbackUrl) {
+	const callback = new URL(callbackUrl);
+	const target = new URL("/auth/callback", getRendererUrl());
+	target.search = callback.search;
+	return target.toString();
+}
+
+app.on("open-url", (event, url) => {
+	event.preventDefault();
+	pendingAuthCallbackUrl = url;
+	if (mainWindow && !mainWindow.isDestroyed()) {
+		void mainWindow.loadURL(buildAuthCallbackUrl(url));
+		pendingAuthCallbackUrl = null;
+	}
+});
 
 function shouldUseProductionServer() {
 	return (
@@ -143,6 +171,12 @@ async function createMainWindow() {
 			nodeIntegration: false,
 		},
 	});
+	mainWindow = window;
+	window.on("closed", () => {
+		if (mainWindow === window) {
+			mainWindow = null;
+		}
+	});
 
 	window.webContents.setWindowOpenHandler(({ url }) => {
 		void shell.openExternal(url);
@@ -164,12 +198,20 @@ async function createMainWindow() {
 	});
 
 	if (shouldUseProductionServer()) {
-		await window.loadURL(getProductionServerUrl());
+		const targetUrl = pendingAuthCallbackUrl
+			? buildAuthCallbackUrl(pendingAuthCallbackUrl)
+			: getProductionServerUrl();
+		pendingAuthCallbackUrl = null;
+		await window.loadURL(targetUrl);
 		return;
 	}
 
 	await waitForSongMode(DEV_SERVER_URL, SERVER_BOOT_TIMEOUT_MS);
-	await window.loadURL(DEV_SERVER_URL);
+	const targetUrl = pendingAuthCallbackUrl
+		? buildAuthCallbackUrl(pendingAuthCallbackUrl)
+		: DEV_SERVER_URL;
+	pendingAuthCallbackUrl = null;
+	await window.loadURL(targetUrl);
 	window.webContents.openDevTools({ mode: "detach" });
 }
 

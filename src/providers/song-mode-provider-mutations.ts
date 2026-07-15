@@ -1,4 +1,6 @@
 import { useCallback, useMemo } from "react";
+import { deleteRemoteAudio, uploadRemoteAudio } from "#/lib/cloud/media";
+import type { CloudPersistence } from "#/lib/cloud/persistence";
 import { isoDateInLocalCalendar } from "#/lib/song-mode/dates";
 import {
 	deleteAnnotation as deleteAnnotationRecord,
@@ -36,12 +38,15 @@ import {
 import type { CommitSnapshot } from "./song-mode-provider-state";
 
 interface UseSongMutationsOptions {
+	cloud: CloudPersistence | null;
 	commitSnapshot: CommitSnapshot;
 	prunePlaybackState: (audioFileIds: string[]) => void;
 	removeRegisteredAudio: (audioFileIds: string[]) => void;
 }
 
 interface UseAudioFileMutationsOptions {
+	cloud: CloudPersistence | null;
+	cloudUserId?: string;
 	commitSnapshot: CommitSnapshot;
 	prunePlaybackState: (audioFileIds: string[]) => void;
 	removeRegisteredAudio: (audioFileIds: string[]) => void;
@@ -49,14 +54,17 @@ interface UseAudioFileMutationsOptions {
 }
 
 interface UseAnnotationMutationsOptions {
+	cloud: CloudPersistence | null;
 	commitSnapshot: CommitSnapshot;
 }
 
 interface UseWorkspaceMutationsOptions {
+	cloud: CloudPersistence | null;
 	commitSnapshot: CommitSnapshot;
 }
 
 export function useSongMutations({
+	cloud,
 	commitSnapshot,
 	prunePlaybackState,
 	removeRegisteredAudio,
@@ -91,13 +99,15 @@ export function useSongMutations({
 					await Promise.all([
 						saveSong(song),
 						saveSettings(nextSnapshot.settings),
+						cloud?.saveSong(song),
+						cloud?.saveSettings(nextSnapshot.settings),
 					]);
 				},
 			);
 
 			return next.songs.find((entry) => entry.id === song.id) ?? song;
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const updateSong = useCallback(
@@ -117,23 +127,30 @@ export function useSongMutations({
 				async (nextSnapshot) => {
 					const song = findEntityById(nextSnapshot.songs, songId);
 					if (song) {
-						await saveSong(song);
+						await Promise.all([saveSong(song), cloud?.saveSong(song)]);
 					}
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const deleteSong = useCallback(
 		async (songId: string) => {
 			let deletedAudioFileIds: string[] = [];
+			let deletedRemoteAudioFileIds: string[] = [];
 			let deletedAnnotationIds: string[] = [];
 
 			await commitSnapshot(
 				(current) => {
 					deletedAudioFileIds = current.audioFiles
 						.filter((audioFile) => audioFile.songId === songId)
+						.map((audioFile) => audioFile.id);
+					deletedRemoteAudioFileIds = current.audioFiles
+						.filter(
+							(audioFile) =>
+								audioFile.songId === songId && Boolean(audioFile.remoteMedia),
+						)
 						.map((audioFile) => audioFile.id);
 					deletedAnnotationIds = current.annotations
 						.filter((annotation) => annotation.songId === songId)
@@ -177,6 +194,11 @@ export function useSongMutations({
 						annotationIds: deletedAnnotationIds,
 						settings: nextSnapshot.settings,
 					});
+					await Promise.all(deletedRemoteAudioFileIds.map(deleteRemoteAudio));
+					await Promise.all([
+						cloud?.deleteSong(songId),
+						cloud?.saveSettings(nextSnapshot.settings),
+					]);
 				},
 			);
 
@@ -187,7 +209,7 @@ export function useSongMutations({
 			removeRegisteredAudio(deletedAudioFileIds);
 			prunePlaybackState(deletedAudioFileIds);
 		},
-		[commitSnapshot, prunePlaybackState, removeRegisteredAudio],
+		[cloud, commitSnapshot, prunePlaybackState, removeRegisteredAudio],
 	);
 
 	return useMemo(
@@ -201,6 +223,8 @@ export function useSongMutations({
 }
 
 export function useAudioFileMutations({
+	cloud,
+	cloudUserId,
 	commitSnapshot,
 	prunePlaybackState,
 	removeRegisteredAudio,
@@ -213,8 +237,12 @@ export function useAudioFileMutations({
 			const waveform = await generateWaveformFromFile(browserAudioBlob);
 			const now = new Date().toISOString();
 			const sessionDate = input.sessionDate.trim() || isoDateInLocalCalendar();
+			const audioFileId = crypto.randomUUID();
+			const remoteMedia = cloudUserId
+				? await uploadRemoteAudio(cloudUserId, audioFileId, input.file)
+				: undefined;
 			const audioFile: AudioFileRecord = {
-				id: crypto.randomUUID(),
+				id: audioFileId,
 				songId,
 				title: input.title.trim() || input.file.name.replace(/\.[^.]+$/, ""),
 				sessionDate,
@@ -222,6 +250,7 @@ export function useAudioFileMutations({
 				volumeDb: 0,
 				durationMs: waveform.durationMs,
 				waveform,
+				...(remoteMedia ? { remoteMedia } : {}),
 				createdAt: now,
 				updatedAt: now,
 			};
@@ -250,13 +279,15 @@ export function useAudioFileMutations({
 						saveAudioFile(audioFile),
 						saveAudioBlob(audioFile.id, input.file),
 						song ? saveSong(song) : Promise.resolve(),
+						cloud?.saveAudioFile(audioFile),
+						song ? cloud?.saveSong(song) : undefined,
 					]);
 				},
 			);
 
 			return audioFile;
 		},
-		[commitSnapshot, setError],
+		[cloud, cloudUserId, commitSnapshot, setError],
 	);
 
 	const updateAudioFile = useCallback(
@@ -282,17 +313,21 @@ export function useAudioFileMutations({
 						audioFileId,
 					);
 					if (audioFile) {
-						await saveAudioFile(audioFile);
+						await Promise.all([
+							saveAudioFile(audioFile),
+							cloud?.saveAudioFile(audioFile),
+						]);
 					}
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const deleteAudioFile = useCallback(
 		async (audioFileId: string) => {
 			let didDeleteFile = false;
+			let hadRemoteMedia = false;
 			let deletedAnnotationIds: string[] = [];
 			let updatedSongId: string | undefined;
 
@@ -306,6 +341,7 @@ export function useAudioFileMutations({
 					}
 
 					didDeleteFile = true;
+					hadRemoteMedia = Boolean(targetFile.remoteMedia);
 					updatedSongId = targetFile.songId;
 					deletedAnnotationIds = current.annotations
 						.filter((annotation) => annotation.audioFileId === audioFileId)
@@ -364,6 +400,14 @@ export function useAudioFileMutations({
 						settings: nextSnapshot.settings,
 						song: updatedSong,
 					});
+					if (hadRemoteMedia) {
+						await deleteRemoteAudio(audioFileId);
+					}
+					await Promise.all([
+						cloud?.deleteAudioFile(audioFileId),
+						cloud?.saveSettings(nextSnapshot.settings),
+						updatedSong ? cloud?.saveSong(updatedSong) : undefined,
+					]);
 				},
 			);
 
@@ -374,7 +418,7 @@ export function useAudioFileMutations({
 			removeRegisteredAudio([audioFileId]);
 			prunePlaybackState([audioFileId]);
 		},
-		[commitSnapshot, prunePlaybackState, removeRegisteredAudio],
+		[cloud, commitSnapshot, prunePlaybackState, removeRegisteredAudio],
 	);
 
 	const reorderAudioFiles = useCallback(
@@ -391,12 +435,12 @@ export function useAudioFileMutations({
 				async (nextSnapshot) => {
 					const song = findEntityById(nextSnapshot.songs, songId);
 					if (song) {
-						await saveSong(song);
+						await Promise.all([saveSong(song), cloud?.saveSong(song)]);
 					}
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	return useMemo(
@@ -411,6 +455,7 @@ export function useAudioFileMutations({
 }
 
 export function useAnnotationMutations({
+	cloud,
 	commitSnapshot,
 }: UseAnnotationMutationsOptions) {
 	const createAnnotation = useCallback(
@@ -431,13 +476,16 @@ export function useAnnotationMutations({
 					annotations: [...current.annotations, annotation],
 				}),
 				async () => {
-					await saveAnnotation(annotation);
+					await Promise.all([
+						saveAnnotation(annotation),
+						cloud?.saveAnnotation(annotation),
+					]);
 				},
 			);
 
 			return annotation;
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const updateAnnotation = useCallback(
@@ -462,12 +510,15 @@ export function useAnnotationMutations({
 						annotationId,
 					);
 					if (annotation) {
-						await saveAnnotation(annotation);
+						await Promise.all([
+							saveAnnotation(annotation),
+							cloud?.saveAnnotation(annotation),
+						]);
 					}
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const deleteAnnotation = useCallback(
@@ -478,11 +529,14 @@ export function useAnnotationMutations({
 					annotations: removeEntityById(current.annotations, annotationId),
 				}),
 				async () => {
-					await deleteAnnotationRecord(annotationId);
+					await Promise.all([
+						deleteAnnotationRecord(annotationId),
+						cloud?.deleteAnnotation(annotationId),
+					]);
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	return useMemo(
@@ -496,6 +550,7 @@ export function useAnnotationMutations({
 }
 
 export function useWorkspaceMutations({
+	cloud,
 	commitSnapshot,
 }: UseWorkspaceMutationsOptions) {
 	const updateUiSettings = useCallback(
@@ -523,11 +578,14 @@ export function useWorkspaceMutations({
 					};
 				},
 				async (nextSnapshot) => {
-					await saveSettings(nextSnapshot.settings);
+					await Promise.all([
+						saveSettings(nextSnapshot.settings),
+						cloud?.saveSettings(nextSnapshot.settings),
+					]);
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const updateWorkspaceState = useCallback(
@@ -562,11 +620,14 @@ export function useWorkspaceMutations({
 					};
 				},
 				async (nextSnapshot) => {
-					await saveSettings(nextSnapshot.settings);
+					await Promise.all([
+						saveSettings(nextSnapshot.settings),
+						cloud?.saveSettings(nextSnapshot.settings),
+					]);
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	const rememberSongOpened = useCallback(
@@ -598,11 +659,14 @@ export function useWorkspaceMutations({
 					};
 				},
 				async (nextSnapshot) => {
-					await saveSettings(nextSnapshot.settings);
+					await Promise.all([
+						saveSettings(nextSnapshot.settings),
+						cloud?.saveSettings(nextSnapshot.settings),
+					]);
 				},
 			);
 		},
-		[commitSnapshot],
+		[cloud, commitSnapshot],
 	);
 
 	return useMemo(

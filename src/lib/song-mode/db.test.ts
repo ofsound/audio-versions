@@ -273,4 +273,43 @@ describe("song-mode db cascade helpers", () => {
 			}),
 		]);
 	});
+
+	it("replaces an account cache atomically and records its owner", async () => {
+		const db = await loadDbModule();
+		await db.saveSong(createSong({ id: "old-song" }));
+		await db.saveAudioBlob(
+			"old-file",
+			new Blob(["old"], { type: "audio/wav" }),
+		);
+
+		const song = createSong({ id: "new-song", audioFileOrder: ["new-file"] });
+		const audioFile = createAudioFile({
+			id: "new-file",
+			songId: song.id,
+			remoteMedia: {
+				pathname: "users/user-1/audio/new-file/take.wav",
+				contentType: "audio/wav",
+				size: 4,
+				originalName: "take.wav",
+			},
+		});
+		const blob = new Blob(["wave"], { type: "audio/wav" });
+
+		await db.replaceLocalSnapshot(
+			{
+				songs: [song],
+				audioFiles: [audioFile],
+				annotations: [],
+				blobsByAudioId: { [audioFile.id]: blob },
+				settings: baseSettings,
+			},
+			"user-1",
+		);
+
+		const snapshot = await db.loadSnapshot();
+		expect(await db.getLocalOwnerId()).toBe("user-1");
+		expect(snapshot.songs.map((entry) => entry.id)).toEqual(["new-song"]);
+		expect(snapshot.audioFiles[0]?.remoteMedia).toEqual(audioFile.remoteMedia);
+		expect(snapshot.blobsByAudioId).toEqual({ [audioFile.id]: blob });
+	});
 });

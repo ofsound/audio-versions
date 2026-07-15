@@ -5,6 +5,7 @@ import {
 	useContext,
 	useMemo,
 } from "react";
+import { createCloudPersistence } from "#/lib/cloud/persistence";
 import { searchSongMode } from "#/lib/song-mode/search";
 import type {
 	AddAudioFileInput,
@@ -18,6 +19,7 @@ import type {
 	SongModeUiSettings,
 	WorkspaceState,
 } from "#/lib/song-mode/types";
+import { useOptionalAuth } from "./auth-provider";
 import {
 	useAnnotationMutations,
 	useAudioFileMutations,
@@ -100,8 +102,14 @@ interface SongModeContextValue extends SongModeSnapshot {
 const SongModeContext = createContext<SongModeContextValue | null>(null);
 
 export function SongModeProvider({ children }: { children: ReactNode }) {
+	const { cloudAvailable, user } = useOptionalAuth();
+	const cloudUserId = cloudAvailable ? user?.id : undefined;
+	const cloud = useMemo(
+		() => (cloudUserId ? createCloudPersistence(cloudUserId) : null),
+		[cloudUserId],
+	);
 	const { commitSnapshot, error, ready, setError, snapshot, snapshotRef } =
-		useSongModeSnapshotState();
+		useSongModeSnapshotState(cloudUserId);
 	const selectors = useSongModeSelectors({ snapshot });
 
 	const {
@@ -172,20 +180,25 @@ export function SongModeProvider({ children }: { children: ReactNode }) {
 	);
 
 	const songMutations = useSongMutations({
+		cloud,
 		commitSnapshot,
 		prunePlaybackState,
 		removeRegisteredAudio,
 	});
 	const audioFileMutations = useAudioFileMutations({
+		cloud,
+		cloudUserId,
 		commitSnapshot,
 		prunePlaybackState,
 		removeRegisteredAudio,
 		setError,
 	});
 	const annotationMutations = useAnnotationMutations({
+		cloud,
 		commitSnapshot,
 	});
 	const workspaceMutations = useWorkspaceMutations({
+		cloud,
 		commitSnapshot,
 	});
 

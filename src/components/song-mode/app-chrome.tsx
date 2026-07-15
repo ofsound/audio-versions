@@ -1,6 +1,7 @@
 import { Link, useMatchRoute } from "@tanstack/react-router";
-import { Library, Settings } from "lucide-react";
+import { Library, LogOut, Settings } from "lucide-react";
 import { createContext, useContext, useState } from "react";
+import { useOptionalAuth } from "#/providers/auth-provider";
 import { useSongMode } from "#/providers/song-mode-provider";
 import { GlobalSearch } from "./global-search";
 import { SongModeSettingsDialog } from "./song-mode-settings-dialog";
@@ -31,6 +32,7 @@ export function useLibraryHeaderActionSlot() {
 
 export function SongModeChrome({ children }: { children: React.ReactNode }) {
 	const matchRoute = useMatchRoute();
+	const { cloudAvailable, signOut, user } = useOptionalAuth();
 	const { ready, getSongById, settings, updateUiSettings } = useSongMode();
 	const songMatch = matchRoute({ to: "/songs/$songId" });
 	const songId = songMatch ? songMatch.songId : undefined;
@@ -105,6 +107,17 @@ export function SongModeChrome({ children }: { children: React.ReactNode }) {
 							) : null}
 
 							<div className="flex w-full min-w-0 items-center justify-end gap-3 xl:ml-auto xl:w-auto xl:shrink-0">
+								{cloudAvailable && user ? (
+									<button
+										type="button"
+										onClick={() => void signOut()}
+										className="theme-toggle-button h-12 w-12 shrink-0"
+										aria-label="Sign out"
+										title={`Sign out ${user.email ?? ""}`.trim()}
+									>
+										<LogOut size={18} />
+									</button>
+								) : null}
 								<button
 									type="button"
 									onClick={() => setIsSettingsOpen(true)}

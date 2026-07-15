@@ -36,11 +36,16 @@ interface SongModeDB extends DBSchema {
 		key: string;
 		value: SongModeSettings;
 	};
+	sync: {
+		key: string;
+		value: string;
+	};
 }
 
 const DB_NAME = "song-mode";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const SETTINGS_KEY = "app-settings";
+const LOCAL_OWNER_KEY = "cloud-owner-id";
 const LEGACY_POINT_ANNOTATION_COLOR = "var(--color-annotation-4)";
 const LEGACY_RANGE_ANNOTATION_COLOR = "var(--color-annotation-2)";
 const POINT_MARKER_COLOR = "var(--color-marker-point)";
@@ -80,6 +85,10 @@ function getDb(): Promise<IDBPDatabase<SongModeDB>> {
 
 			if (!database.objectStoreNames.contains("settings")) {
 				database.createObjectStore("settings");
+			}
+
+			if (!database.objectStoreNames.contains("sync")) {
+				database.createObjectStore("sync");
 			}
 
 			if (oldVersion < 2) {
@@ -226,6 +235,49 @@ export async function deleteAnnotation(annotationId: string): Promise<void> {
 export async function saveSettings(settings: SongModeSettings): Promise<void> {
 	const db = await getDb();
 	await db.put("settings", settings, SETTINGS_KEY);
+}
+
+export async function getLocalOwnerId(): Promise<string | null> {
+	const db = await getDb();
+	return (await db.get("sync", LOCAL_OWNER_KEY)) ?? null;
+}
+
+export async function replaceLocalSnapshot(
+	snapshot: SongModeSnapshot,
+	ownerId: string,
+): Promise<void> {
+	const db = await getDb();
+	const transaction = db.transaction(
+		["songs", "audioFiles", "annotations", "blobs", "settings", "sync"],
+		"readwrite",
+	);
+
+	await Promise.all([
+		transaction.objectStore("songs").clear(),
+		transaction.objectStore("audioFiles").clear(),
+		transaction.objectStore("annotations").clear(),
+		transaction.objectStore("blobs").clear(),
+	]);
+
+	for (const song of snapshot.songs) {
+		await transaction.objectStore("songs").put(song);
+	}
+	for (const audioFile of snapshot.audioFiles) {
+		await transaction.objectStore("audioFiles").put(audioFile);
+		const blob = snapshot.blobsByAudioId[audioFile.id];
+		if (blob instanceof Blob) {
+			await transaction.objectStore("blobs").put(blob, audioFile.id);
+		}
+	}
+	for (const annotation of snapshot.annotations) {
+		await transaction.objectStore("annotations").put(annotation);
+	}
+
+	await transaction
+		.objectStore("settings")
+		.put(snapshot.settings, SETTINGS_KEY);
+	await transaction.objectStore("sync").put(ownerId, LOCAL_OWNER_KEY);
+	await transaction.done;
 }
 
 export async function deleteAudioFileCascade({

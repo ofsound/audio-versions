@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SongsSongIdRouteImport } from './routes/songs.$songId'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
+import { Route as ApiBlobSignedUrlRouteImport } from './routes/api/blob/signed-url'
+import { Route as ApiBlobDeleteRouteImport } from './routes/api/blob/delete'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +26,86 @@ const SongsSongIdRoute = SongsSongIdRouteImport.update({
   path: '/songs/$songId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
+  id: '/api/blob/upload',
+  path: '/api/blob/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBlobSignedUrlRoute = ApiBlobSignedUrlRouteImport.update({
+  id: '/api/blob/signed-url',
+  path: '/api/blob/signed-url',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBlobDeleteRoute = ApiBlobDeleteRouteImport.update({
+  id: '/api/blob/delete',
+  path: '/api/blob/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
+  '/api/blob/delete': typeof ApiBlobDeleteRoute
+  '/api/blob/signed-url': typeof ApiBlobSignedUrlRoute
+  '/api/blob/upload': typeof ApiBlobUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
+  '/api/blob/delete': typeof ApiBlobDeleteRoute
+  '/api/blob/signed-url': typeof ApiBlobSignedUrlRoute
+  '/api/blob/upload': typeof ApiBlobUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
+  '/api/blob/delete': typeof ApiBlobDeleteRoute
+  '/api/blob/signed-url': typeof ApiBlobSignedUrlRoute
+  '/api/blob/upload': typeof ApiBlobUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/songs/$songId'
+  fullPaths:
+    | '/'
+    | '/auth/callback'
+    | '/songs/$songId'
+    | '/api/blob/delete'
+    | '/api/blob/signed-url'
+    | '/api/blob/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/songs/$songId'
-  id: '__root__' | '/' | '/songs/$songId'
+  to:
+    | '/'
+    | '/auth/callback'
+    | '/songs/$songId'
+    | '/api/blob/delete'
+    | '/api/blob/signed-url'
+    | '/api/blob/upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth/callback'
+    | '/songs/$songId'
+    | '/api/blob/delete'
+    | '/api/blob/signed-url'
+    | '/api/blob/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   SongsSongIdRoute: typeof SongsSongIdRoute
+  ApiBlobDeleteRoute: typeof ApiBlobDeleteRoute
+  ApiBlobSignedUrlRoute: typeof ApiBlobSignedUrlRoute
+  ApiBlobUploadRoute: typeof ApiBlobUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +124,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SongsSongIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/blob/upload': {
+      id: '/api/blob/upload'
+      path: '/api/blob/upload'
+      fullPath: '/api/blob/upload'
+      preLoaderRoute: typeof ApiBlobUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/blob/signed-url': {
+      id: '/api/blob/signed-url'
+      path: '/api/blob/signed-url'
+      fullPath: '/api/blob/signed-url'
+      preLoaderRoute: typeof ApiBlobSignedUrlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/blob/delete': {
+      id: '/api/blob/delete'
+      path: '/api/blob/delete'
+      fullPath: '/api/blob/delete'
+      preLoaderRoute: typeof ApiBlobDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   SongsSongIdRoute: SongsSongIdRoute,
+  ApiBlobDeleteRoute: ApiBlobDeleteRoute,
+  ApiBlobSignedUrlRoute: ApiBlobSignedUrlRoute,
+  ApiBlobUploadRoute: ApiBlobUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

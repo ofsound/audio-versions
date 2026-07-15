@@ -1,6 +1,6 @@
 # Song Mode
 
-Song Mode is a local-first review workspace for song files. It stores songs, uploaded audio, waveform peaks, annotations, and workspace state in IndexedDB so the app works without a backend.
+Song Mode is a private review workspace for song files. The same TanStack app runs on the web and in Electron, with Supabase authentication and realtime metadata sync, private media in Vercel Blob, and IndexedDB as the desktop/browser cache.
 
 ## What It Does
 
@@ -18,6 +18,24 @@ npm run dev
 ```
 
 The dev server runs on `http://localhost:3000`.
+
+Without cloud environment variables, development stays in local-only mode. Copy `.env.example` to `.env.local` after creating the cloud resources described below.
+
+## Cloud Setup
+
+1. Create a Supabase project through the Vercel Marketplace integration.
+2. Run `supabase/migrations/20260715000000_song_mode_cloud.sql` in the Supabase SQL editor, or apply it with the Supabase CLI after linking the project.
+3. Enable Email/Password and Google in Supabase Auth. Add these redirect URLs:
+   - `http://localhost:3000/auth/callback`
+   - `song-mode://auth/callback`
+   - `https://your-production-domain/auth/callback`
+   - the equivalent `/auth/callback` URL for Vercel preview deployments you use for auth testing
+4. Create a **private** Vercel Blob store and connect it to the Vercel project.
+5. Set the variables from `.env.example` in local development and in Vercel. The `VITE_` values are intentionally publishable browser credentials; never expose a Supabase service-role key.
+
+Import the GitHub repository into Vercel to deploy every push. Vercel uses `main` for production and creates preview deployments for other branches and pull requests. The existing Nitro build automatically emits the Vercel output when it runs in Vercel's build environment.
+
+On the first cloud sign-in from an existing desktop installation, Song Mode merges the legacy IndexedDB library into that account and marks the local cache as owned by it. Switching accounts replaces the cache from the newly authenticated account instead of leaking the prior account's records.
 
 ## Electron Wrapper
 
@@ -45,7 +63,7 @@ For a zipped macOS build artifact in `dist/electron`:
 npm run electron:dist
 ```
 
-The packaged app runs the local Nitro server on `http://127.0.0.1:31415` so the desktop build keeps a stable origin for IndexedDB.
+The packaged app runs the local Nitro server on `http://127.0.0.1:31415` so the desktop build keeps a stable origin for IndexedDB. Google sign-in opens the system browser and returns through the registered `song-mode://auth/callback` protocol; email/password remains entirely inside the app.
 
 ## Quality Checks
 
@@ -56,8 +74,10 @@ npm run verify
 ## Architecture
 
 - Routing: TanStack Router file-based routes in `src/routes`
-- State: `SongModeProvider` owns the local snapshot and serializes persistence writes
-- Storage: IndexedDB via `idb` in `src/lib/song-mode/db.ts`
+- State: `SongModeProvider` owns the optimistic snapshot and serializes persistence writes
+- Authentication and records: Supabase Auth, Postgres row-level security, and Realtime
+- Media: private Vercel Blob uploads with authenticated, expiring playback URLs
+- Local cache: IndexedDB via `idb` in `src/lib/song-mode/db.ts`
 - Rich text: Tiptap-based editors for journals, file notes, and annotation notes
 - Waveforms: browser-side decoding and peak generation in `src/lib/song-mode/waveform.ts`
 - Server/runtime plugin: TanStack Start wired through `nitro/vite`; this repo pins the currently compatible Nitro beta line because the official TanStack Start hosting docs note that the `nitro/vite` integration is still under active development
@@ -72,14 +92,14 @@ npm run verify
 - `Shift + J`: focus the song journal
 - `/` or `Cmd/Ctrl + K`: focus global search
 
-## Local Data Model
+## Data Model
 
-Song Mode persists the following records locally:
+Song Mode persists and syncs the following records:
 
 - songs
 - audio files
 - annotation records
-- raw audio blobs
+- Vercel Blob media metadata; locally imported raw audio remains cached in IndexedDB
 - per-song workspace settings and recents
 
-No server sync is implemented. Clearing site storage removes the workspace.
+Every cloud row is scoped by `user_id` and protected by Supabase row-level security. Deletions use tombstones so another connected device receives them as realtime updates. The schema reserves a disabled, hashed song share token for a future secret-link sharing feature; there is currently no public read policy.
