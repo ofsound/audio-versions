@@ -1,12 +1,20 @@
-import { constants as fsConstants } from "node:fs";
+import { existsSync, constants as fsConstants } from "node:fs";
 import { access } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { app, BrowserWindow, dialog, session, shell } from "electron";
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	nativeImage,
+	session,
+	shell,
+} from "electron";
 
 const ELECTRON_DIR = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(ELECTRON_DIR, "..");
+const APP_ICON_PATH = join(PROJECT_ROOT, "build", "icon.png");
 
 const DEV_SERVER_URL =
 	process.env.SONG_MODE_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
@@ -111,7 +119,17 @@ function stopProductionServer() {
 	productionServerPromise = null;
 }
 
+function getAppIcon() {
+	if (!existsSync(APP_ICON_PATH)) {
+		return undefined;
+	}
+
+	return nativeImage.createFromPath(APP_ICON_PATH);
+}
+
 async function createMainWindow() {
+	const appIcon = getAppIcon();
+
 	const window = new BrowserWindow({
 		width: 1440,
 		height: 960,
@@ -119,6 +137,7 @@ async function createMainWindow() {
 		minHeight: 720,
 		show: false,
 		backgroundColor: "#f4f1e8",
+		...(appIcon ? { icon: appIcon } : {}),
 		webPreferences: {
 			contextIsolation: true,
 			nodeIntegration: false,
@@ -185,6 +204,11 @@ function denyDevicePermissions() {
 
 async function launchSongMode() {
 	denyDevicePermissions();
+
+	const appIcon = getAppIcon();
+	if (process.platform === "darwin" && appIcon != null) {
+		app.dock.setIcon(appIcon);
+	}
 
 	if (shouldUseProductionServer()) {
 		await startProductionServer();
