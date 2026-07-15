@@ -474,6 +474,14 @@ describe("InspectorPane", () => {
 		});
 
 		expect(screen.getByText(/^notes$/i)).toBeTruthy();
+		const notesLabel = screen.getByText(/^notes$/i);
+		const markersHeading = screen.getByRole("heading", {
+			name: "Markers And Regions",
+		});
+		expect(
+			notesLabel.compareDocumentPosition(markersHeading) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
 		expect(screen.queryByText(/mastering note/i)).toBeNull();
 		expect(screen.getAllByTestId("rich-text-editor")).toHaveLength(2);
 	});

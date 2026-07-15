@@ -191,6 +191,18 @@ describe("LibraryView", () => {
 		});
 	});
 
+	it("does not show a journal placeholder for songs without notes", () => {
+		const headerSlot = document.createElement("div");
+		document.body.appendChild(headerSlot);
+		songs = [makeSong("song-1")];
+
+		renderWithLibraryHeaderSlot(headerSlot);
+
+		expect(
+			screen.queryByText("Journal is ready for the first pass."),
+		).toBeNull();
+	});
+
 	it("opens song settings from the title row and updates song metadata", async () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);

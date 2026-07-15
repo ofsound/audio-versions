@@ -89,10 +89,30 @@ export function InspectorPane({
 					ref={scrollerRef}
 					className="-mx-4 mt-1 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
 				>
+					{selectedFile ? (
+						<div className="shrink-0">
+							<div className="grid gap-2">
+								<span className="field-label">Notes</span>
+								<RichTextEditor
+									value={selectedFile.notes}
+									onChange={(nextValue) =>
+										void onUpdateFile({
+											notes: nextValue,
+										})
+									}
+									onInternalLink={onOpenTarget}
+									compact
+									showToolbar={false}
+									commitDelayMs={DEBOUNCE_MS.compactEditor}
+								/>
+							</div>
+						</div>
+					) : null}
+					<h4 className="field-label shrink-0">Markers And Regions</h4>
 					{annotations.length === 0 ? (
-						<p className="border border-dashed border-[var(--color-border-plain)] px-4 py-5 text-sm text-[var(--color-text-muted)]">
-							Create point markers or regions from the waveform to build the
-							linked note list here.
+						<p className="py-5 text-sm text-[var(--color-text-muted)]">
+							Create markers or ranges from the waveform to build that list
+							here.
 						</p>
 					) : (
 						annotations.map((annotation) => (
@@ -127,25 +147,7 @@ export function InspectorPane({
 					</div>
 				) : null}
 
-				{selectedFile ? (
-					<div className="mt-3 shrink-0">
-						<div className="grid gap-2">
-							<span className="field-label">Notes</span>
-							<RichTextEditor
-								value={selectedFile.notes}
-								onChange={(nextValue) =>
-									void onUpdateFile({
-										notes: nextValue,
-									})
-								}
-								onInternalLink={onOpenTarget}
-								compact
-								showToolbar={false}
-								commitDelayMs={DEBOUNCE_MS.compactEditor}
-							/>
-						</div>
-					</div>
-				) : (
+				{selectedFile ? null : (
 					<p className="text-sm leading-7 text-[var(--color-text-muted)]">
 						Pick an audio lane to edit notes, inspect time-based annotations,
 						and copy deep links back into the song journal.

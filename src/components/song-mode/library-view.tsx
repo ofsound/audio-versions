@@ -211,6 +211,8 @@ export function LibraryView() {
 					) : (
 						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 							{orderedSongs.map((song) => {
+								const notesPreview = richTextPreview(song.generalNotes, "");
+
 								return (
 									<div
 										key={song.id}
@@ -240,12 +242,11 @@ export function LibraryView() {
 													) : null}
 												</div>
 
-												<p className="mt-5 text-sm leading-7 text-[var(--color-text-muted)]">
-													{richTextPreview(
-														song.generalNotes,
-														"Journal is ready for the first pass.",
-													)}
-												</p>
+												{notesPreview ? (
+													<p className="mt-5 text-sm leading-7 text-[var(--color-text-muted)]">
+														{notesPreview}
+													</p>
+												) : null}
 											</button>
 											<button
 												type="button"
