@@ -25,6 +25,7 @@ import {
 } from "#/lib/song-mode/types";
 import {
 	generateWaveformFromFile,
+	normalizeAudioBlobForBrowser,
 	normalizeVolumeDb,
 } from "#/lib/song-mode/waveform";
 import {
@@ -208,7 +209,8 @@ export function useAudioFileMutations({
 	const addAudioFile = useCallback(
 		async (songId: string, input: AddAudioFileInput) => {
 			setError(null);
-			const waveform = await generateWaveformFromFile(input.file);
+			const browserAudioBlob = await normalizeAudioBlobForBrowser(input.file);
+			const waveform = await generateWaveformFromFile(browserAudioBlob);
 			const now = new Date().toISOString();
 			const sessionDate = input.sessionDate.trim() || isoDateInLocalCalendar();
 			const audioFile: AudioFileRecord = {
@@ -239,7 +241,7 @@ export function useAudioFileMutations({
 					audioFiles: [...current.audioFiles, audioFile],
 					blobsByAudioId: {
 						...current.blobsByAudioId,
-						[audioFile.id]: input.file,
+						[audioFile.id]: browserAudioBlob,
 					},
 				}),
 				async (nextSnapshot) => {

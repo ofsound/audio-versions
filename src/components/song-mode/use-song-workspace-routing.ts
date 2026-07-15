@@ -44,7 +44,7 @@ export function useSongWorkspaceRouting({
 		(search.fileId &&
 		audioFiles.some((audioFile) => audioFile.id === search.fileId)
 			? search.fileId
-			: audioFiles[0]?.id) ?? undefined;
+			: audioFiles.at(-1)?.id) ?? undefined;
 	const selectedFile = audioFiles.find(
 		(audioFile) => audioFile.id === selectedFileId,
 	);

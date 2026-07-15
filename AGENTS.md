@@ -8,6 +8,8 @@
 
 ---
 
+After each code or UI change, rebuild the packaged macOS app with `npm run electron:pack` so `dist/electron/mac-arm64/Song Mode.app` stays current.
+
 ## 2. Reasoning & Constraints
 
 ### A. Think Before Coding

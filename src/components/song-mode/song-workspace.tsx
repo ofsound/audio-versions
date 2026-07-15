@@ -37,6 +37,7 @@ export function SongWorkspace({
 		getSongAudioFiles,
 		getAnnotationsForFile,
 		getWorkspaceState,
+		settings,
 		blobsByAudioId,
 		playback,
 		rememberSongOpened,
@@ -49,6 +50,7 @@ export function SongWorkspace({
 		updateAnnotation,
 		deleteAnnotation,
 		updateWorkspaceState,
+		updateUiSettings,
 		registerAudioElement,
 		reportPlaybackState,
 		togglePlayback,
@@ -108,20 +110,8 @@ export function SongWorkspace({
 	const handleAnnotationTitleFocusHandled = useCallback(() => {
 		setAnnotationTitleFocusId(null);
 	}, []);
-	const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 	const previousSelectedFileIdRef = useRef<string | undefined>(selectedFileId);
 	const previousIsPlayingRef = useRef(playback.isPlaying);
-
-	useEffect(() => {
-		if (!selectedFileId) {
-			return;
-		}
-
-		itemRefs.current[selectedFileId]?.scrollIntoView({
-			behavior: "smooth",
-			block: "center",
-		});
-	}, [selectedFileId]);
 
 	const editingFile = useMemo(
 		() =>
@@ -380,7 +370,11 @@ export function SongWorkspace({
 	const songHeaderControls = (
 		<SongWorkspaceHeaderControls
 			song={song}
+			waveformLayout={settings.ui.waveformLayout}
 			onOpenUpload={() => setIsUploadOpen(true)}
+			onUpdateWaveformLayout={(waveformLayout) =>
+				void updateUiSettings({ waveformLayout })
+			}
 		/>
 	);
 
@@ -399,8 +393,8 @@ export function SongWorkspace({
 				}`}
 				aria-hidden={isModalOpen}
 			>
-				<section className="grid gap-5 xl:min-h-0 xl:flex-1 xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_420px_minmax(280px,1fr)] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
-					<div className="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
+				<section className="grid gap-5 xl:min-h-0 xl:flex-1 xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_minmax(280px,1fr)_420px] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
+					<div className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
 						<SongWorkspaceWaveformList
 							activeAnnotationId={activeAnnotationId}
 							audioFiles={audioFiles}
@@ -413,7 +407,6 @@ export function SongWorkspace({
 									audioFileId: fileId,
 								})
 							}
-							itemRefs={itemRefs}
 							playback={playback}
 							registerAudioElement={registerAudioElement}
 							reorderAudioFiles={reorderAudioFiles}
@@ -426,6 +419,7 @@ export function SongWorkspace({
 							deleteAnnotation={deleteAnnotation}
 							updateAudioFile={updateAudioFile}
 							workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
+							waveformLayout={settings.ui.waveformLayout}
 							onOpenFileDetails={handleOpenFileDetails}
 							onSelectFile={(fileId) =>
 								patchRouteSelection({

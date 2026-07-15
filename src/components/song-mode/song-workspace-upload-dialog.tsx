@@ -50,7 +50,7 @@ export function SongWorkspaceUploadDialog({
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept="audio/*"
+						accept="audio/*,.aif,.aiff,audio/aiff,audio/x-aiff"
 						onChange={(event) => {
 							onFileChange(event.target.files?.[0] ?? null);
 						}}

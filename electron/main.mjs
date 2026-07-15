@@ -131,10 +131,10 @@ async function createMainWindow() {
 	const appIcon = getAppIcon();
 
 	const window = new BrowserWindow({
-		width: 1440,
-		height: 960,
-		minWidth: 1120,
-		minHeight: 720,
+		width: 1600,
+		height: 1080,
+		minWidth: 1200,
+		minHeight: 800,
 		show: false,
 		backgroundColor: "#f4f1e8",
 		...(appIcon ? { icon: appIcon } : {}),

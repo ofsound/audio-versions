@@ -104,6 +104,27 @@ vi.mock("./waveform-card", () => ({
 	),
 }));
 
+vi.mock("./waveform-thumbnail", () => ({
+	WaveformThumbnail: ({
+		audioFile,
+		isSelected,
+		onSelectFile,
+	}: {
+		audioFile: AudioFileRecord;
+		isSelected: boolean;
+		onSelectFile: (fileId: string) => void;
+	}) => (
+		<button
+			type="button"
+			data-testid="waveform-thumbnail"
+			aria-label={`Select ${audioFile.id}`}
+			onClick={() => onSelectFile(audioFile.id)}
+		>
+			{audioFile.title}:{String(isSelected)}
+		</button>
+	),
+}));
+
 const baseSong: Song = {
 	id: "song-1",
 	title: "Reload Test",
@@ -160,6 +181,7 @@ const togglePlayback = vi.fn();
 const updateAnnotation = vi.fn();
 const updateAudioFile = vi.fn();
 const updateSong = vi.fn();
+const updateUiSettings = vi.fn();
 
 function createAudioFile(
 	overrides: Partial<AudioFileRecord> = {},
@@ -214,6 +236,7 @@ vi.mock("#/providers/song-mode-provider", () => ({
 		updateAnnotation,
 		deleteAnnotation,
 		updateWorkspaceState: updateWorkspaceStateMock,
+		updateUiSettings,
 		registerAudioElement,
 		reportPlaybackState,
 		togglePlayback,
@@ -251,6 +274,7 @@ describe("SongWorkspace", () => {
 		deleteAudioFile.mockResolvedValue(undefined);
 		updateAudioFile.mockReset();
 		updateSong.mockReset();
+		updateUiSettings.mockReset();
 		updateSong.mockResolvedValue(undefined);
 		Element.prototype.scrollIntoView = vi.fn();
 	});
@@ -315,6 +339,40 @@ describe("SongWorkspace", () => {
 			expect(screen.getByText("Mix v1:true")).toBeTruthy();
 		});
 		expect(rememberSongOpened).not.toHaveBeenCalled();
+	});
+
+	it("browser mode shows every thumbnail and only the selected full player", () => {
+		currentUiSettings = {
+			...createDefaultUiSettings(),
+			waveformLayout: "browser",
+		};
+		currentAudioFiles = [
+			createAudioFile({ id: "file-1", title: "Mix A" }),
+			createAudioFile({ id: "file-2", title: "Mix B" }),
+			createAudioFile({ id: "file-3", title: "Mix C" }),
+		];
+
+		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
+
+		expect(screen.getAllByTestId("waveform-thumbnail")).toHaveLength(3);
+		expect(screen.getAllByTestId("waveform-card")).toHaveLength(1);
+		expect(screen.getByTestId("waveform-card").textContent).toContain(
+			"Mix C:true",
+		);
+	});
+
+	it("opens the bottom file without automatically scrolling to it", () => {
+		currentAudioFiles = [
+			createAudioFile({ id: "file-1", title: "Mix A" }),
+			createAudioFile({ id: "file-2", title: "Mix B" }),
+		];
+
+		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
+
+		expect(screen.getByText("Mix B:true")).toBeTruthy();
+		expect(screen.getByText("Mix A:false")).toBeTruthy();
+		expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+		expect(updateWorkspaceStateMock).not.toHaveBeenCalled();
 	});
 
 	it("does not reset selection to a stale ?fileId= when picking another waveform", async () => {
