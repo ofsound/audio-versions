@@ -412,6 +412,13 @@ describe("WaveformCard", () => {
 		});
 	});
 
+	it("requests audio with CORS enabled for Web Audio playback", () => {
+		renderWaveformCard();
+
+		const audioElement = document.querySelector("audio");
+		expect(audioElement?.crossOrigin).toBe("anonymous");
+	});
+
 	it("commits seek on pointer up and uses autoplay on waveform double-click", async () => {
 		const onSeek = vi.fn().mockResolvedValue(undefined);
 		const onSelectFile = vi.fn();

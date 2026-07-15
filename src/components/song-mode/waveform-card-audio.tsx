@@ -23,6 +23,7 @@ export function WaveformCardAudio({
 	return (
 		/* biome-ignore lint/a11y/useMediaCaption: hidden transport audio is controlled programmatically instead of being exposed as standalone media */
 		<audio
+			crossOrigin="anonymous"
 			ref={(element) => {
 				audioRef.current = element;
 				onRegisterAudioElement(element);
