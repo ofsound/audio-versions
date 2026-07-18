@@ -81,9 +81,23 @@ export function SongWorkspaceWaveformList({
 	onSelectFile,
 }: SongWorkspaceWaveformListProps) {
 	const [draggingFileId, setDraggingFileId] = useState<string | null>(null);
+	const [isPhoneViewport, setIsPhoneViewport] = useState(false);
 	const thumbnailsViewportRef = useRef<HTMLDivElement | null>(null);
 	const orderedIdsRef = useRef<string[]>([]);
 	orderedIdsRef.current = audioFiles.map((audioFile) => audioFile.id);
+
+	useEffect(() => {
+		if (typeof window.matchMedia !== "function") {
+			return;
+		}
+
+		const mediaQuery = window.matchMedia("(max-width: 767px)");
+		const updatePhoneViewport = () => setIsPhoneViewport(mediaQuery.matches);
+		updatePhoneViewport();
+		mediaQuery.addEventListener("change", updatePhoneViewport);
+
+		return () => mediaQuery.removeEventListener("change", updatePhoneViewport);
+	}, []);
 
 	useEffect(() => {
 		if (
@@ -166,18 +180,18 @@ export function SongWorkspaceWaveformList({
 		</div>
 	);
 
-	if (waveformLayout === "browser") {
+	if (waveformLayout === "browser" || isPhoneViewport) {
 		const selectedAudioFile = audioFiles.find(
 			(audioFile) => audioFile.id === selectedFileId,
 		);
 
 		return (
-			<div className="flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
+			<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
 				<div
 					ref={thumbnailsViewportRef}
-					className="min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
+					className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
 				>
-					<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,28rem),1fr))] gap-3 sm:gap-4">
+					<div className="grid grid-cols-2 gap-3 sm:gap-4">
 						{audioFiles.map((audioFile) => (
 							<div key={audioFile.id}>
 								<WaveformThumbnail
@@ -194,7 +208,10 @@ export function SongWorkspaceWaveformList({
 						))}
 					</div>
 				</div>
-				<div className="min-h-0 shrink-0 overflow-y-auto">
+				<div
+					className="song-workspace-file-player min-h-0 shrink-0 overflow-y-auto"
+					data-testid={isPhoneViewport ? "mobile-file-player" : undefined}
+				>
 					{selectedAudioFile ? (
 						renderWaveformCard(selectedAudioFile)
 					) : (

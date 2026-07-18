@@ -388,12 +388,12 @@ export function SongWorkspace({
 		<>
 			{renderedSongHeaderControls}
 			<main
-				className={`flex min-h-0 w-full flex-1 flex-col gap-6 overflow-y-auto px-3 py-8 [transition:filter_200ms_ease,opacity_200ms_ease] xl:overflow-hidden ${
+				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-8 ${
 					isModalOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
 				}`}
 				aria-hidden={isModalOpen}
 			>
-				<section className="grid gap-5 xl:min-h-0 xl:flex-1 xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_minmax(280px,1fr)_420px] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
+				<section className="song-workspace-scroll-region grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_minmax(280px,1fr)_420px] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
 					<div className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
 						<SongWorkspaceWaveformList
 							activeAnnotationId={activeAnnotationId}

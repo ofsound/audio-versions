@@ -20,7 +20,7 @@ export function SongWorkspaceHeaderControls({
 				{song.title}
 			</h1>
 			<fieldset
-				className="flex shrink-0 items-center border-0 p-0"
+				className="hidden shrink-0 items-center border-0 p-0 md:flex"
 				aria-label="Waveform layout"
 			>
 				<button

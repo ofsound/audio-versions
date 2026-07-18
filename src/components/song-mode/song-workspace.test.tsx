@@ -150,6 +150,7 @@ let currentPlayback = {
 };
 let currentAnnotationsByFileId: Record<string, Annotation[]> = {};
 let currentUiSettings = createDefaultUiSettings();
+let phoneViewportMatches = false;
 
 const getSongById = vi.fn((songId: string) =>
 	songId === baseSong.id
@@ -262,6 +263,18 @@ describe("SongWorkspace", () => {
 			currentTimeByFileId: {},
 		};
 		currentUiSettings = createDefaultUiSettings();
+		phoneViewportMatches = false;
+		vi.stubGlobal(
+			"matchMedia",
+			vi.fn(() => ({
+				matches: phoneViewportMatches,
+				media: "(max-width: 767px)",
+				onchange: null,
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+				dispatchEvent: vi.fn(),
+			})),
+		);
 		navigateMock.mockReset();
 		updateWorkspaceStateMock.mockReset();
 		updateWorkspaceStateMock.mockResolvedValue(undefined);
@@ -358,6 +371,24 @@ describe("SongWorkspace", () => {
 		expect(screen.getAllByTestId("waveform-card")).toHaveLength(1);
 		expect(screen.getByTestId("waveform-card").textContent).toContain(
 			"Mix C:true",
+		);
+	});
+
+	it("uses the single-player browser layout on phone viewports", async () => {
+		phoneViewportMatches = true;
+		currentAudioFiles = [
+			createAudioFile({ id: "file-1", title: "Mix A" }),
+			createAudioFile({ id: "file-2", title: "Mix B" }),
+		];
+
+		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
+
+		await waitFor(() => {
+			expect(screen.getAllByTestId("waveform-thumbnail")).toHaveLength(2);
+		});
+		expect(screen.getAllByTestId("waveform-card")).toHaveLength(1);
+		expect(screen.getByTestId("mobile-file-player").textContent).toContain(
+			"Mix B:true",
 		);
 	});
 

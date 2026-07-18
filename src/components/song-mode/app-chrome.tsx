@@ -68,7 +68,7 @@ export function SongModeChrome({ children }: { children: React.ReactNode }) {
 			}}
 		>
 			<div className={shellClassName}>
-				<header className={headerClassName}>
+				<header className={`${headerClassName} app-safe-area-header`}>
 					<div className="flex w-full flex-col gap-4 px-3 py-4">
 						<div className="flex flex-col gap-4 xl:flex-row xl:items-end">
 							<div

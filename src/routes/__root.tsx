@@ -32,13 +32,41 @@ export const Route = createRootRoute({
 			},
 			{
 				name: "viewport",
-				content: "width=device-width, initial-scale=1",
+				content: "width=device-width, initial-scale=1, viewport-fit=cover",
+			},
+			{
+				name: "theme-color",
+				content: "#090f0d",
+			},
+			{
+				name: "mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "black-translucent",
+			},
+			{
+				name: "apple-mobile-web-app-title",
+				content: "Song Mode",
 			},
 			{
 				title: "Song Mode",
 			},
 		],
 		links: [
+			{
+				rel: "manifest",
+				href: "/manifest.json",
+			},
+			{
+				rel: "apple-touch-icon",
+				href: "/logo192.png",
+			},
 			{
 				rel: "stylesheet",
 				href: appCss,
