@@ -21,7 +21,7 @@ export function WaveformCardFooter({
 	volumeDb,
 }: WaveformCardFooterProps) {
 	return (
-		<div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
+		<div className="waveform-card__footer mt-3 flex items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
 			<span className="text-sm tabular-nums text-[var(--color-text)]">
 				{formatDuration(currentTimeMs)} / {formatDuration(durationMs)}
 			</span>

@@ -11,7 +11,12 @@ export function ThemeToggle() {
 	}, []);
 
 	if (!mounted) {
-		return <div className="h-12 w-12 shrink-0" aria-hidden="true" />;
+		return (
+			<div
+				className="song-mode-header-control h-12 w-12 shrink-0"
+				aria-hidden="true"
+			/>
+		);
 	}
 
 	const nextLabel =
@@ -21,7 +26,7 @@ export function ThemeToggle() {
 		<button
 			type="button"
 			onClick={toggleTheme}
-			className="theme-toggle-button h-12 w-12 shrink-0"
+			className="song-mode-header-control theme-toggle-button h-12 w-12 shrink-0"
 			aria-label={nextLabel}
 			title={nextLabel}
 		>

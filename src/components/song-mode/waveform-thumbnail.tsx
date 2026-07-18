@@ -48,15 +48,15 @@ export function WaveformThumbnail({
 		>
 			<div
 				ref={surfaceRef}
-				className="waveform-surface relative aspect-[5/1] min-h-16 w-full sm:min-h-20"
+				className="waveform-thumbnail__surface waveform-surface relative aspect-[5/1] min-h-16 w-full sm:min-h-20"
 			>
 				<canvas ref={canvasRef} className="block w-full" />
-				<div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
-					<span className="self-start truncate bg-black px-1.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
+				<div className="waveform-thumbnail__overlay pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
+					<span className="waveform-thumbnail__title self-start truncate bg-black px-1.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
 						{audioFile.title}
 					</span>
 					{sessionDateLabel ? (
-						<span className="self-end bg-black px-1.5 py-0.5 text-[9px] tabular-nums text-white sm:text-[10px]">
+						<span className="waveform-thumbnail__date self-end bg-black px-1.5 py-0.5 text-[9px] tabular-nums text-white sm:text-[10px]">
 							{sessionDateLabel}
 						</span>
 					) : null}

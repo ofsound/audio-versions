@@ -44,8 +44,8 @@ export function WaveformCardHeader({
 	sessionDateLabel,
 }: WaveformCardHeaderProps) {
 	return (
-		<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-			<div className="flex min-w-0 items-center gap-3">
+		<div className="waveform-card__header mb-4 flex flex-wrap items-center justify-between gap-3">
+			<div className="waveform-card__identity flex min-w-0 items-center gap-3">
 				<button
 					type="button"
 					aria-label={`Reorder ${audioFileTitle}`}
@@ -53,7 +53,7 @@ export function WaveformCardHeader({
 					onPointerUp={onReleaseDrag}
 					onPointerCancel={onReleaseDrag}
 					onBlur={onReleaseDrag}
-					className="icon-button h-10 w-10 shrink-0"
+					className="waveform-card__reorder icon-button h-10 w-10 shrink-0"
 					title="Drag to reorder"
 				>
 					<GripVertical size={16} />
@@ -63,7 +63,7 @@ export function WaveformCardHeader({
 						<button
 							type="button"
 							onClick={onSelectFile}
-							className="min-w-0 flex-1 truncate text-left text-lg font-semibold text-[var(--color-text)]"
+							className="waveform-card__title min-w-0 flex-1 truncate text-left text-lg font-semibold text-[var(--color-text)]"
 						>
 							{audioFileTitle}
 						</button>
@@ -78,14 +78,14 @@ export function WaveformCardHeader({
 						</button>
 					</div>
 					{sessionDateLabel ? (
-						<span className="whitespace-nowrap text-xs tabular-nums text-[var(--color-text-muted)]">
+						<span className="waveform-card__date whitespace-nowrap text-xs tabular-nums text-[var(--color-text-muted)]">
 							{sessionDateLabel}
 						</span>
 					) : null}
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="waveform-card__actions flex flex-wrap items-center gap-2">
 				<button
 					type="button"
 					aria-label={`Add marker at playhead for ${audioFileTitle}`}
