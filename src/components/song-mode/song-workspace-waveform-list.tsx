@@ -191,7 +191,7 @@ export function SongWorkspaceWaveformList({
 					ref={thumbnailsViewportRef}
 					className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
 				>
-					<div className="grid grid-cols-2 gap-3 sm:gap-4">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
 						{audioFiles.map((audioFile) => (
 							<div key={audioFile.id}>
 								<WaveformThumbnail
