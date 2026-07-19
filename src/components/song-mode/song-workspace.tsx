@@ -37,7 +37,6 @@ export function SongWorkspace({
 		getSongAudioFiles,
 		getAnnotationsForFile,
 		getWorkspaceState,
-		settings,
 		blobsByAudioId,
 		playback,
 		rememberSongOpened,
@@ -50,7 +49,6 @@ export function SongWorkspace({
 		updateAnnotation,
 		deleteAnnotation,
 		updateWorkspaceState,
-		updateUiSettings,
 		registerAudioElement,
 		reportPlaybackState,
 		togglePlayback,
@@ -370,11 +368,7 @@ export function SongWorkspace({
 	const songHeaderControls = (
 		<SongWorkspaceHeaderControls
 			song={song}
-			waveformLayout={settings.ui.waveformLayout}
 			onOpenUpload={() => setIsUploadOpen(true)}
-			onUpdateWaveformLayout={(waveformLayout) =>
-				void updateUiSettings({ waveformLayout })
-			}
 		/>
 	);
 
@@ -419,7 +413,6 @@ export function SongWorkspace({
 							deleteAnnotation={deleteAnnotation}
 							updateAudioFile={updateAudioFile}
 							workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
-							waveformLayout={settings.ui.waveformLayout}
 							onOpenFileDetails={handleOpenFileDetails}
 							onSelectFile={(fileId) =>
 								patchRouteSelection({

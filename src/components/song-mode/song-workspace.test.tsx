@@ -307,7 +307,7 @@ describe("SongWorkspace", () => {
 		);
 
 		expect(
-			screen.getByText(/Add audio to start the stacked waveform review/i),
+			screen.getByText(/Add audio to start reviewing waveforms/i),
 		).toBeTruthy();
 		expect(screen.queryByText(/waveform stack/i)).toBeNull();
 		expect(
@@ -349,16 +349,14 @@ describe("SongWorkspace", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Mix v1:true")).toBeTruthy();
+			expect(screen.getByTestId("waveform-card").textContent).toContain(
+				"Mix v1:true",
+			);
 		});
 		expect(rememberSongOpened).not.toHaveBeenCalled();
 	});
 
-	it("browser mode shows every thumbnail and only the selected full player", () => {
-		currentUiSettings = {
-			...createDefaultUiSettings(),
-			waveformLayout: "browser",
-		};
+	it("shows every thumbnail and only the selected full player", () => {
 		currentAudioFiles = [
 			createAudioFile({ id: "file-1", title: "Mix A" }),
 			createAudioFile({ id: "file-2", title: "Mix B" }),
@@ -374,7 +372,7 @@ describe("SongWorkspace", () => {
 		);
 	});
 
-	it("uses the single-player browser layout on phone viewports", async () => {
+	it("uses the single-player layout on phone viewports", async () => {
 		phoneViewportMatches = true;
 		currentAudioFiles = [
 			createAudioFile({ id: "file-1", title: "Mix A" }),
@@ -400,8 +398,12 @@ describe("SongWorkspace", () => {
 
 		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
 
-		expect(screen.getByText("Mix B:true")).toBeTruthy();
-		expect(screen.getByText("Mix A:false")).toBeTruthy();
+		expect(screen.getByTestId("waveform-card").textContent).toContain(
+			"Mix B:true",
+		);
+		expect(
+			screen.getByRole("button", { name: "Select file-1" }).textContent,
+		).toContain("Mix A:false");
 		expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
 		expect(updateWorkspaceStateMock).not.toHaveBeenCalled();
 	});
@@ -454,8 +456,12 @@ describe("SongWorkspace", () => {
 		const nextSearch = navigateArg.search(search);
 		rerender(<SongWorkspace songId={baseSong.id} search={nextSearch} />);
 		await waitFor(() => {
-			expect(screen.getByText("Mix B:true")).toBeTruthy();
-			expect(screen.getByText("Mix A:false")).toBeTruthy();
+			expect(screen.getByTestId("waveform-card").textContent).toContain(
+				"Mix B:true",
+			);
+			expect(
+				screen.getByRole("button", { name: "Select file-1" }).textContent,
+			).toContain("Mix A:false");
 		});
 		expect(nextSearch.fileId).toBe("file-2");
 		expect(nextSearch.annotationId).toBeUndefined();
@@ -1097,8 +1103,12 @@ describe("SongWorkspace", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Mix A:false")).toBeTruthy();
-		expect(screen.getByText("Mix B:true")).toBeTruthy();
+		expect(screen.getByTestId("waveform-card").textContent).toContain(
+			"Mix B:true",
+		);
+		expect(
+			screen.getByRole("button", { name: "Select file-1" }).textContent,
+		).toContain("Mix A:false");
 
 		navigateMock.mockClear();
 		currentPlayback = {
@@ -1117,8 +1127,12 @@ describe("SongWorkspace", () => {
 		await waitFor(() => {
 			expect(navigateMock).not.toHaveBeenCalled();
 		});
-		expect(screen.getByText("Mix A:false")).toBeTruthy();
-		expect(screen.getByText("Mix B:true")).toBeTruthy();
+		expect(screen.getByTestId("waveform-card").textContent).toContain(
+			"Mix B:true",
+		);
+		expect(
+			screen.getByRole("button", { name: "Select file-1" }).textContent,
+		).toContain("Mix A:false");
 	});
 
 	it("opens the upload form inside a modal when add file is clicked", () => {

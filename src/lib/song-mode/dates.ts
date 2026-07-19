@@ -60,3 +60,28 @@ export function resolveAudioFileSessionDateLabel(
 	const iso = resolveAudioFileSessionDateIso(audioFile);
 	return formatIsoDateForDisplay(iso);
 }
+
+/** Inclusive session-date span for a song’s files, or `null` when none are dated. */
+export function formatAudioFileSessionDateRange(
+	audioFiles: Pick<AudioFileRecord, "sessionDate">[],
+): string | null {
+	const dates = audioFiles
+		.map((audioFile) => {
+			const explicit = audioFile.sessionDate.trim();
+			return /^\d{4}-\d{2}-\d{2}$/.test(explicit) ? explicit : null;
+		})
+		.filter((isoDate): isoDate is string => isoDate !== null)
+		.sort();
+
+	if (dates.length === 0) {
+		return null;
+	}
+
+	const earliest = dates[0];
+	const latest = dates[dates.length - 1];
+	if (earliest === latest) {
+		return formatIsoDateForDisplay(earliest);
+	}
+
+	return `${formatIsoDateForDisplay(earliest)} – ${formatIsoDateForDisplay(latest)}`;
+}

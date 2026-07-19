@@ -96,7 +96,7 @@
 	);
 	--color-waveform-progress-line: light-dark(
 		var(--accent-light-primary-base),
-		var(--accent-dark-primary-base)
+		#ffffff
 	);
 	--color-marker-point: light-dark(
 		color-mix(in srgb, var(--color-zinc-500) 72%, var(--color-sky-600)),

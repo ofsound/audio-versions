@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
 	Bookmark,
+	Calendar,
 	File,
 	FolderOpenDot,
 	Plus,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { formatAudioFileSessionDateRange } from "#/lib/song-mode/dates";
 import { EMPTY_RICH_TEXT, richTextPreview } from "#/lib/song-mode/rich-text";
 import { useSongMode } from "#/providers/song-mode-provider";
 import { useLibraryHeaderActionSlot } from "./app-chrome";
@@ -75,6 +77,28 @@ export function LibraryView() {
 		}
 
 		return counts;
+	}, [audioFiles]);
+	const sessionDateRangeBySongId = useMemo(() => {
+		const filesBySongId = new Map<string, typeof audioFiles>();
+
+		for (const audioFile of audioFiles) {
+			const existing = filesBySongId.get(audioFile.songId);
+			if (existing) {
+				existing.push(audioFile);
+			} else {
+				filesBySongId.set(audioFile.songId, [audioFile]);
+			}
+		}
+
+		const ranges = new Map<string, string>();
+		for (const [songId, songAudioFiles] of filesBySongId) {
+			const range = formatAudioFileSessionDateRange(songAudioFiles);
+			if (range) {
+				ranges.set(songId, range);
+			}
+		}
+
+		return ranges;
 	}, [audioFiles]);
 	const annotationCountBySongId = useMemo(() => {
 		const counts = new Map<string, number>();
@@ -212,6 +236,7 @@ export function LibraryView() {
 						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 							{orderedSongs.map((song) => {
 								const notesPreview = richTextPreview(song.generalNotes, "");
+								const sessionDateRange = sessionDateRangeBySongId.get(song.id);
 
 								return (
 									<div
@@ -259,7 +284,7 @@ export function LibraryView() {
 											</button>
 										</div>
 
-										<div className="mt-6 flex items-center gap-2">
+										<div className="mt-6 flex flex-wrap items-center gap-2">
 											<StatChip
 												icon={<File size={14} />}
 												label={`${
@@ -272,6 +297,12 @@ export function LibraryView() {
 													annotationCountBySongId.get(song.id) ?? 0
 												} markers`}
 											/>
+											{sessionDateRange ? (
+												<StatChip
+													icon={<Calendar size={14} />}
+													label={sessionDateRange}
+												/>
+											) : null}
 										</div>
 									</div>
 								);

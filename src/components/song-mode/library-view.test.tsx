@@ -264,6 +264,79 @@ describe("LibraryView", () => {
 		expect(settingsButton.className).toContain("icon-button");
 	});
 
+	it("shows the session date range next to files and markers on song cards", () => {
+		const headerSlot = document.createElement("div");
+		document.body.appendChild(headerSlot);
+		songs = [makeSong("song-1")];
+		audioFiles = [
+			{
+				id: "audio-1",
+				songId: "song-1",
+				title: "Mix A",
+				sessionDate: "2026-04-16",
+				notes: EMPTY_RICH_TEXT,
+				volumeDb: 0,
+				durationMs: 180000,
+				waveform: {
+					peaks: [0.1, 0.4, 0.2],
+					peakCount: 3,
+					durationMs: 180000,
+					sampleRate: 44100,
+				},
+				createdAt: "2026-04-16T00:00:00.000Z",
+				updatedAt: "2026-04-16T00:00:00.000Z",
+			},
+			{
+				id: "audio-2",
+				songId: "song-1",
+				title: "Mix B",
+				sessionDate: "2026-06-02",
+				notes: EMPTY_RICH_TEXT,
+				volumeDb: 0,
+				durationMs: 180000,
+				waveform: {
+					peaks: [0.2, 0.5, 0.3],
+					peakCount: 3,
+					durationMs: 180000,
+					sampleRate: 44100,
+				},
+				createdAt: "2026-06-02T00:00:00.000Z",
+				updatedAt: "2026-06-02T00:00:00.000Z",
+			},
+		];
+		annotations = [
+			{
+				id: "annotation-1",
+				songId: "song-1",
+				audioFileId: "audio-1",
+				type: "point",
+				startMs: 1000,
+				title: "Downbeat",
+				body: EMPTY_RICH_TEXT,
+				createdAt: "2026-04-16T00:00:00.000Z",
+				updatedAt: "2026-04-16T00:00:00.000Z",
+			},
+		];
+
+		renderWithLibraryHeaderSlot(headerSlot);
+
+		expect(screen.getByText("2 files")).toBeTruthy();
+		expect(screen.getByText("1 markers")).toBeTruthy();
+		expect(
+			screen.getByText(
+				`${new Date(2026, 3, 16).toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+				})} – ${new Date(2026, 5, 2).toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+				})}`,
+			),
+		).toBeTruthy();
+	});
+
 	it("confirms before deleting a song from the library song settings modal", async () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);

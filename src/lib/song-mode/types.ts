@@ -80,17 +80,12 @@ const WAVEFORM_HEIGHT_PRESETS = ["large", "medium", "small"] as const;
 
 export type WaveformHeightPreset = (typeof WAVEFORM_HEIGHT_PRESETS)[number];
 
-const WAVEFORM_LAYOUTS = ["stacked", "browser"] as const;
-
-export type WaveformLayout = (typeof WAVEFORM_LAYOUTS)[number];
-
 export interface SongModeUiSettings {
 	accentLightPrimary: string;
 	accentLightStrong: string;
 	accentDarkPrimary: string;
 	accentDarkStrong: string;
 	waveformHeight: WaveformHeightPreset;
-	waveformLayout: WaveformLayout;
 	showArtist: boolean;
 	showProject: boolean;
 	/** When true, :focus-visible uses accent rings (recommended for keyboard use). */
@@ -180,7 +175,6 @@ export function createDefaultUiSettings(): SongModeUiSettings {
 		accentDarkPrimary: "#6ee7b7",
 		accentDarkStrong: "#38bdf8",
 		waveformHeight: "large",
-		waveformLayout: "stacked",
 		showArtist: true,
 		showProject: true,
 		keyboardFocusHighlights: false,
@@ -199,12 +193,6 @@ function normalizeWaveformHeightPreset(
 	value: string | null | undefined,
 ): WaveformHeightPreset {
 	return value === "medium" || value === "small" ? value : "large";
-}
-
-function normalizeWaveformLayout(
-	value: string | null | undefined,
-): WaveformLayout {
-	return value === "browser" ? "browser" : "stacked";
 }
 
 function normalizeHexColor(
@@ -237,7 +225,6 @@ export function normalizeUiSettings(
 			defaults.accentDarkStrong,
 		).toLowerCase(),
 		waveformHeight: normalizeWaveformHeightPreset(value?.waveformHeight),
-		waveformLayout: normalizeWaveformLayout(value?.waveformLayout),
 		showArtist: value?.showArtist ?? defaults.showArtist,
 		showProject: value?.showProject ?? defaults.showProject,
 		keyboardFocusHighlights:

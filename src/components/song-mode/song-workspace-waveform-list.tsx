@@ -3,7 +3,6 @@ import type {
 	Annotation,
 	AudioFileRecord,
 	CreateAnnotationInput,
-	WaveformLayout,
 } from "#/lib/song-mode/types";
 import { normalizeVolumeDb } from "#/lib/song-mode/waveform";
 import type { PlaybackState } from "#/providers/use-song-mode-playback";
@@ -51,7 +50,6 @@ interface SongWorkspaceWaveformListProps {
 		patch: Partial<AudioFileRecord>,
 	) => Promise<void>;
 	workspacePlayheadMsByFileId: Record<string, number>;
-	waveformLayout: WaveformLayout;
 	onOpenFileDetails: (fileId: string) => void;
 	onSelectFile: (fileId: string) => void;
 	onSelectAnnotation: (fileId: string, annotationId: string) => void;
@@ -75,7 +73,6 @@ export function SongWorkspaceWaveformList({
 	deleteAnnotation,
 	updateAudioFile,
 	workspacePlayheadMsByFileId,
-	waveformLayout,
 	onOpenFileDetails,
 	onSelectAnnotation,
 	onSelectFile,
@@ -100,27 +97,26 @@ export function SongWorkspaceWaveformList({
 	}, []);
 
 	useEffect(() => {
-		if (
-			waveformLayout !== "browser" ||
-			audioFiles.length === 0 ||
-			!thumbnailsViewportRef.current
-		) {
+		if (audioFiles.length === 0 || !thumbnailsViewportRef.current) {
 			return;
 		}
 
 		thumbnailsViewportRef.current.scrollTop =
 			thumbnailsViewportRef.current.scrollHeight;
-	}, [audioFiles.length, waveformLayout]);
+	}, [audioFiles.length]);
 
 	if (audioFiles.length === 0) {
 		return (
 			<div className="border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
-				Add audio to start the stacked waveform review. Each file gets its own
-				notes, time markers, range annotations, and immediate seek-and-play
-				links.
+				Add audio to start reviewing waveforms. Each file gets its own notes,
+				time markers, range annotations, and immediate seek-and-play links.
 			</div>
 		);
 	}
+
+	const selectedAudioFile = audioFiles.find(
+		(audioFile) => audioFile.id === selectedFileId,
+	);
 
 	const renderWaveformCard = (audioFile: AudioFileRecord) => (
 		<div key={audioFile.id}>
@@ -180,49 +176,41 @@ export function SongWorkspaceWaveformList({
 		</div>
 	);
 
-	if (waveformLayout === "browser" || isPhoneViewport) {
-		const selectedAudioFile = audioFiles.find(
-			(audioFile) => audioFile.id === selectedFileId,
-		);
-
-		return (
-			<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
-				<div
-					ref={thumbnailsViewportRef}
-					className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
-				>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-						{audioFiles.map((audioFile) => (
-							<div key={audioFile.id}>
-								<WaveformThumbnail
-									audioFile={audioFile}
-									currentTimeMs={
-										playback.currentTimeByFileId[audioFile.id] ??
-										workspacePlayheadMsByFileId[audioFile.id] ??
-										0
-									}
-									isSelected={selectedFileId === audioFile.id}
-									onSelectFile={onSelectFile}
-								/>
-							</div>
-						))}
-					</div>
-				</div>
-				<div
-					className="song-workspace-file-player min-h-0 shrink-0 overflow-y-auto"
-					data-testid={isPhoneViewport ? "mobile-file-player" : undefined}
-				>
-					{selectedAudioFile ? (
-						renderWaveformCard(selectedAudioFile)
-					) : (
-						<div className="border border-dashed border-[var(--color-border-plain)] px-5 py-6 text-sm text-[var(--color-text-muted)]">
-							Select a file above to open its player.
+	return (
+		<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
+			<div
+				ref={thumbnailsViewportRef}
+				className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
+			>
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+					{audioFiles.map((audioFile) => (
+						<div key={audioFile.id}>
+							<WaveformThumbnail
+								audioFile={audioFile}
+								currentTimeMs={
+									playback.currentTimeByFileId[audioFile.id] ??
+									workspacePlayheadMsByFileId[audioFile.id] ??
+									0
+								}
+								isSelected={selectedFileId === audioFile.id}
+								onSelectFile={onSelectFile}
+							/>
 						</div>
-					)}
+					))}
 				</div>
 			</div>
-		);
-	}
-
-	return <>{audioFiles.map((audioFile) => renderWaveformCard(audioFile))}</>;
+			<div
+				className="song-workspace-file-player min-h-0 shrink-0 overflow-y-auto"
+				data-testid={isPhoneViewport ? "mobile-file-player" : undefined}
+			>
+				{selectedAudioFile ? (
+					renderWaveformCard(selectedAudioFile)
+				) : (
+					<div className="border border-dashed border-[var(--color-border-plain)] px-5 py-6 text-sm text-[var(--color-text-muted)]">
+						Select a file above to open its player.
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
