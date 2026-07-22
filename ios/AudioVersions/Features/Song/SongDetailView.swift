@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SongDetailView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @State private var isEditingJournal = false
     let songID: String
 
     private var song: Song? {
@@ -24,6 +25,34 @@ struct SongDetailView: View {
                         .padding(.vertical, 5)
                     }
 
+                    Section("Journal") {
+                        Button {
+                            isEditingJournal = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(
+                                    song.generalNotes.isEmpty
+                                        ? "Add notes about this song"
+                                        : song.generalNotes
+                                )
+                                .foregroundStyle(
+                                    song.generalNotes.isEmpty ? .secondary : .primary
+                                )
+                                .lineLimit(6)
+
+                                Label(
+                                    song.generalNotes.isEmpty ? "Add journal" : "Edit journal",
+                                    systemImage: "square.and.pencil"
+                                )
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(.orange)
+                            }
+                            .padding(.vertical, 5)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Section("Versions") {
                         ForEach(song.versions.sorted(by: { $0.createdAt > $1.createdAt })) { version in
                             NavigationLink {
@@ -36,6 +65,15 @@ struct SongDetailView: View {
                 }
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.large)
+                .sheet(isPresented: $isEditingJournal) {
+                    PlainTextNoteEditorView(
+                        title: "Song Journal",
+                        accessibilityLabel: "Song journal",
+                        text: song.generalNotes
+                    ) { journal in
+                        store.saveSongJournal(journal, songID: song.id)
+                    }
+                }
             } else {
                 ContentUnavailableView(
                     "Song unavailable",

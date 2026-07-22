@@ -4,6 +4,7 @@ struct Song: Identifiable, Hashable {
     let id: String
     var title: String
     var artist: String
+    var generalNotes: String = ""
     var updatedAt: Date
     var versions: [AudioVersion]
 
@@ -15,6 +16,7 @@ struct Song: Identifiable, Hashable {
 struct AudioVersion: Identifiable, Hashable {
     let id: String
     var name: String
+    var notes: String = ""
     var createdAt: Date
     var duration: TimeInterval
     var waveformPeaks: [Double]

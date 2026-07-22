@@ -37,14 +37,14 @@ final class CloudLibraryService: @unchecked Sendable {
     func fetchActiveSnapshot() async throws -> CloudLibrarySnapshot {
         let songRows: [SongRow] = try await client
             .from("songs")
-            .select("id,title,artist,audio_file_order,updated_at")
+            .select("id,title,artist,general_notes,audio_file_order,updated_at")
             .is("deleted_at", value: nil)
             .execute()
             .value
 
         let audioFileRows: [AudioFileRow] = try await client
             .from("audio_files")
-            .select("id,song_id,title,duration_ms,waveform,created_at")
+            .select("id,song_id,title,notes,duration_ms,waveform,created_at")
             .is("deleted_at", value: nil)
             .execute()
             .value
@@ -61,6 +61,54 @@ final class CloudLibraryService: @unchecked Sendable {
             audioFileRows: audioFileRows,
             annotationRows: annotationRows
         )
+    }
+
+    @discardableResult
+    func updateSongJournal(_ journal: String, songID: String) async throws -> String {
+        guard let songID = UUID(uuidString: songID) else {
+            throw CloudDataError.invalidIdentifier(songID)
+        }
+
+        let update = SongJournalUpdate(
+            generalNotes: .plainText(journal),
+            updatedAt: CloudTimestamp.format(.now)
+        )
+        let rows: [MutationResultRow] = try await client
+            .from("songs")
+            .update(update, returning: .representation)
+            .eq("id", value: songID)
+            .is("deleted_at", value: nil)
+            .execute()
+            .value
+
+        guard let row = rows.first else {
+            throw CloudDataError.invalidIdentifier(songID.uuidString)
+        }
+        return row.updatedAt
+    }
+
+    @discardableResult
+    func updateAudioFileNotes(_ notes: String, audioFileID: String) async throws -> String {
+        guard let audioFileID = UUID(uuidString: audioFileID) else {
+            throw CloudDataError.invalidIdentifier(audioFileID)
+        }
+
+        let update = AudioFileNotesUpdate(
+            notes: .plainText(notes),
+            updatedAt: CloudTimestamp.format(.now)
+        )
+        let rows: [MutationResultRow] = try await client
+            .from("audio_files")
+            .update(update, returning: .representation)
+            .eq("id", value: audioFileID)
+            .is("deleted_at", value: nil)
+            .execute()
+            .value
+
+        guard let row = rows.first else {
+            throw CloudDataError.invalidIdentifier(audioFileID.uuidString)
+        }
+        return row.updatedAt
     }
 
     func insertAnnotation(
@@ -207,6 +255,7 @@ final class CloudLibraryService: @unchecked Sendable {
                     AudioVersion(
                         id: audioRow.id.uuidString.lowercased(),
                         name: audioRow.title,
+                        notes: audioRow.notes.plainText,
                         createdAt: try CloudTimestamp.parse(audioRow.createdAt),
                         duration: max(0, audioRow.durationMilliseconds / 1_000),
                         waveformPeaks: audioRow.waveform.peaks.map {
@@ -237,6 +286,7 @@ final class CloudLibraryService: @unchecked Sendable {
                 id: row.id.uuidString.lowercased(),
                 title: row.title,
                 artist: row.artist,
+                generalNotes: row.generalNotes.plainText,
                 updatedAt: try CloudTimestamp.parse(row.updatedAt),
                 versions: versions
             )

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Matte Dark Slate Background -->
+    <linearGradient id="bg-grad-06" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="50%" stop-color="#0b0f19"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+
+    <!-- Spectrum Bar Gradients -->
+    <linearGradient id="eq-green" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="70%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#6ee7b7"/>
+    </linearGradient>
+
+    <linearGradient id="eq-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <linearGradient id="eq-amber" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+
+    <filter id="glow-06" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="shadow-06" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Container Base -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-06)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
+
+  <!-- Frequency Grid Baseline -->
+  <line x1="86" y1="390" x2="426" y2="390" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
+  <line x1="86" y1="122" x2="426" y2="122" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
+
+  <!-- Equalizer Capsule Columns shaping 'A' (left to peak) and 'V' (peak down to valley) -->
+  <g filter="url(#shadow-06)">
+    <!-- Column 1 (Left A base) -->
+    <rect x="96" y="320" width="18" height="60" rx="9" fill="url(#eq-green)"/>
+
+    <!-- Column 2 -->
+    <rect x="126" y="270" width="18" height="110" rx="9" fill="url(#eq-green)"/>
+
+    <!-- Column 3 -->
+    <rect x="156" y="210" width="18" height="170" rx="9" fill="url(#eq-green)"/>
+
+    <!-- Column 4 -->
+    <rect x="186" y="150" width="18" height="230" rx="9" fill="url(#eq-green)"/>
+
+    <!-- Column 5 ('A' Peak Column) -->
+    <rect x="216" y="126" width="18" height="254" rx="9" fill="url(#eq-amber)" filter="url(#glow-06)"/>
+
+    <!-- Column 6 (Middle Cross / Transition) -->
+    <rect x="246" y="190" width="20" height="190" rx="10" fill="#ffffff" filter="url(#glow-06)"/>
+
+    <!-- Column 7 ('V' Top Right start) -->
+    <rect x="276" y="126" width="18" height="254" rx="9" fill="url(#eq-cyan)"/>
+
+    <!-- Column 8 -->
+    <rect x="306" y="180" width="18" height="200" rx="9" fill="url(#eq-cyan)"/>
+
+    <!-- Column 9 -->
+    <rect x="336" y="240" width="18" height="140" rx="9" fill="url(#eq-cyan)"/>
+
+    <!-- Column 10 -->
+    <rect x="366" y="300" width="18" height="80" rx="9" fill="url(#eq-cyan)"/>
+
+    <!-- Column 11 ('V' Valley Base Right) -->
+    <rect x="396" y="350" width="18" height="30" rx="9" fill="url(#eq-cyan)"/>
+
+    <!-- Chevron Line Overlay connecting EQ Caps -->
+    <path d="M 105 320 L 225 126 L 256 260 L 285 126 L 405 350" fill="none" stroke="#6ee7b7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-06)"/>
+  </g>
+</svg>

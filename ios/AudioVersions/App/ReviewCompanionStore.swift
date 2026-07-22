@@ -150,6 +150,52 @@ final class ReviewCompanionStore: ObservableObject {
         seek(to: currentTime + delta, in: version)
     }
 
+    func saveSongJournal(_ journal: String, songID: String) {
+        guard let songIndex = songs.firstIndex(where: { $0.id == songID }) else { return }
+        let previousJournal = songs[songIndex].generalNotes
+        let previousUpdatedAt = songs[songIndex].updatedAt
+        songs[songIndex].generalNotes = journal
+        songs[songIndex].updatedAt = .now
+
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                _ = try await cloudLibrary.updateSongJournal(journal, songID: songID)
+            } catch {
+                if let currentIndex = songs.firstIndex(where: { $0.id == songID }),
+                   songs[currentIndex].generalNotes == journal {
+                    songs[currentIndex].generalNotes = previousJournal
+                    songs[currentIndex].updatedAt = previousUpdatedAt
+                }
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func saveAudioFileNotes(_ notes: String, audioFileID: String) {
+        guard let previousNotes = version(id: audioFileID)?.notes else { return }
+        updateVersion(id: audioFileID) { version in
+            version.notes = notes
+        }
+
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                _ = try await cloudLibrary.updateAudioFileNotes(
+                    notes,
+                    audioFileID: audioFileID
+                )
+            } catch {
+                if version(id: audioFileID)?.notes == notes {
+                    updateVersion(id: audioFileID) { version in
+                        version.notes = previousNotes
+                    }
+                }
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func save(_ annotation: ReviewAnnotation, in versionID: String) {
         let previous = version(id: versionID)?.annotations.first {
             $0.id == annotation.id

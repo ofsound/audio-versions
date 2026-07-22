@@ -118,6 +118,7 @@ struct SongRow: Decodable, Sendable {
     let id: UUID
     let title: String
     let artist: String
+    let generalNotes: RichTextDocument
     let audioFileOrder: [UUID]
     let updatedAt: String
 
@@ -125,6 +126,7 @@ struct SongRow: Decodable, Sendable {
         case id
         case title
         case artist
+        case generalNotes = "general_notes"
         case audioFileOrder = "audio_file_order"
         case updatedAt = "updated_at"
     }
@@ -134,6 +136,7 @@ struct AudioFileRow: Decodable, Sendable {
     let id: UUID
     let songID: UUID
     let title: String
+    let notes: RichTextDocument
     let durationMilliseconds: Double
     let waveform: WaveformRow
     let createdAt: String
@@ -142,6 +145,7 @@ struct AudioFileRow: Decodable, Sendable {
         case id
         case songID = "song_id"
         case title
+        case notes
         case durationMilliseconds = "duration_ms"
         case waveform
         case createdAt = "created_at"
@@ -182,6 +186,26 @@ struct MutationResultRow: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SongJournalUpdate: Encodable, Sendable {
+    let generalNotes: RichTextDocument
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case generalNotes = "general_notes"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct AudioFileNotesUpdate: Encodable, Sendable {
+    let notes: RichTextDocument
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case notes
         case updatedAt = "updated_at"
     }
 }

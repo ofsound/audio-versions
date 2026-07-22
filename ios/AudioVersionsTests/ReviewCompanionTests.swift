@@ -118,6 +118,23 @@ struct ReviewCompanionTests {
         )
     }
 
+    @MainActor
+    @Test
+    func journalAndFileNotesUpdateTheFixtureLibrary() throws {
+        let store = ReviewCompanionStore()
+        let song = try #require(store.songs.first)
+        let version = try #require(song.versions.first)
+
+        store.saveSongJournal("Finish the bridge arrangement.", songID: song.id)
+        store.saveAudioFileNotes("Vocal-up reference mix.", audioFileID: version.id)
+
+        #expect(
+            store.songs.first(where: { $0.id == song.id })?.generalNotes
+                == "Finish the bridge arrangement."
+        )
+        #expect(store.version(id: version.id)?.notes == "Vocal-up reference mix.")
+    }
+
     @Test
     func missingCloudConfigurationFallsBackToFixtures() {
         #expect(AppConfiguration.resolve(infoDictionary: [:]) == .fixture)

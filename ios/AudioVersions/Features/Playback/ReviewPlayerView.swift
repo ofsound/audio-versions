@@ -3,6 +3,7 @@ import SwiftUI
 struct ReviewPlayerView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
     @State private var editingAnnotation: ReviewAnnotation?
+    @State private var isEditingFileNotes = false
 
     let songID: String
     let versionID: String
@@ -21,6 +22,7 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
+                        fileNotesCard(version: version)
                         annotationActions(version: version)
                         AnnotationListView(
                             annotations: version.annotations,
@@ -42,6 +44,15 @@ struct ReviewPlayerView: View {
                         store.save($0, in: version.id)
                     }
                 }
+                .sheet(isPresented: $isEditingFileNotes) {
+                    PlainTextNoteEditorView(
+                        title: "File Notes",
+                        accessibilityLabel: "Notes for \(version.name)",
+                        text: version.notes
+                    ) { notes in
+                        store.saveAudioFileNotes(notes, audioFileID: version.id)
+                    }
+                }
                 .task {
                     store.activate(version: version)
                 }
@@ -53,6 +64,34 @@ struct ReviewPlayerView: View {
                 )
             }
         }
+    }
+
+    private func fileNotesCard(version: AudioVersion) -> some View {
+        Button {
+            isEditingFileNotes = true
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label("File Notes", systemImage: "note.text")
+                        .font(.headline)
+                    Spacer()
+                    Text(version.notes.isEmpty ? "Add" : "Edit")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.orange)
+                }
+
+                Text(version.notes.isEmpty ? "Add context for this audio file." : version.notes)
+                    .font(.subheadline)
+                    .foregroundStyle(version.notes.isEmpty ? .secondary : .primary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(18)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private func playerCard(version: AudioVersion) -> some View {

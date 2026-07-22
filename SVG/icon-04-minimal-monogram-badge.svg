@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Dark Forest to Midnight Gradient -->
+    <linearGradient id="bg-grad-04" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="50%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="mark-grad-04" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <linearGradient id="gold-accent-04" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+
+    <filter id="shadow-04" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- App Card -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-04)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#6ee7b7" stroke-opacity="0.2" stroke-width="2"/>
+
+  <!-- Geometric Outer Circle Emblem -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#mark-grad-04)" stroke-width="3" stroke-dasharray="80 30 40 30"/>
+
+  <g filter="url(#shadow-04)">
+    <!-- Main Interlocking 'A' and 'V' Triangle Geometry -->
+    <!-- 'A' Outer Triangle Peak -->
+    <path d="M 256 120 L 360 312 L 312 312 L 256 208 L 200 312 L 152 312 Z" fill="#ffffff"/>
+
+    <!-- 'V' Inverted Triangle Valley (Overlapping) -->
+    <path d="M 256 392 L 152 200 L 200 200 L 256 304 L 312 200 L 360 200 Z" fill="url(#mark-grad-04)"/>
+
+    <!-- Central Audio Play Triangle / Version Node -->
+    <polygon points="244,236 276,256 244,276" fill="url(#gold-accent-04)"/>
+
+    <!-- Accent Dots for Audio Versions -->
+    <circle cx="152" cy="256" r="6" fill="#6ee7b7"/>
+    <circle cx="360" cy="256" r="6" fill="#38bdf8"/>
+  </g>
+</svg>

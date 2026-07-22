@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Synth Dark Background -->
+    <linearGradient id="bg-grad-08" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#160d29"/>
+      <stop offset="50%" stop-color="#0a0514"/>
+      <stop offset="100%" stop-color="#030108"/>
+    </linearGradient>
+
+    <linearGradient id="cyber-neon-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="50%" stop-color="#4facfe"/>
+      <stop offset="100%" stop-color="#00c6ff"/>
+    </linearGradient>
+
+    <linearGradient id="cyber-neon-v" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#d946ef"/>
+    </linearGradient>
+
+    <linearGradient id="cyber-gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <filter id="laser-glow-08" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="shadow-08" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- Container Base -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-08)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#ec4899" stroke-opacity="0.25" stroke-width="2"/>
+
+  <!-- Cyber HUD Grid Backdrop -->
+  <path d="M 80 120 L 432 120 M 80 256 L 432 256 M 80 392 L 432 392" stroke="#4facfe" stroke-opacity="0.1" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <path d="M 120 80 L 120 432 M 256 80 L 256 432 M 392 80 L 392 432" stroke="#4facfe" stroke-opacity="0.1" stroke-width="1.5" stroke-dasharray="6 6"/>
+
+  <!-- Beveled Hex Shield Frame -->
+  <polygon points="256,76 416,168 416,344 256,436 96,344 96,168" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="6"/>
+  <polygon points="256,84 408,172 408,340 256,428 104,340 104,172" fill="none" stroke="url(#cyber-neon-a)" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="100 20 60 20"/>
+
+  <g filter="url(#shadow-08)">
+    <!-- Cyber 'A' Angular Monogram -->
+    <path d="M 256 128 L 352 304 L 308 304 L 284 256 L 228 256 L 204 304 L 160 304 Z" fill="url(#cyber-neon-a)" filter="url(#laser-glow-08)"/>
+
+    <!-- Cyber 'V' Inverted Angular Cut (Overlapping) -->
+    <path d="M 256 384 L 160 208 L 204 208 L 228 256 L 284 256 L 308 208 L 352 208 Z" fill="url(#cyber-neon-v)" filter="url(#laser-glow-08)"/>
+
+    <!-- Center Laser Wave Crossbar -->
+    <polygon points="190,250 322,250 310,262 202,262" fill="url(#cyber-gold)" filter="url(#laser-glow-08)"/>
+
+    <!-- Corner Audio HUD Ticks -->
+    <rect x="110" y="180" width="12" height="4" fill="#00f2fe"/>
+    <rect x="110" y="192" width="20" height="4" fill="#00f2fe"/>
+    <rect x="110" y="204" width="8" height="4" fill="#00f2fe"/>
+
+    <rect x="382" y="308" width="20" height="4" fill="#ec4899"/>
+    <rect x="390" y="320" width="12" height="4" fill="#ec4899"/>
+    <rect x="394" y="332" width="8" height="4" fill="#ec4899"/>
+
+    <!-- Center Version Node Diamond -->
+    <polygon points="256,244 266,256 256,268 246,256" fill="#ffffff" filter="url(#laser-glow-08)"/>
+  </g>
+</svg>
