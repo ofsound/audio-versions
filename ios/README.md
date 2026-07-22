@@ -49,14 +49,54 @@ a second production identity.
 - Restored email/password Supabase sessions
 - Active songs, files, waveforms, and annotations under existing RLS policies
 - Private playback through the bearer-authenticated signed-media endpoint
-- Native `AVPlayer` playback, scrubbing, skipping, and rate changes
+- Native `AVPlayer` streaming with observable loading, buffering, failure, and
+  end-of-track states
+- Playback audio session that remains audible through Silent mode and while the
+  phone is locked or the app is backgrounded
+- Lock Screen, Control Center, headset, Bluetooth, and AirPlay controls for
+  play/pause, ±10-second skips, seeking, and playback rate
+- Now Playing song/version metadata and an in-app AirPlay route picker
+- Safe interruption behavior for calls and Siri, including conditional resume
+- Automatic pause when headphones or Bluetooth audio disconnect
+- One bounded signed-link recovery that preserves the playhead, plus proactive
+  renewal before long-lived links expire
+- Coalesced playback preparation, HTTPS/expiry validation, and in-memory link
+  invalidation on sign-out
+- Coalesced waveform scrubbing, skipping, and rate changes
 - Point and range annotation insertion
 - Conflict-aware annotation editing and tombstone deletion
 - Pull-to-refresh and explicit refresh
 - Fixture fallback whenever cloud values are absent
 
-Downloads, offline mutation queues, background/lock-screen playback, Google
-OAuth, full rich-text editing, and TestFlight are deliberately deferred.
+Real downloads, offline mutation queues, Google OAuth, full rich-text editing,
+and TestFlight are deliberately deferred. The download button is hidden until
+it can represent a real, encrypted-at-rest offline file rather than UI-only
+state.
+
+## Physical-device audio acceptance
+
+Run these checks after installing a new build from Xcode:
+
+1. Start a version with the Ring/Silent switch set to silent. Audio should still
+   use the selected output.
+2. Lock the phone and confirm playback continues. Verify title, artist, version,
+   duration, play/pause, ±10 seconds, seeking, and rate in Now Playing.
+3. Background and foreground the app. The waveform, playhead, and button state
+   should remain synchronized.
+4. Disconnect wired headphones or Bluetooth audio during playback. Playback
+   must pause rather than leak through the speaker.
+5. Trigger Siri or a phone-call interruption. Playback must pause and may resume
+   only when iOS permits it and it was not manually paused during interruption.
+6. Select an AirPlay destination with the route button and confirm metadata,
+   seeking, and remote controls remain synchronized.
+7. Disable networking until the buffer drains. The app should show
+   **Buffering…**; pausing while stalled must prevent surprise autoplay when the
+   network returns.
+8. Leave one version playing with the phone locked for at least 30 minutes, then
+   seek and switch playback speed. No gap, duplicate audio, or playhead reset is
+   acceptable.
+9. Sign out while audio is playing. Playback and Now Playing must stop and the
+   private signed-link cache must be cleared.
 
 ## Verification
 

@@ -38,6 +38,7 @@ enum AppConfiguration {
         let apiBaseURL = configuredString(infoDictionary[apiBaseURLKey])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://audio-versions.vercel.app")!
+        guard apiBaseURL.scheme == "https" else { return .fixture }
 
         return .cloud(
             CloudConfiguration(

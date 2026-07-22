@@ -31,6 +31,58 @@ struct ReviewCompanionTests {
         #expect(store.currentTime == 0)
     }
 
+    @Test
+    func playbackTimelineRejectsInvalidTimesAndClampsBounds() {
+        #expect(PlaybackTimeline.clamp(-1, duration: 30) == 0)
+        #expect(PlaybackTimeline.clamp(12, duration: 30) == 12)
+        #expect(PlaybackTimeline.clamp(31, duration: 30) == 30)
+        #expect(PlaybackTimeline.clamp(.infinity, duration: 30) == 0)
+        #expect(PlaybackTimeline.clamp(10, duration: .nan) == 0)
+        #expect(PlaybackTimeline.clamp(10, duration: 0) == 0)
+    }
+
+    @Test
+    func playbackStateDistinguishesAudibleIntentFromStaticStates() {
+        #expect(PlaybackState.playing.isPlayingOrWaiting)
+        #expect(PlaybackState.buffering.isPlayingOrWaiting)
+        #expect(!PlaybackState.preparing.isPlayingOrWaiting)
+        #expect(!PlaybackState.paused.isPlayingOrWaiting)
+        #expect(PlaybackState.buffering.statusText == "Buffering…")
+        #expect(PlaybackState.failed("Unavailable").statusText == "Unavailable")
+    }
+
+    @Test
+    func signedMediaLeaseRequiresHTTPSAndSafeExpiryWindow() throws {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let validURL = try #require(URL(string: "https://example.com/audio.wav"))
+        let insecureURL = try #require(URL(string: "http://example.com/audio.wav"))
+
+        #expect(
+            SignedMediaLease(
+                url: validURL,
+                expiresAt: now.addingTimeInterval(3_600)
+            ).isUsable(at: now, safetyMargin: 300, maximumLifetime: 7_200)
+        )
+        #expect(
+            !SignedMediaLease(
+                url: insecureURL,
+                expiresAt: now.addingTimeInterval(3_600)
+            ).isUsable(at: now, safetyMargin: 300, maximumLifetime: 7_200)
+        )
+        #expect(
+            !SignedMediaLease(
+                url: validURL,
+                expiresAt: now.addingTimeInterval(299)
+            ).isUsable(at: now, safetyMargin: 300, maximumLifetime: 7_200)
+        )
+        #expect(
+            !SignedMediaLease(
+                url: validURL,
+                expiresAt: now.addingTimeInterval(7_201)
+            ).isUsable(at: now, safetyMargin: 300, maximumLifetime: 7_200)
+        )
+    }
+
     @MainActor
     @Test
     func annotationsInsertSortUpdateAndDelete() throws {
@@ -69,6 +121,19 @@ struct ReviewCompanionTests {
     @Test
     func missingCloudConfigurationFallsBackToFixtures() {
         #expect(AppConfiguration.resolve(infoDictionary: [:]) == .fixture)
+    }
+
+    @Test
+    func insecureMediaEndpointFallsBackToFixtures() {
+        #expect(
+            AppConfiguration.resolve(
+                infoDictionary: [
+                    AppConfiguration.supabaseURLKey: "https://project.supabase.co",
+                    AppConfiguration.supabasePublishableKeyKey: "sb_publishable_example",
+                    AppConfiguration.apiBaseURLKey: "http://example.com"
+                ]
+            ) == .fixture
+        )
     }
 
     @Test

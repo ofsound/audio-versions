@@ -3,7 +3,6 @@ import SwiftUI
 struct ReviewPlayerView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
     @State private var editingAnnotation: ReviewAnnotation?
-    @State private var isDownloaded = false
 
     let songID: String
     let versionID: String
@@ -38,17 +37,6 @@ struct ReviewPlayerView: View {
                 .background(Color(.systemGroupedBackground))
                 .navigationTitle(version.name)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            isDownloaded.toggle()
-                        } label: {
-                            Image(systemName: isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
-                        }
-                        .accessibilityLabel(isDownloaded ? "Remove download" : "Download version")
-                        .accessibilityValue(isDownloaded ? "Downloaded" : "Not downloaded")
-                    }
-                }
                 .sheet(item: $editingAnnotation) { annotation in
                     AnnotationEditorView(annotation: annotation, duration: version.duration) {
                         store.save($0, in: version.id)
@@ -93,6 +81,31 @@ struct ReviewPlayerView: View {
             .font(.caption.monospacedDigit())
             .foregroundStyle(.secondary)
 
+            if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
+                HStack(spacing: 8) {
+                    if store.isPreparingPlayback || status == "Buffering…" {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Text(status)
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            if let error = store.playbackErrorMessage {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                    Button("Retry playback") {
+                        store.retryPlayback(for: version)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
             HStack(spacing: 26) {
                 Button {
                     store.skip(by: -10, in: version)
@@ -133,6 +146,13 @@ struct ReviewPlayerView: View {
             HStack {
                 Image(systemName: "speaker.wave.2")
                     .foregroundStyle(.secondary)
+                Text(store.outputRouteName)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                AudioRoutePicker()
+                    .frame(width: 28, height: 28)
+                    .accessibilityLabel("Choose audio output")
                 Spacer()
                 Menu {
                     ForEach([0.75, 1, 1.25, 1.5], id: \.self) { rate in

@@ -10,11 +10,20 @@ export const Route = createFileRoute("/api/blob/signed-url")({
 			OPTIONS: async ({ request }) => cloudCorsPreflight(request),
 			POST: async ({ request }) => {
 				const { client, user } = await authenticateRequest(request);
-				const { audioFileId } = (await request.json()) as {
-					audioFileId?: string;
-				};
-				if (!audioFileId) {
-					return new Response("Missing audio file id.", { status: 400 });
+				let audioFileId: unknown;
+				try {
+					audioFileId = ((await request.json()) as { audioFileId?: unknown })
+						.audioFileId;
+				} catch {
+					return new Response("Invalid JSON body.", { status: 400 });
+				}
+				if (
+					typeof audioFileId !== "string" ||
+					!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+						audioFileId,
+					)
+				) {
+					return new Response("Invalid audio file id.", { status: 400 });
 				}
 
 				const { data, error } = await client
@@ -25,7 +34,9 @@ export const Route = createFileRoute("/api/blob/signed-url")({
 					.is("deleted_at", null)
 					.maybeSingle();
 				if (error) {
-					return new Response(error.message, { status: 500 });
+					return new Response("Unable to authorize the audio file.", {
+						status: 500,
+					});
 				}
 				const pathname = data?.blob_pathname;
 				if (typeof pathname !== "string" || !pathname) {
@@ -47,7 +58,12 @@ export const Route = createFileRoute("/api/blob/signed-url")({
 
 				return Response.json(
 					{ expiresAt, url: presignedUrl },
-					{ headers: cloudCorsHeaders(request) },
+					{
+						headers: {
+							...cloudCorsHeaders(request),
+							"Cache-Control": "private, no-store",
+						},
+					},
 				);
 			},
 		},
