@@ -4,18 +4,18 @@ import {
 	ScriptOnce,
 	Scripts,
 } from "@tanstack/react-router";
-import { VersionCompareChrome } from "#/components/version-compare/app-chrome";
-import { AuthScreen } from "#/components/version-compare/auth-screen";
-import { VersionCompareDevtools } from "#/components/version-compare/version-compare-devtools";
-import { THEME_STORAGE_KEY } from "#/lib/theme";
+import { AudioVersionsChrome } from "#/components/audio-versions/app-chrome";
+import { AudioVersionsDevtools } from "#/components/audio-versions/audio-versions-devtools";
+import { AuthScreen } from "#/components/audio-versions/auth-screen";
 import {
 	buildUiSettingsBootstrapScript,
 	UI_SETTINGS_STORAGE_KEY,
-} from "#/lib/version-compare/ui-settings";
+} from "#/lib/audio-versions/ui-settings";
+import { THEME_STORAGE_KEY } from "#/lib/theme";
+import { AudioVersionsProvider } from "#/providers/audio-versions-provider";
+import { AudioVersionsUiSettingsSync } from "#/providers/audio-versions-ui-settings-sync";
 import { AuthProvider, useAuth } from "#/providers/auth-provider";
 import { ThemeProvider } from "#/providers/theme-provider";
-import { VersionCompareProvider } from "#/providers/version-compare-provider";
-import { VersionCompareUiSettingsSync } from "#/providers/version-compare-ui-settings-sync";
 
 import appCss from "#/styles.css?url";
 
@@ -52,10 +52,10 @@ export const Route = createRootRoute({
 			},
 			{
 				name: "apple-mobile-web-app-title",
-				content: "Version Compare",
+				content: "Audio Versions",
 			},
 			{
-				title: "Version Compare",
+				title: "Audio Versions",
 			},
 		],
 		links: [
@@ -101,7 +101,7 @@ function AuthenticatedShell({ children }: { children: React.ReactNode }) {
 	if (!ready) {
 		return (
 			<div className="flex min-h-dvh items-center justify-center text-sm text-text-muted">
-				Loading Version Compare…
+				Loading Audio Versions…
 			</div>
 		);
 	}
@@ -111,10 +111,10 @@ function AuthenticatedShell({ children }: { children: React.ReactNode }) {
 	}
 
 	return (
-		<VersionCompareProvider>
-			<VersionCompareUiSettingsSync />
-			<VersionCompareChrome>{children}</VersionCompareChrome>
-			<VersionCompareDevtools />
-		</VersionCompareProvider>
+		<AudioVersionsProvider>
+			<AudioVersionsUiSettingsSync />
+			<AudioVersionsChrome>{children}</AudioVersionsChrome>
+			<AudioVersionsDevtools />
+		</AudioVersionsProvider>
 	);
 }

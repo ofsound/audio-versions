@@ -1,5 +1,5 @@
 ---
-description: React, TanStack Router, and Vitest patterns for version-compare
+description: React, TanStack Router, and Vitest patterns for audio-versions
 globs: "**/*.tsx,**/*.test.tsx,src/**/*.ts"
 alwaysApply: false
 ---
@@ -8,9 +8,9 @@ alwaysApply: false
 
 ## React
 
-- Prefer **function components** with hooks; align with `src/providers/*` (context) and `src/components/version-compare/*` (feature UI).
+- Prefer **function components** with hooks; align with `src/providers/*` (context) and `src/components/audio-versions/*` (feature UI).
 - Keep **shared state** in providers or lifted state where the codebase already does; avoid new global singletons unless necessary.
-- Use **TypeScript** types from `#/lib/version-compare/types` and related modules—do not duplicate domain shapes ad hoc.
+- Use **TypeScript** types from `#/lib/audio-versions/types` and related modules—do not duplicate domain shapes ad hoc.
 
 ## TanStack Router
 
@@ -22,7 +22,7 @@ alwaysApply: false
 ## Testing (Vitest + Testing Library)
 
 - Tests live next to code: **`src/**/*.test.ts`** / **`src/**/*.test.tsx`** (see `vitest.config.ts`).
-- Default Vitest environment is **node**; for components that need DOM APIs, add **`// @vitest-environment jsdom`** as the first line (matches existing version-compare tests).
+- Default Vitest environment is **node**; for components that need DOM APIs, add **`// @vitest-environment jsdom`** as the first line (matches existing audio-versions tests).
 - Mock router hooks when asserting navigation or route-dependent UI; keep mocks minimal and aligned with `@testing-library/react` usage elsewhere in the repo.
 
 ## Knip (dead code & dependencies)

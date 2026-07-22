@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			return data.session
 				? null
-				: "Check your email to confirm your Version Compare account.";
+				: "Check your email to confirm your Audio Versions account.";
 		},
 		[],
 	);
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		const electron = isElectronRenderer();
 		const redirectTo = electron
-			? "version-compare://auth/callback"
+			? "audio-versions://auth/callback"
 			: `${window.location.origin}/auth/callback`;
 		const { data, error } = await client.auth.signInWithOAuth({
 			provider: "google",

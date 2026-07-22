@@ -17,10 +17,10 @@ const PROJECT_ROOT = resolve(ELECTRON_DIR, "..");
 const APP_ICON_PATH = join(PROJECT_ROOT, "build", "icon.png");
 
 const DEV_SERVER_URL =
-	process.env.VERSION_COMPARE_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
+	process.env.AUDIO_VERSIONS_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
 const SERVER_HOST = "127.0.0.1";
 const SERVER_PORT = Number.parseInt(
-	process.env.VERSION_COMPARE_ELECTRON_PORT ?? "31415",
+	process.env.AUDIO_VERSIONS_ELECTRON_PORT ?? "31415",
 	10,
 );
 const SERVER_BOOT_TIMEOUT_MS = 15_000;
@@ -33,7 +33,7 @@ let mainWindow = null;
 /** @type {string | null} */
 let pendingAuthCallbackUrl = null;
 
-app.setAsDefaultProtocolClient("version-compare");
+app.setAsDefaultProtocolClient("audio-versions");
 
 function getRendererUrl() {
 	return shouldUseProductionServer()
@@ -60,7 +60,7 @@ app.on("open-url", (event, url) => {
 function shouldUseProductionServer() {
 	return (
 		app.isPackaged ||
-		process.env.VERSION_COMPARE_ELECTRON_USE_PRODUCTION_SERVER === "1"
+		process.env.AUDIO_VERSIONS_ELECTRON_USE_PRODUCTION_SERVER === "1"
 	);
 }
 
@@ -91,7 +91,7 @@ async function canAccessFile(filePath) {
 	}
 }
 
-async function waitForVersionCompare(url, timeoutMs) {
+async function waitForAudioVersions(url, timeoutMs) {
 	const deadline = Date.now() + timeoutMs;
 
 	while (Date.now() < deadline) {
@@ -103,7 +103,7 @@ async function waitForVersionCompare(url, timeoutMs) {
 			if (response.ok) {
 				const html = await response.text();
 
-				if (html.includes("<title>Version Compare</title>")) {
+				if (html.includes("<title>Audio Versions</title>")) {
 					return;
 				}
 			}
@@ -112,7 +112,7 @@ async function waitForVersionCompare(url, timeoutMs) {
 		await delay(SERVER_READY_POLL_MS);
 	}
 
-	throw new Error(`Timed out waiting for Version Compare at ${url}.`);
+	throw new Error(`Timed out waiting for Audio Versions at ${url}.`);
 }
 
 async function startProductionServer() {
@@ -134,7 +134,7 @@ async function startProductionServer() {
 		process.env.PORT = String(SERVER_PORT);
 
 		await import(pathToFileURL(serverEntryPath).href);
-		await waitForVersionCompare(
+		await waitForAudioVersions(
 			getProductionServerUrl(),
 			SERVER_BOOT_TIMEOUT_MS,
 		);
@@ -190,7 +190,7 @@ async function createMainWindow() {
 		"did-fail-load",
 		(_event, errorCode, errorDescription) => {
 			void dialog.showErrorBox(
-				"Unable to load Version Compare",
+				"Unable to load Audio Versions",
 				`The app window failed to load (${errorCode}: ${errorDescription}).`,
 			);
 		},
@@ -209,7 +209,7 @@ async function createMainWindow() {
 		return;
 	}
 
-	await waitForVersionCompare(DEV_SERVER_URL, SERVER_BOOT_TIMEOUT_MS);
+	await waitForAudioVersions(DEV_SERVER_URL, SERVER_BOOT_TIMEOUT_MS);
 	const targetUrl = pendingAuthCallbackUrl
 		? buildAuthCallbackUrl(pendingAuthCallbackUrl)
 		: DEV_SERVER_URL;
@@ -235,7 +235,7 @@ app.on("before-quit", () => {
 });
 
 function denyDevicePermissions() {
-	// Version Compare never captures audio, video, or other hardware. Denying these
+	// Audio Versions never captures audio, video, or other hardware. Denying these
 	// requests at the Chromium layer keeps the renderer from triggering macOS
 	// TCC prompts (microphone, camera, etc.) when Chromium probes devices
 	// during AudioContext / <audio> initialization.
@@ -247,7 +247,7 @@ function denyDevicePermissions() {
 	session.defaultSession.setPermissionCheckHandler(() => false);
 }
 
-async function launchVersionCompare() {
+async function launchAudioVersions() {
 	denyDevicePermissions();
 
 	const appIcon = getAppIcon();
@@ -264,10 +264,10 @@ async function launchVersionCompare() {
 
 app
 	.whenReady()
-	.then(launchVersionCompare)
+	.then(launchAudioVersions)
 	.catch((error) => {
-		console.error("[version-compare] failed to launch", error);
+		console.error("[audio-versions] failed to launch", error);
 		const message = error instanceof Error ? error.message : String(error);
-		dialog.showErrorBox("Unable to launch Version Compare", message);
+		dialog.showErrorBox("Unable to launch Audio Versions", message);
 		app.quit();
 	});

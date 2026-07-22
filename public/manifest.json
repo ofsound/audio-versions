@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "short_name": "Version Compare",
-  "name": "Version Compare",
+  "short_name": "Audio Versions",
+  "name": "Audio Versions",
   "icons": [
     {
       "src": "favicon.ico",

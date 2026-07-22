@@ -5,7 +5,7 @@ const require = createRequire(import.meta.url);
 
 const electronBinary = require("electron");
 const devServerUrl =
-	process.env.VERSION_COMPARE_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
+	process.env.AUDIO_VERSIONS_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 const devServerProcess = spawn(npmCommand, ["run", "dev"], {
@@ -18,7 +18,7 @@ const electronProcess = spawn(electronBinary, ["electron/main.mjs"], {
 	cwd: process.cwd(),
 	env: {
 		...process.env,
-		VERSION_COMPARE_ELECTRON_RENDERER_URL: devServerUrl,
+		AUDIO_VERSIONS_ELECTRON_RENDERER_URL: devServerUrl,
 	},
 	stdio: "inherit",
 });

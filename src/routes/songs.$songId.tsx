@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SongWorkspace } from "#/components/version-compare/song-workspace";
-import { normalizeSongRouteSearch } from "#/lib/version-compare/links";
+import { SongWorkspace } from "#/components/audio-versions/song-workspace";
+import { normalizeSongRouteSearch } from "#/lib/audio-versions/links";
 
 export const Route = createFileRoute("/songs/$songId")({
 	validateSearch: (search) => normalizeSongRouteSearch(search),

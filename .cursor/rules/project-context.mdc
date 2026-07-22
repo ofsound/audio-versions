@@ -1,5 +1,5 @@
 ---
-description: Core stack and conventions for version-compare (React, TanStack, Biome)
+description: Core stack and conventions for audio-versions (React, TanStack, Biome)
 alwaysApply: true
 ---
 

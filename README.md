@@ -1,6 +1,6 @@
-# Version Compare
+# Audio Versions
 
-Version Compare is a private review workspace for song files. The same TanStack app runs on the web and in Electron, with Supabase authentication and realtime metadata sync, private media in Vercel Blob, and IndexedDB as the desktop/browser cache.
+Audio Versions is a private review workspace for song files. The same TanStack app runs on the web and in Electron, with Supabase authentication and realtime metadata sync, private media in Vercel Blob, and IndexedDB as the desktop/browser cache.
 
 ## What It Does
 
@@ -24,10 +24,10 @@ Without cloud environment variables, development stays in local-only mode. Copy 
 ## Cloud Setup
 
 1. Create a Supabase project through the Vercel Marketplace integration.
-2. Run `supabase/migrations/20260715000000_version_compare_cloud.sql` in the Supabase SQL editor, or apply it with the Supabase CLI after linking the project.
+2. Run `supabase/migrations/20260715000000_audio_versions_cloud.sql` in the Supabase SQL editor, or apply it with the Supabase CLI after linking the project.
 3. Enable Email/Password and Google in Supabase Auth. Add these redirect URLs:
    - `http://localhost:3000/auth/callback`
-   - `version-compare://auth/callback`
+   - `audio-versions://auth/callback`
    - `https://your-production-domain/auth/callback`
    - the equivalent `/auth/callback` URL for Vercel preview deployments you use for auth testing
 4. Create a **private** Vercel Blob store and connect it to the Vercel project.
@@ -35,7 +35,7 @@ Without cloud environment variables, development stays in local-only mode. Copy 
 
 Import the GitHub repository into Vercel to deploy every push. Vercel uses `main` for production and creates preview deployments for other branches and pull requests. The existing Nitro build automatically emits the Vercel output when it runs in Vercel's build environment.
 
-On the first cloud sign-in from an existing desktop installation, Version Compare merges the legacy IndexedDB library into that account and marks the local cache as owned by it. Switching accounts replaces the cache from the newly authenticated account instead of leaking the prior account's records.
+On the first cloud sign-in from an existing desktop installation, Audio Versions merges the legacy IndexedDB library into that account and marks the local cache as owned by it. Switching accounts replaces the cache from the newly authenticated account instead of leaking the prior account's records.
 
 ## Electron Wrapper
 
@@ -63,7 +63,7 @@ For a zipped macOS build artifact in `dist/electron`:
 npm run electron:dist
 ```
 
-The packaged app runs the local Nitro server on `http://127.0.0.1:31415` so the desktop build keeps a stable origin for IndexedDB. Google sign-in opens the system browser and returns through the registered `version-compare://auth/callback` protocol; email/password remains entirely inside the app.
+The packaged app runs the local Nitro server on `http://127.0.0.1:31415` so the desktop build keeps a stable origin for IndexedDB. Google sign-in opens the system browser and returns through the registered `audio-versions://auth/callback` protocol; email/password remains entirely inside the app.
 
 ## Quality Checks
 
@@ -74,12 +74,12 @@ npm run verify
 ## Architecture
 
 - Routing: TanStack Router file-based routes in `src/routes`
-- State: `VersionCompareProvider` owns the optimistic snapshot and serializes persistence writes
+- State: `AudioVersionsProvider` owns the optimistic snapshot and serializes persistence writes
 - Authentication and records: Supabase Auth, Postgres row-level security, and Realtime
 - Media: private Vercel Blob uploads with authenticated, expiring playback URLs
-- Local cache: IndexedDB via `idb` in `src/lib/version-compare/db.ts`
+- Local cache: IndexedDB via `idb` in `src/lib/audio-versions/db.ts`
 - Rich text: Tiptap-based editors for journals, file notes, and annotation notes
-- Waveforms: browser-side decoding and peak generation in `src/lib/version-compare/waveform.ts`
+- Waveforms: browser-side decoding and peak generation in `src/lib/audio-versions/waveform.ts`
 - Server/runtime plugin: TanStack Start wired through `nitro/vite`; this repo pins the currently compatible Nitro beta line because the official TanStack Start hosting docs note that the `nitro/vite` integration is still under active development
 
 ## Keyboard Shortcuts
@@ -94,7 +94,7 @@ npm run verify
 
 ## Data Model
 
-Version Compare persists and syncs the following records:
+Audio Versions persists and syncs the following records:
 
 - songs
 - audio files

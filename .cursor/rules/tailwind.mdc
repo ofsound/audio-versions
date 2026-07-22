@@ -1,5 +1,5 @@
 ---
-description: Tailwind and theme tokens for Version Compare UI
+description: Tailwind and theme tokens for Audio Versions UI
 globs: "**/*.{tsx,css}"
 alwaysApply: false
 ---
@@ -11,6 +11,6 @@ alwaysApply: false
 - Avoid arbitrary values when an existing utility class is close to the desired value.
 - Use the **semantic color system** in `src/styles.css` (`@theme`, `light-dark(...)`, CSS variables such as `--color-surface`, `--color-text`, etc.).
 - Do **not** introduce new colors that break the existing light/dark semantic system—extend `styles.css` coherently if new tokens are required.
-- Reuse existing component patterns in `src/components/version-compare/` for buttons, cards, and chrome instead of inventing divergent styles.
+- Reuse existing component patterns in `src/components/audio-versions/` for buttons, cards, and chrome instead of inventing divergent styles.
 - Follow the shared cursor convention in `src/styles/base.css`: clickable controls should inherit pointer from semantic elements (`button`, `a`, TanStack `Link`) or from `[role="button"]` when non-semantic structure is required.
 - Prefer semantic interactive elements first; if a non-semantic wrapper must be clickable, it must include `role="button"` (with keyboard support) so cursor and accessibility behavior stay consistent.

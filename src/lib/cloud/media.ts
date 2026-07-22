@@ -1,6 +1,6 @@
 import { upload } from "@vercel/blob/client";
 
-import type { AudioFileRecord } from "#/lib/version-compare/types";
+import type { AudioFileRecord } from "#/lib/audio-versions/types";
 
 import { getSupabaseBrowserClient } from "./supabase";
 
@@ -11,23 +11,23 @@ function cloudApiUrl(pathname: string): string {
 		typeof navigator !== "undefined" &&
 		navigator.userAgent.includes("Electron");
 	const configuredBaseUrl =
-		import.meta.env.VITE_VERSION_COMPARE_API_URL?.replace(/\/$/, "");
+		import.meta.env.VITE_AUDIO_VERSIONS_API_URL?.replace(/\/$/, "");
 	const baseUrl =
 		configuredBaseUrl ??
-		(isElectron ? "https://version-compare.vercel.app" : "");
+		(isElectron ? "https://audio-versions.vercel.app" : "");
 	return `${baseUrl}${pathname}`;
 }
 
 async function getAccessToken(): Promise<string> {
 	const client = getSupabaseBrowserClient();
 	if (!client) {
-		throw new Error("Version Compare cloud media is not configured.");
+		throw new Error("Audio Versions cloud media is not configured.");
 	}
 
 	const { data, error } = await client.auth.getSession();
 	if (error || !data.session?.access_token) {
 		throw new Error(
-			error?.message ?? "Your Version Compare session has expired.",
+			error?.message ?? "Your Audio Versions session has expired.",
 		);
 	}
 
