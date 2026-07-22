@@ -5,6 +5,12 @@ import {
 	useRef,
 	useState,
 } from "react";
+import {
+	closeSharedAudioContext,
+	recoverSharedAudioContext,
+	resumeSharedAudioContext,
+	subscribeToAudioEngineGeneration,
+} from "#/lib/audio-versions/audio-engine";
 import type {
 	Annotation,
 	AudioVersionsSnapshot,
@@ -89,9 +95,33 @@ export function useAudioVersionsPlayback({
 		() => () => {
 			pendingCurrentTimeByFileIdRef.current = {};
 			cancelScheduledPlaybackUpdate();
+			void closeSharedAudioContext();
 		},
 		[cancelScheduledPlaybackUpdate],
 	);
+
+	useEffect(() => {
+		const handleForeground = () => {
+			if (document.visibilityState === "visible") {
+				void recoverSharedAudioContext();
+			}
+		};
+		const handlePageHide = (event: PageTransitionEvent) => {
+			if (!event.persisted) {
+				void closeSharedAudioContext();
+			}
+		};
+
+		document.addEventListener("visibilitychange", handleForeground);
+		window.addEventListener("pageshow", handleForeground);
+		window.addEventListener("pagehide", handlePageHide);
+
+		return () => {
+			document.removeEventListener("visibilitychange", handleForeground);
+			window.removeEventListener("pageshow", handleForeground);
+			window.removeEventListener("pagehide", handlePageHide);
+		};
+	}, []);
 
 	const pauseOtherAudio = useCallback((currentFileId?: string) => {
 		for (const [fileId, element] of audioRefs.current.entries()) {
@@ -99,6 +129,39 @@ export function useAudioVersionsPlayback({
 				element.pause();
 			}
 		}
+	}, []);
+
+	useEffect(
+		() =>
+			subscribeToAudioEngineGeneration(() => {
+				pauseOtherAudio();
+				setPlayback((current) => ({
+					...current,
+					isPlaying: false,
+				}));
+			}),
+		[pauseOtherAudio],
+	);
+
+	const playAudioElement = useCallback(async (element: HTMLAudioElement) => {
+		const resumePromise = resumeSharedAudioContext();
+		const playPromise = element.play();
+		const [resumeResult, playResult] = await Promise.allSettled([
+			resumePromise,
+			playPromise,
+		]);
+		const resumed =
+			resumeResult.status === "fulfilled" && resumeResult.value === true;
+		const played = playResult.status === "fulfilled";
+
+		if (!resumed || !played) {
+			if (!element.paused) {
+				element.pause();
+			}
+			return false;
+		}
+
+		return true;
 	}, []);
 
 	const registerAudioElement = useCallback(
@@ -165,14 +228,16 @@ export function useAudioVersionsPlayback({
 
 			if (autoplay) {
 				pauseOtherAudio(fileId);
-				await element.play().catch(() => undefined);
+				if (!(await playAudioElement(element))) {
+					return;
+				}
 				reportPlaybackState(fileId, {
 					isPlaying: true,
 					currentTimeMs: boundedTime,
 				});
 			}
 		},
-		[pauseOtherAudio, reportPlaybackState, snapshotRef],
+		[pauseOtherAudio, playAudioElement, reportPlaybackState, snapshotRef],
 	);
 
 	const togglePlayback = useCallback(
@@ -192,13 +257,15 @@ export function useAudioVersionsPlayback({
 			}
 
 			pauseOtherAudio(fileId);
-			await element.play().catch(() => undefined);
+			if (!(await playAudioElement(element))) {
+				return;
+			}
 			reportPlaybackState(fileId, {
 				isPlaying: true,
 				currentTimeMs: element.currentTime * 1000,
 			});
 		},
-		[pauseOtherAudio, reportPlaybackState],
+		[pauseOtherAudio, playAudioElement, reportPlaybackState],
 	);
 
 	const seekActiveBy = useCallback(

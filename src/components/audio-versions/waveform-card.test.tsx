@@ -9,6 +9,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { closeSharedAudioContext } from "#/lib/audio-versions/audio-engine";
 import {
 	EMPTY_RICH_TEXT,
 	plainTextToRichText,
@@ -284,8 +285,9 @@ describe("WaveformCard", () => {
 		revokeObjectURLMock.mockClear();
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		cleanup();
+		await closeSharedAudioContext();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});

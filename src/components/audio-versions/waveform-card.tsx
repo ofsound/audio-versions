@@ -145,9 +145,8 @@ export function WaveformCard({
 		}
 	}, [currentTimeMs]);
 
-	useWaveformAudioGraph({
+	const audioEngineGeneration = useWaveformAudioGraph({
 		audioRef,
-		isPlaying,
 		volumeDb: audioFile.volumeDb,
 	});
 
@@ -383,6 +382,7 @@ export function WaveformCard({
 			/>
 
 			<WaveformCardAudio
+				key={audioEngineGeneration}
 				audioFileDurationMs={audioFile.durationMs}
 				audioRef={audioRef}
 				currentTimeMs={currentTimeMs}
