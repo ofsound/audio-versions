@@ -14,3 +14,7 @@ todos.json
 .vercel
 .env*
 !.env.example
+ios/Config/Secrets.xcconfig
+ios/DerivedData/
+**/xcuserdata/
+*.xcuserstate

@@ -1,0 +1,14 @@
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SWIFT_VERSION = 6.0
+TARGETED_DEVICE_FAMILY = 1,2
+
+PRODUCT_BUNDLE_IDENTIFIER = com.benmontgomery.audioversions
+PRODUCT_NAME = Audio Versions
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+AV_API_BASE_URL = https:/$()/audio-versions.vercel.app
+AV_SUPABASE_URL =
+AV_SUPABASE_PUBLISHABLE_KEY =
+
+#include? "Secrets.xcconfig"
