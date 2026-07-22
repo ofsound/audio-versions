@@ -13,7 +13,10 @@ final class ReviewCloudEnvironment: @unchecked Sendable {
     init(configuration: CloudConfiguration) {
         let client = SupabaseClient(
             supabaseURL: configuration.supabaseURL,
-            supabaseKey: configuration.supabasePublishableKey
+            supabaseKey: configuration.supabasePublishableKey,
+            options: .init(
+                auth: .init(emitLocalSessionAsInitialSession: true)
+            )
         )
         self.client = client
         library = CloudLibraryService(client: client)
