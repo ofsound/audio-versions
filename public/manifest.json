@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "short_name": "Song Mode",
-  "name": "Song Mode",
+  "short_name": "Version Compare",
+  "name": "Version Compare",
   "icons": [
     {
       "src": "favicon.ico",

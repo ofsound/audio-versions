@@ -4,18 +4,18 @@ import {
 	ScriptOnce,
 	Scripts,
 } from "@tanstack/react-router";
-import { SongModeChrome } from "#/components/song-mode/app-chrome";
-import { AuthScreen } from "#/components/song-mode/auth-screen";
-import { SongModeDevtools } from "#/components/song-mode/song-mode-devtools";
+import { VersionCompareChrome } from "#/components/version-compare/app-chrome";
+import { AuthScreen } from "#/components/version-compare/auth-screen";
+import { VersionCompareDevtools } from "#/components/version-compare/version-compare-devtools";
+import { THEME_STORAGE_KEY } from "#/lib/theme";
 import {
 	buildUiSettingsBootstrapScript,
 	UI_SETTINGS_STORAGE_KEY,
-} from "#/lib/song-mode/ui-settings";
-import { THEME_STORAGE_KEY } from "#/lib/theme";
+} from "#/lib/version-compare/ui-settings";
 import { AuthProvider, useAuth } from "#/providers/auth-provider";
-import { SongModeProvider } from "#/providers/song-mode-provider";
-import { SongModeUiSettingsSync } from "#/providers/song-mode-ui-settings-sync";
 import { ThemeProvider } from "#/providers/theme-provider";
+import { VersionCompareProvider } from "#/providers/version-compare-provider";
+import { VersionCompareUiSettingsSync } from "#/providers/version-compare-ui-settings-sync";
 
 import appCss from "#/styles.css?url";
 
@@ -52,10 +52,10 @@ export const Route = createRootRoute({
 			},
 			{
 				name: "apple-mobile-web-app-title",
-				content: "Song Mode",
+				content: "Version Compare",
 			},
 			{
-				title: "Song Mode",
+				title: "Version Compare",
 			},
 		],
 		links: [
@@ -101,7 +101,7 @@ function AuthenticatedShell({ children }: { children: React.ReactNode }) {
 	if (!ready) {
 		return (
 			<div className="flex min-h-dvh items-center justify-center text-sm text-text-muted">
-				Loading Song Mode…
+				Loading Version Compare…
 			</div>
 		);
 	}
@@ -111,10 +111,10 @@ function AuthenticatedShell({ children }: { children: React.ReactNode }) {
 	}
 
 	return (
-		<SongModeProvider>
-			<SongModeUiSettingsSync />
-			<SongModeChrome>{children}</SongModeChrome>
-			<SongModeDevtools />
-		</SongModeProvider>
+		<VersionCompareProvider>
+			<VersionCompareUiSettingsSync />
+			<VersionCompareChrome>{children}</VersionCompareChrome>
+			<VersionCompareDevtools />
+		</VersionCompareProvider>
 	);
 }

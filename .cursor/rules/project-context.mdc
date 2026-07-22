@@ -1,5 +1,5 @@
 ---
-description: Core stack and conventions for song-mode (React, TanStack, Biome)
+description: Core stack and conventions for version-compare (React, TanStack, Biome)
 alwaysApply: true
 ---
 

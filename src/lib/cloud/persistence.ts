@@ -2,9 +2,9 @@ import type {
 	Annotation,
 	AudioFileRecord,
 	Song,
-	SongModeSettings,
-	SongModeSnapshot,
-} from "#/lib/song-mode/types";
+	VersionCompareSettings,
+	VersionCompareSnapshot,
+} from "#/lib/version-compare/types";
 
 import { getSupabaseBrowserClient } from "./supabase";
 
@@ -54,12 +54,12 @@ interface AnnotationRow {
 }
 
 interface SettingsRow {
-	settings: SongModeSettings;
+	settings: VersionCompareSettings;
 }
 
 interface CloudSnapshotResult {
 	exists: boolean;
-	snapshot: SongModeSnapshot;
+	snapshot: VersionCompareSnapshot;
 }
 
 export interface CloudPersistence {
@@ -68,14 +68,14 @@ export interface CloudPersistence {
 	deleteSong: (songId: string) => Promise<void>;
 	saveAnnotation: (annotation: Annotation) => Promise<void>;
 	saveAudioFile: (audioFile: AudioFileRecord) => Promise<void>;
-	saveSettings: (settings: SongModeSettings) => Promise<void>;
+	saveSettings: (settings: VersionCompareSettings) => Promise<void>;
 	saveSong: (song: Song) => Promise<void>;
 }
 
 function requireClient() {
 	const client = getSupabaseBrowserClient();
 	if (!client) {
-		throw new Error("Song Mode cloud sync is not configured.");
+		throw new Error("Version Compare cloud sync is not configured.");
 	}
 
 	return client;
@@ -355,7 +355,7 @@ export async function loadCloudSnapshot(
 
 export async function uploadCloudSnapshot(
 	userId: string,
-	snapshot: SongModeSnapshot,
+	snapshot: VersionCompareSnapshot,
 ): Promise<void> {
 	const cloud = createCloudPersistence(userId);
 	await Promise.all(snapshot.songs.map(cloud.saveSong));
@@ -370,7 +370,7 @@ export function subscribeToCloudChanges(
 ): () => void {
 	const client = requireClient();
 	const channel = client
-		.channel(`song-mode:${userId}`)
+		.channel(`version-compare:${userId}`)
 		.on(
 			"postgres_changes",
 			{

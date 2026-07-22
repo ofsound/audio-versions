@@ -1,6 +1,6 @@
 import { upload } from "@vercel/blob/client";
 
-import type { AudioFileRecord } from "#/lib/song-mode/types";
+import type { AudioFileRecord } from "#/lib/version-compare/types";
 
 import { getSupabaseBrowserClient } from "./supabase";
 
@@ -10,24 +10,25 @@ function cloudApiUrl(pathname: string): string {
 	const isElectron =
 		typeof navigator !== "undefined" &&
 		navigator.userAgent.includes("Electron");
-	const configuredBaseUrl = import.meta.env.VITE_SONG_MODE_API_URL?.replace(
-		/\/$/,
-		"",
-	);
+	const configuredBaseUrl =
+		import.meta.env.VITE_VERSION_COMPARE_API_URL?.replace(/\/$/, "");
 	const baseUrl =
-		configuredBaseUrl ?? (isElectron ? "https://song-mode.vercel.app" : "");
+		configuredBaseUrl ??
+		(isElectron ? "https://version-compare.vercel.app" : "");
 	return `${baseUrl}${pathname}`;
 }
 
 async function getAccessToken(): Promise<string> {
 	const client = getSupabaseBrowserClient();
 	if (!client) {
-		throw new Error("Song Mode cloud media is not configured.");
+		throw new Error("Version Compare cloud media is not configured.");
 	}
 
 	const { data, error } = await client.auth.getSession();
 	if (error || !data.session?.access_token) {
-		throw new Error(error?.message ?? "Your Song Mode session has expired.");
+		throw new Error(
+			error?.message ?? "Your Version Compare session has expired.",
+		);
 	}
 
 	return data.session.access_token;

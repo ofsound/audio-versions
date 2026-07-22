@@ -1,5 +1,5 @@
 {
-  "name": "song-mode",
+  "name": "version-compare",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "electron:dev": "node electron/dev.mjs",
-    "electron:start": "npm run build && SONG_MODE_ELECTRON_USE_PRODUCTION_SERVER=1 electron electron/main.mjs",
+    "electron:start": "npm run build && VERSION_COMPARE_ELECTRON_USE_PRODUCTION_SERVER=1 electron electron/main.mjs",
     "electron:pack": "npm run build && electron-builder --mac dir",
     "electron:dist": "npm run build && electron-builder --mac zip",
     "preview": "vite preview",
@@ -61,13 +61,13 @@
     "vitest": "^3.0.5"
   },
   "build": {
-    "appId": "com.songmode.app",
-    "productName": "Song Mode",
+    "appId": "com.versioncompare.app",
+    "productName": "Version Compare",
     "protocols": [
       {
-        "name": "Song Mode authentication",
+        "name": "Version Compare authentication",
         "schemes": [
-          "song-mode"
+          "version-compare"
         ]
       }
     ],

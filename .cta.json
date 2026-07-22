@@ -1,5 +1,5 @@
 {
-  "projectName": "song-mode",
+  "projectName": "version-compare",
   "mode": "file-router",
   "typescript": true,
   "tailwind": true,

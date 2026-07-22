@@ -1,4 +1,4 @@
-# Agent Execution Protocol: Song Mode
+# Agent Execution Protocol: Version Compare
 
 ## 1. Boot Sequence
 
@@ -8,7 +8,7 @@
 
 ---
 
-After each code or UI change, rebuild the packaged macOS app with `npm run electron:pack` so `dist/electron/mac-arm64/Song Mode.app` stays current.
+After each code or UI change, rebuild the packaged macOS app with `npm run electron:pack` so `dist/electron/mac-arm64/Version Compare.app` stays current.
 
 ## 2. Reasoning & Constraints
 
@@ -41,8 +41,8 @@ After each code or UI change, rebuild the packaged macOS app with `npm run elect
 - **TanStack Router / Start:** File-based routes under `src/routes/`. Use `createFileRoute`, `Link`, `useNavigate`, and patterns in `src/routes/__root.tsx` and `src/router.tsx`. Treat `src/routeTree.gen.ts` as generated—do not hand-edit unless the tooling workflow requires it.
 - **Imports:** Prefer `**#/...`** for app code (`#/lib/...`, `#/components/...`).
 - **Styling:** Tailwind utility classes plus semantic tokens in `src/styles.css`. Follow the Tailwind Cursor rule (theme colors, `gap-`* not `space-*`, etc.).
-- **Persistence:** Local **IndexedDB** via `idb` in `src/lib/song-mode/db.ts`—not Supabase unless explicitly added to the project.
-- **Rich text:** **TipTap** (`@tiptap/`*); extend in line with `src/components/song-mode/rich-text-editor.tsx`.
+- **Persistence:** Local **IndexedDB** via `idb` in `src/lib/version-compare/db.ts`—not Supabase unless explicitly added to the project.
+- **Rich text:** **TipTap** (`@tiptap/`*); extend in line with `src/components/version-compare/rich-text-editor.tsx`.
 
 ---
 

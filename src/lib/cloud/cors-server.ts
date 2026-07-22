@@ -2,7 +2,7 @@ const ALLOWED_ORIGINS = new Set([
 	"http://127.0.0.1:3000",
 	"http://127.0.0.1:31415",
 	"http://localhost:3000",
-	"https://song-mode.vercel.app",
+	"https://version-compare.vercel.app",
 ]);
 
 export function cloudCorsHeaders(request: Request): HeadersInit {

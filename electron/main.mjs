@@ -17,10 +17,10 @@ const PROJECT_ROOT = resolve(ELECTRON_DIR, "..");
 const APP_ICON_PATH = join(PROJECT_ROOT, "build", "icon.png");
 
 const DEV_SERVER_URL =
-	process.env.SONG_MODE_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
+	process.env.VERSION_COMPARE_ELECTRON_RENDERER_URL ?? "http://127.0.0.1:3000";
 const SERVER_HOST = "127.0.0.1";
 const SERVER_PORT = Number.parseInt(
-	process.env.SONG_MODE_ELECTRON_PORT ?? "31415",
+	process.env.VERSION_COMPARE_ELECTRON_PORT ?? "31415",
 	10,
 );
 const SERVER_BOOT_TIMEOUT_MS = 15_000;
@@ -33,7 +33,7 @@ let mainWindow = null;
 /** @type {string | null} */
 let pendingAuthCallbackUrl = null;
 
-app.setAsDefaultProtocolClient("song-mode");
+app.setAsDefaultProtocolClient("version-compare");
 
 function getRendererUrl() {
 	return shouldUseProductionServer()
@@ -60,7 +60,7 @@ app.on("open-url", (event, url) => {
 function shouldUseProductionServer() {
 	return (
 		app.isPackaged ||
-		process.env.SONG_MODE_ELECTRON_USE_PRODUCTION_SERVER === "1"
+		process.env.VERSION_COMPARE_ELECTRON_USE_PRODUCTION_SERVER === "1"
 	);
 }
 
@@ -91,7 +91,7 @@ async function canAccessFile(filePath) {
 	}
 }
 
-async function waitForSongMode(url, timeoutMs) {
+async function waitForVersionCompare(url, timeoutMs) {
 	const deadline = Date.now() + timeoutMs;
 
 	while (Date.now() < deadline) {
@@ -103,7 +103,7 @@ async function waitForSongMode(url, timeoutMs) {
 			if (response.ok) {
 				const html = await response.text();
 
-				if (html.includes("<title>Song Mode</title>")) {
+				if (html.includes("<title>Version Compare</title>")) {
 					return;
 				}
 			}
@@ -112,7 +112,7 @@ async function waitForSongMode(url, timeoutMs) {
 		await delay(SERVER_READY_POLL_MS);
 	}
 
-	throw new Error(`Timed out waiting for Song Mode at ${url}.`);
+	throw new Error(`Timed out waiting for Version Compare at ${url}.`);
 }
 
 async function startProductionServer() {
@@ -134,7 +134,10 @@ async function startProductionServer() {
 		process.env.PORT = String(SERVER_PORT);
 
 		await import(pathToFileURL(serverEntryPath).href);
-		await waitForSongMode(getProductionServerUrl(), SERVER_BOOT_TIMEOUT_MS);
+		await waitForVersionCompare(
+			getProductionServerUrl(),
+			SERVER_BOOT_TIMEOUT_MS,
+		);
 	})().catch((error) => {
 		productionServerPromise = null;
 		throw error;
@@ -187,7 +190,7 @@ async function createMainWindow() {
 		"did-fail-load",
 		(_event, errorCode, errorDescription) => {
 			void dialog.showErrorBox(
-				"Unable to load Song Mode",
+				"Unable to load Version Compare",
 				`The app window failed to load (${errorCode}: ${errorDescription}).`,
 			);
 		},
@@ -206,7 +209,7 @@ async function createMainWindow() {
 		return;
 	}
 
-	await waitForSongMode(DEV_SERVER_URL, SERVER_BOOT_TIMEOUT_MS);
+	await waitForVersionCompare(DEV_SERVER_URL, SERVER_BOOT_TIMEOUT_MS);
 	const targetUrl = pendingAuthCallbackUrl
 		? buildAuthCallbackUrl(pendingAuthCallbackUrl)
 		: DEV_SERVER_URL;
@@ -232,7 +235,7 @@ app.on("before-quit", () => {
 });
 
 function denyDevicePermissions() {
-	// Song Mode never captures audio, video, or other hardware. Denying these
+	// Version Compare never captures audio, video, or other hardware. Denying these
 	// requests at the Chromium layer keeps the renderer from triggering macOS
 	// TCC prompts (microphone, camera, etc.) when Chromium probes devices
 	// during AudioContext / <audio> initialization.
@@ -244,7 +247,7 @@ function denyDevicePermissions() {
 	session.defaultSession.setPermissionCheckHandler(() => false);
 }
 
-async function launchSongMode() {
+async function launchVersionCompare() {
 	denyDevicePermissions();
 
 	const appIcon = getAppIcon();
@@ -261,10 +264,10 @@ async function launchSongMode() {
 
 app
 	.whenReady()
-	.then(launchSongMode)
+	.then(launchVersionCompare)
 	.catch((error) => {
-		console.error("[song-mode] failed to launch", error);
+		console.error("[version-compare] failed to launch", error);
 		const message = error instanceof Error ? error.message : String(error);
-		dialog.showErrorBox("Unable to launch Song Mode", message);
+		dialog.showErrorBox("Unable to launch Version Compare", message);
 		app.quit();
 	});
