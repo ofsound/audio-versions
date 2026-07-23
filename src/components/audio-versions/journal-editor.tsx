@@ -89,7 +89,7 @@ export function JournalEditor({ value, onChange }: JournalEditorProps) {
 				ref={textareaRef}
 				value={draft}
 				onChange={(event) => commitDraft(event.currentTarget.value)}
-				className="journal-editor min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-4 text-base leading-7 text-[var(--color-text-muted)] outline-none"
+				className="journal-editor min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-4 text-base leading-7 text-[var(--color-text)] outline-none"
 				aria-label="Song journal"
 				placeholder="Write a note…"
 				spellCheck

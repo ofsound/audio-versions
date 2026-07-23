@@ -111,8 +111,8 @@ export function InspectorPane({
 					{annotations.length === 0 ? (
 						<div className="grid shrink-0 gap-2">
 							<h4 className="field-label">Markers And Regions</h4>
-							<p className="text-sm italic text-[var(--color-text-muted)]">
-								Create markers or ranges from the waveform to build the list
+							<p className="text-sm text-[var(--color-text-muted)]">
+								Create markers or ranges from the waveform to build the list.
 							</p>
 						</div>
 					) : (
