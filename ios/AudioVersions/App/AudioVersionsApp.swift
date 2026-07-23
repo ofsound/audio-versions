@@ -26,7 +26,11 @@ private struct AudioVersionsRootView: View {
         }
 
         self.environment = environment
-        _store = StateObject(wrappedValue: ReviewCompanionStore())
+        _store = StateObject(
+            wrappedValue: ReviewCompanionStore(
+                songs: environment == nil ? FixtureLibrary.songs : []
+            )
+        )
         _authentication = State(
             initialValue: environment.map { AuthenticationStore(client: $0.client) }
         )

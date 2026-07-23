@@ -67,8 +67,12 @@ final class ReviewCompanionStore: ObservableObject {
         library: CloudLibraryService,
         signedMedia: SignedMediaURLProvider
     ) {
+        let isNewCloudSession = cloudLibrary !== library
         cloudLibrary = library
         self.signedMedia = signedMedia
+        if isNewCloudSession {
+            replaceLibrary(with: [])
+        }
     }
 
     func refreshCloudLibrary() async {
