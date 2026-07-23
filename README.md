@@ -1,6 +1,12 @@
 # Audio Versions
 
-Audio Versions is a private review workspace for song files. The same TanStack app runs on the web and in Electron, with Supabase authentication and realtime metadata sync, private media in Vercel Blob, and IndexedDB as the desktop/browser cache.
+Audio Versions is a private review workspace for song files. It has three clients over the same library and media contracts:
+
+- A React/TanStack web application
+- An Electron desktop wrapper around the web application
+- A native SwiftUI review companion for iPhone
+
+Supabase provides authentication and realtime metadata sync, private media lives in Vercel Blob, and IndexedDB provides the web/Electron cache and local-only mode. See the [iOS runbook](ios/README.md) for native setup, capabilities, and device verification.
 
 ## What It Does
 
@@ -51,7 +57,7 @@ For a standalone local desktop launch against the production Nitro build:
 npm run electron:start
 ```
 
-For a packaged macOS app bundle in `dist/electron/mac`:
+For a packaged macOS app bundle in `dist/electron/mac-arm64`:
 
 ```bash
 npm run electron:pack
@@ -67,12 +73,17 @@ The packaged app runs the local Nitro server on `http://127.0.0.1:31415` so the 
 
 ## Quality Checks
 
+For the web, server, and Electron workspace:
+
 ```bash
 npm run verify
 ```
 
+For native builds and tests, use the commands in the [iOS runbook](ios/README.md#verification).
+
 ## Architecture
 
+- Native companion: SwiftUI and AVFoundation in `ios/`
 - Routing: TanStack Router file-based routes in `src/routes`
 - State: `AudioVersionsProvider` owns the optimistic snapshot and serializes persistence writes
 - Authentication and records: Supabase Auth, Postgres row-level security, and Realtime

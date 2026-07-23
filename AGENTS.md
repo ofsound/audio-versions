@@ -1,49 +1,42 @@
-# Agent Execution Protocol: Audio Versions
+# Audio Versions Repository Instructions
 
-## 1. Boot Sequence
+## Repository Map
 
-- **Scan:** Read all `.cursor/rules/*.mdc` before first output.
-- **Stack:** This repo is **React 19 + TanStack Router / TanStack Start** (no Svelte). Ignore Svelte-specific MCP tools and skills unless the codebase gains `.svelte` files.
-- **Validation:** After substantive edits, run the full gate: `**npm run verify`** — Biome `**check**`, `**typecheck**` (`tsc --noEmit`), Vitest `**test**`, then **Knip**. Equivalent: `npm run check && npm run typecheck && npm test && npm run knip`. Do not block on tools that do not apply here (e.g. `svelte-autofixer`). **Knip** enforces lean `package.json` dependencies and reachable exports/files—fix unused dependency/export findings or justify with Knip config/JSDoc `@public` per [Knip docs](https://knip.dev).
+- `src/`: React 19, TanStack Router/Start, TypeScript, Tailwind CSS, and the Nitro server routes.
+- `electron/`: Electron wrapper for the web application.
+- `ios/`: Native SwiftUI companion app. Follow `ios/AGENTS.md` for changes in this directory.
+- `supabase/`: Shared Postgres schema and migrations.
 
----
+Use **npm** for the JavaScript workspace. This repository does not use Svelte.
 
-After each code or UI change, rebuild the packaged macOS app with `npm run electron:pack` so `dist/electron/mac-arm64/Audio Versions.app` stays current.
+## Working Rules
 
-## 2. Reasoning & Constraints
+- Make the smallest change that fully satisfies the request. Do not refactor adjacent code without a concrete need.
+- Match existing patterns and remove imports, variables, or helpers made unused by your change.
+- When materially different interpretations would produce different results, state the ambiguity and ask before implementing.
+- Prefer a focused implementation over speculative abstractions.
+- Do not add eyebrow, kicker, overline, or tiny uppercase labels unless explicitly requested.
+- Treat `src/routeTree.gen.ts` as generated. Add routes under `src/routes/` and let TanStack tooling update the route tree.
+- Never commit credentials. Browser Supabase keys are publishable; service-role keys and Vercel Blob write tokens are secrets.
 
-### A. Think Before Coding
+## Web and Electron Conventions
 
-- **Surface Tradeoffs:** State assumptions explicitly. If 2+ interpretations exist, **ask**; do not guess.
-- **Halt on Ambiguity:** If a request is unclear, name the confusion and stop.
-- **Senior Dev Filter:** If a solution is 200 lines and could be 50, **rewrite it.** No speculative abstractions.
+- Prefer `#/*` imports for application code.
+- `AudioVersionsProvider` owns the optimistic snapshot and serialized persistence queue. Route snapshot mutations through `commitSnapshot` or existing mutation helpers.
+- Persistence is hybrid: Supabase stores authenticated cloud records, Vercel Blob stores private media, and IndexedDB provides the local cache and local-only mode.
+- IndexedDB schema changes belong in `src/lib/audio-versions/db.ts` migrations with a version bump. Supabase schema changes belong in `supabase/migrations/`.
+- Use Tailwind utilities and the semantic tokens in `src/styles/tokens.css`. Use flex/grid `gap-*` utilities instead of `space-x-*` or `space-y-*`.
+- Reuse the application chrome and header portal contexts instead of duplicating route-level header UI.
+- Extend TipTap behavior in line with `src/components/audio-versions/rich-text-editor.tsx` and the shared rich-text record shapes.
 
-### B. Surgical Implementation
+## Validation Matrix
 
-- **Strict Scope:** Change only what is requested.
-- **No Side Effects:** Do not "improve" or refactor adjacent code, comments, or formatting.
-- **Style Match:** Mirror existing patterns, even if suboptimal.
-- **No Eyebrows:** Never add or create eyebrow/kicker text (`eyebrow`, overline labels, tiny uppercase section headers above titles) unless the user explicitly asks for one.
-- **Orphan Policy:** Remove imports/variables/functions rendered unused by *your* changes. Leave pre-existing dead code alone.
+Run the gate that matches the files changed:
 
-### C. Goal-Driven Loop
+- Documentation or instructions only: review the rendered Markdown, paths, and commands. No application build is required.
+- Web, server, shared TypeScript, CSS, dependency, or Electron changes: run `npm run verify`.
+- Web UI or Electron runtime changes: after `npm run verify`, run `npm run electron:pack` once the change is final so `dist/electron/mac-arm64/Audio Versions.app` is current.
+- iOS-only changes: follow `ios/AGENTS.md`; do not package Electron unless shared web/Electron code also changed.
+- Shared Supabase schema, media API, or cross-client data-contract changes: run `npm run verify` and the relevant iOS build/tests from `ios/AGENTS.md`.
 
-1. **Reproduce:** Write/run a test or define a specific failure state.
-2. **Execute:** Implement the minimum code to solve the problem.
-3. **Verify:** Confirm success criteria (e.g. tests pass, UI behavior matches the request).
-
----
-
-## 3. Tech Stack Specifics
-
-- **Package manager:** Use **npm** (see `package.json`).
-- **React 19 + TypeScript:** Functional components and hooks; follow patterns in `src/components/` and `src/providers/`.
-- **TanStack Router / Start:** File-based routes under `src/routes/`. Use `createFileRoute`, `Link`, `useNavigate`, and patterns in `src/routes/__root.tsx` and `src/router.tsx`. Treat `src/routeTree.gen.ts` as generated—do not hand-edit unless the tooling workflow requires it.
-- **Imports:** Prefer `**#/...`** for app code (`#/lib/...`, `#/components/...`).
-- **Styling:** Tailwind utility classes plus semantic tokens in `src/styles.css`. Follow the Tailwind Cursor rule (theme colors, `gap-`* not `space-*`, etc.).
-- **Persistence:** Local **IndexedDB** via `idb` in `src/lib/audio-versions/db.ts`—not Supabase unless explicitly added to the project.
-- **Rich text:** **TipTap** (`@tiptap/`*); extend in line with `src/components/audio-versions/rich-text-editor.tsx`.
-
----
-
-**Status:** Protocol Active. Awaiting task.
+Always report which validation commands ran and any checks that could not be completed.

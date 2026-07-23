@@ -1,6 +1,11 @@
-# iOS Review Companion Plan
+# iOS Review Companion Plan (Historical)
 
 Last updated: 2026-07-21
+
+> This is an implementation snapshot, not current capability or validation
+> documentation. Several deferred items were completed after this plan stopped
+> being maintained. Use [`ios/README.md`](../ios/README.md) for the current iOS
+> runbook and acceptance checks.
 
 ## Outcome
 

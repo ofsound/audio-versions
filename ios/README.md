@@ -21,9 +21,8 @@ The committed development bundle ID is `com.benmontgomery.audioversions`. Change
 it in `Config/Shared.xcconfig` if Xcode reports that it is unavailable.
 
 Personal Team profiles expire after seven days. Rebuild from Xcode to provision
-the app again. The currently paired iPhone is on a newer OS than this Xcode's
-bundled SDK; if Xcode cannot prepare the phone, update Xcode before changing the
-project.
+the app again. If Xcode cannot prepare a newer phone OS, update Xcode before
+changing the project configuration.
 
 ## Connect the private library
 
@@ -111,13 +110,18 @@ xcodebuild -project ios/AudioVersions.xcodeproj \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Tests on an installed simulator:
+List the available simulators, then run tests using any installed iOS 17 or
+later destination:
+
+```sh
+xcrun simctl list devices available
+```
 
 ```sh
 xcodebuild test -quiet \
   -project ios/AudioVersions.xcodeproj \
   -scheme AudioVersions \
-  -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=17.5' \
+  -destination 'platform=iOS Simulator,name=<available simulator name>' \
   -derivedDataPath /tmp/audio-versions-ios-derived \
   CODE_SIGNING_ALLOWED=NO
 ```

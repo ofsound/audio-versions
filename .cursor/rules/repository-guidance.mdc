@@ -1,0 +1,10 @@
+---
+description: Use the repository's shared agent instructions
+alwaysApply: true
+---
+
+# Repository Guidance
+
+`AGENTS.md` is the source of truth for repository conventions and validation. Read it before making changes. For work under `ios/`, also read `ios/AGENTS.md`.
+
+Do not infer framework or validation requirements from older Cursor plans or conversation history; use the current repository instructions and code.
