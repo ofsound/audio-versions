@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class ReviewCompanionStore: ObservableObject {
     @Published private(set) var songs: [Song]
+    @Published var navigationPath: [LibraryDestination] = []
     @Published var activeVersionID: String?
     @Published var playbackRate: Double = 1 {
         didSet {
@@ -96,6 +97,7 @@ final class ReviewCompanionStore: ObservableObject {
         cloudLibrary = nil
         signedMedia = nil
         replaceLibrary(with: FixtureLibrary.songs)
+        navigationPath = []
     }
 
     func replaceLibrary(with songs: [Song]) {
@@ -148,6 +150,63 @@ final class ReviewCompanionStore: ObservableObject {
         } else {
             audioEngine.seek(to: clampedTime)
         }
+    }
+
+    func open(version: AudioVersion, at time: TimeInterval, autoplay: Bool) {
+        activate(version: version)
+        let clampedTime = PlaybackTimeline.clamp(time, duration: version.duration)
+
+        guard signedMedia != nil else {
+            fixtureCurrentTime = clampedTime
+            if autoplay {
+                fixtureIsPlaying = true
+                beginFixturePlayback(for: version.id)
+            }
+            return
+        }
+
+        if audioEngine.isLoaded(trackID: version.id) {
+            audioEngine.seek(to: clampedTime)
+            if autoplay {
+                audioEngine.play()
+            }
+            return
+        }
+
+        beginCloudPlaybackPreparation(
+            for: version,
+            startTime: clampedTime,
+            invalidateLease: false,
+            autoplay: autoplay
+        )
+    }
+
+    func openSongLink(_ target: SongLinkTarget) {
+        var nextPath: [LibraryDestination] = [.song(id: target.songID)]
+        let versionID = target.fileID ?? songs
+            .first(where: { $0.id == target.songID })?
+            .versions
+            .first(where: { version in
+                version.annotations.contains { $0.id == target.annotationID }
+            })?
+            .id
+
+        if let versionID {
+            nextPath.append(
+                .version(
+                    songID: target.songID,
+                    versionID: versionID,
+                    target: target
+                )
+            )
+        }
+
+        navigationPath = nextPath
+    }
+
+    func openSongLink(_ url: URL) {
+        guard let target = SongLinkTarget(url: url) else { return }
+        openSongLink(target)
     }
 
     func skip(by delta: TimeInterval, in version: AudioVersion) {

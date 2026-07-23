@@ -39,4 +39,32 @@ describe("JournalEditor", () => {
 
 		expect(onChange).toHaveBeenLastCalledWith("First line\n\nSecond line");
 	});
+
+	it("turns pasted marker URLs into cross-file jump controls", () => {
+		const onInternalLink = vi.fn();
+		render(
+			<JournalEditor
+				value={[
+					"Mix B - Marker 0:54",
+					"http://localhost:3000/songs/song-1?fileId=file-2&annotationId=annotation-7&timeMs=54000&autoplay=1",
+				].join("\n")}
+				onChange={() => {}}
+				onInternalLink={onInternalLink}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Jump to Mix B - Marker 0:54",
+			}),
+		);
+
+		expect(onInternalLink).toHaveBeenCalledWith({
+			songId: "song-1",
+			fileId: "file-2",
+			annotationId: "annotation-7",
+			timeMs: 54000,
+			autoplay: true,
+		});
+	});
 });

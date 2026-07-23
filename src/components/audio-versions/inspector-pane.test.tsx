@@ -414,6 +414,36 @@ describe("InspectorPane", () => {
 		);
 	});
 
+	it("falls back to plain text when the runtime rejects a rich clipboard write", async () => {
+		class FakeClipboardItem {
+			constructor(readonly items: Record<string, Blob>) {}
+		}
+
+		const write = vi.fn().mockRejectedValue(new Error("HTML is not allowed"));
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		vi.stubGlobal("ClipboardItem", FakeClipboardItem);
+		Object.defineProperty(window.navigator, "clipboard", {
+			configurable: true,
+			value: {
+				write,
+				writeText,
+			},
+		});
+
+		renderInspector({
+			selectedFile: baseAudioFile,
+		});
+
+		fireEvent.click(screen.getByTitle("Copy link"));
+
+		await waitFor(() => {
+			expect(writeText).toHaveBeenCalledWith(
+				"Mix v1 - Marker 0:54\nhttp://localhost:3000/songs/song-1?fileId=file-1&annotationId=annotation-1&timeMs=54000&autoplay=1",
+			);
+		});
+		expect(screen.getByText("Mix v1 - Marker 0:54 link copied")).toBeTruthy();
+	});
+
 	it("confirms before deleting a marker from the inline card", () => {
 		const confirmSpy = vi.fn(() => true);
 		vi.stubGlobal("confirm", confirmSpy);

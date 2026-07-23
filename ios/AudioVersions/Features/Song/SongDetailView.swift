@@ -9,6 +9,10 @@ struct SongDetailView: View {
         store.songs.first { $0.id == songID }
     }
 
+    private var journalLinks: [SongJournalLink] {
+        SongJournalLink.extract(from: song?.generalNotes ?? "")
+    }
+
     var body: some View {
         Group {
             if let song {
@@ -51,13 +55,46 @@ struct SongDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .buttonStyle(.plain)
+
+                        ForEach(journalLinks) { link in
+                            Button {
+                                store.openSongLink(link.target)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "link")
+                                        .foregroundStyle(.orange)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(link.label)
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                        if let time = link.target.time {
+                                            Text("Jump to \(time.playbackTimestamp)")
+                                                .font(.caption.monospacedDigit())
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Opens the linked version and marker position")
+                        }
                     }
 
                     Section("Versions") {
                         ForEach(song.versions.sorted(by: { $0.createdAt > $1.createdAt })) { version in
-                            NavigationLink {
-                                ReviewPlayerView(songID: song.id, versionID: version.id)
-                            } label: {
+                            NavigationLink(
+                                value: LibraryDestination.version(
+                                    songID: song.id,
+                                    versionID: version.id,
+                                    target: nil
+                                )
+                            ) {
                                 VersionRow(version: version)
                             }
                         }

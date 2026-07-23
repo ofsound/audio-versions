@@ -67,8 +67,12 @@ export function InspectorPane({
 	}, []);
 
 	async function copyLink(target: SongLinkTarget, label: string) {
-		await copySongTargetLink(target, label);
-		setCopiedMessage(`${label} link copied`);
+		try {
+			await copySongTargetLink(target, label);
+			setCopiedMessage(`${label} link copied`);
+		} catch {
+			setCopiedMessage("Couldn’t copy link");
+		}
 		window.setTimeout(() => setCopiedMessage(null), 1400);
 	}
 

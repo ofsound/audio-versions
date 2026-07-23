@@ -185,4 +185,59 @@ struct ReviewCompanionTests {
         )
         #expect(object["general_notes"] as? String == row.generalNotes)
     }
+
+    @Test
+    func songLinksParseSharedWebTargetsAndJournalLabels() throws {
+        let url = try #require(
+            URL(
+                string: "https://audio.example/songs/song-1?fileId=file-2&annotationId=marker-7&timeMs=54000&autoplay=1"
+            )
+        )
+        let target = try #require(SongLinkTarget(url: url))
+
+        #expect(target.songID == "song-1")
+        #expect(target.fileID == "file-2")
+        #expect(target.annotationID == "marker-7")
+        #expect(target.time == 54)
+        #expect(target.autoplay)
+
+        let references = SongJournalLink.extract(
+            from: "Mix B - Marker 0:54\n\(url.absoluteString)"
+        )
+        let reference = try #require(references.first)
+        #expect(reference.label == "Mix B - Marker 0:54")
+        #expect(reference.target == target)
+    }
+
+    @MainActor
+    @Test
+    func songLinksRouteAndSeekTheLinkedVersion() throws {
+        let store = ReviewCompanionStore()
+        let song = try #require(store.songs.first)
+        let version = try #require(song.versions.first)
+        let target = SongLinkTarget(
+            songID: song.id,
+            fileID: version.id,
+            annotationID: version.annotations.first?.id,
+            time: 12,
+            autoplay: false
+        )
+
+        store.openSongLink(target)
+        #expect(
+            store.navigationPath == [
+                .song(id: song.id),
+                .version(
+                    songID: song.id,
+                    versionID: version.id,
+                    target: target
+                )
+            ]
+        )
+
+        store.open(version: version, at: 12, autoplay: false)
+        #expect(store.activeVersionID == version.id)
+        #expect(store.currentTime == min(12, version.duration))
+        #expect(!store.isPlaying)
+    }
 }

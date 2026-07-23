@@ -10,6 +10,24 @@ function escapeHtml(value: string): string {
 		.replaceAll("'", "&#39;");
 }
 
+function copyTextWithSelection(value: string): void {
+	const textarea = document.createElement("textarea");
+	textarea.value = value;
+	textarea.setAttribute("readonly", "");
+	textarea.style.position = "fixed";
+	textarea.style.opacity = "0";
+	textarea.style.pointerEvents = "none";
+	document.body.append(textarea);
+	textarea.select();
+
+	const didCopy = document.execCommand("copy");
+	textarea.remove();
+
+	if (!didCopy) {
+		throw new Error("The clipboard is unavailable.");
+	}
+}
+
 export async function copySongTargetLink(
 	target: SongLinkTarget,
 	label: string,
@@ -29,14 +47,31 @@ export async function copySongTargetLink(
 	).ClipboardItem;
 
 	if (navigator.clipboard?.write && clipboardItemCtor) {
-		await navigator.clipboard.write([
-			new clipboardItemCtor({
-				"text/html": new Blob([htmlPayload], { type: "text/html" }),
-				"text/plain": new Blob([plainTextPayload], { type: "text/plain" }),
-			}),
-		]);
-		return;
+		try {
+			await navigator.clipboard.write([
+				new clipboardItemCtor({
+					"text/html": new Blob([htmlPayload], { type: "text/html" }),
+					"text/plain": new Blob([plainTextPayload], {
+						type: "text/plain",
+					}),
+				}),
+			]);
+			return;
+		} catch {
+			// Chromium/Electron can expose the rich clipboard API while rejecting
+			// HTML writes. Fall through to the more widely supported text path.
+		}
 	}
 
-	await navigator.clipboard.writeText(plainTextPayload);
+	if (navigator.clipboard?.writeText) {
+		try {
+			await navigator.clipboard.writeText(plainTextPayload);
+			return;
+		} catch {
+			// The selection fallback still works in desktop webviews where the
+			// async clipboard permission is unavailable.
+		}
+	}
+
+	copyTextWithSelection(plainTextPayload);
 }

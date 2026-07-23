@@ -248,7 +248,7 @@
 	.waveform-thumbnail-grid[data-density="compressed"]
 		.waveform-thumbnail__title {
 		min-width: 0;
-		flex: 1;
+		flex: 0 1 auto;
 		padding: 0.0625rem 0.25rem;
 		font-size: 0.625rem;
 	}

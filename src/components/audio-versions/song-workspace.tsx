@@ -447,6 +447,7 @@ export function SongWorkspace({
 							<JournalEditor
 								value={song.generalNotes}
 								onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
+								onInternalLink={(target) => openTarget(target)}
 							/>
 						</div>
 					</div>

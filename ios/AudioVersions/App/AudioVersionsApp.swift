@@ -46,6 +46,9 @@ private struct AudioVersionsRootView: View {
             }
         }
         .tint(.orange)
+        .onOpenURL { url in
+            store.openSongLink(url)
+        }
     }
 
     @ViewBuilder

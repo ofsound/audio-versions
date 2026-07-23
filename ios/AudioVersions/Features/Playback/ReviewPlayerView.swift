@@ -7,6 +7,17 @@ struct ReviewPlayerView: View {
 
     let songID: String
     let versionID: String
+    let linkTarget: SongLinkTarget?
+
+    init(
+        songID: String,
+        versionID: String,
+        linkTarget: SongLinkTarget? = nil
+    ) {
+        self.songID = songID
+        self.versionID = versionID
+        self.linkTarget = linkTarget
+    }
 
     private var song: Song? {
         store.songs.first { $0.id == songID }
@@ -53,8 +64,17 @@ struct ReviewPlayerView: View {
                         store.saveAudioFileNotes(notes, audioFileID: version.id)
                     }
                 }
-                .task {
+                .task(id: linkTarget) {
                     store.activate(version: version)
+                    guard let linkTarget else { return }
+                    let annotationTime = linkTarget.annotationID.flatMap { annotationID in
+                        version.annotations.first { $0.id == annotationID }?.startTime
+                    }
+                    store.open(
+                        version: version,
+                        at: annotationTime ?? linkTarget.time ?? 0,
+                        autoplay: linkTarget.autoplay
+                    )
                 }
             } else {
                 ContentUnavailableView(

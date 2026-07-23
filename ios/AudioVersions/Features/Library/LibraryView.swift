@@ -24,15 +24,13 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $store.navigationPath) {
             Group {
                 if filteredSongs.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
                     List(filteredSongs) { song in
-                        NavigationLink {
-                            SongDetailView(songID: song.id)
-                        } label: {
+                        NavigationLink(value: LibraryDestination.song(id: song.id)) {
                             LibrarySongRow(song: song)
                         }
                     }
@@ -69,6 +67,18 @@ struct LibraryView: View {
                         Image(systemName: "person.crop.circle")
                     }
                     .accessibilityLabel("Account")
+                }
+            }
+            .navigationDestination(for: LibraryDestination.self) { destination in
+                switch destination {
+                case let .song(id):
+                    SongDetailView(songID: id)
+                case let .version(songID, versionID, target):
+                    ReviewPlayerView(
+                        songID: songID,
+                        versionID: versionID,
+                        linkTarget: target
+                    )
                 }
             }
         }
