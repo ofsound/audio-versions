@@ -110,14 +110,14 @@ export function InspectorPane({
 					) : null}
 					{annotations.length === 0 ? (
 						<div className="grid shrink-0 gap-2">
-							<h4 className="field-label">Markers And Regions</h4>
+							<h4 className="field-label">Markers And Ranges</h4>
 							<p className="text-sm text-[var(--color-text-muted)]">
 								Create markers or ranges from the waveform to build the list.
 							</p>
 						</div>
 					) : (
 						<>
-							<h4 className="field-label shrink-0">Markers And Regions</h4>
+							<h4 className="field-label shrink-0">Markers And Ranges</h4>
 							{annotations.map((annotation) => (
 								<InspectorMarkerCard
 									key={annotation.id}

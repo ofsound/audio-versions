@@ -480,7 +480,7 @@ describe("InspectorPane", () => {
 		expect(screen.getByText(/^notes$/i)).toBeTruthy();
 		const notesLabel = screen.getByText(/^notes$/i);
 		const markersHeading = screen.getByRole("heading", {
-			name: "Markers And Regions",
+			name: "Markers And Ranges",
 		});
 		expect(
 			notesLabel.compareDocumentPosition(markersHeading) &
