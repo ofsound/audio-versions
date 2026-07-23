@@ -234,9 +234,6 @@ export function LibraryView() {
 					) : (
 						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 							{orderedSongs.map((song) => {
-								const notesPreview = song.generalNotes
-									.replace(/\s+/g, " ")
-									.trim();
 								const sessionDateRange = sessionDateRangeBySongId.get(song.id);
 
 								return (
@@ -267,12 +264,6 @@ export function LibraryView() {
 														</p>
 													) : null}
 												</div>
-
-												{notesPreview ? (
-													<p className="mt-5 text-sm leading-7 text-[var(--color-text-muted)]">
-														{notesPreview}
-													</p>
-												) : null}
 											</button>
 											<button
 												type="button"

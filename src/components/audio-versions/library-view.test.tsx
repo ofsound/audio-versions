@@ -195,15 +195,20 @@ describe("LibraryView", () => {
 		});
 	});
 
-	it("does not show a journal placeholder for songs without notes", () => {
+	it("does not show journal content on the index", () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
-		songs = [makeSong("song-1")];
+		songs = [
+			{
+				...makeSong("song-1"),
+				generalNotes: "Keep the drums brighter in the next pass.",
+			},
+		];
 
 		renderWithLibraryHeaderSlot(headerSlot);
 
 		expect(
-			screen.queryByText("Journal is ready for the first pass."),
+			screen.queryByText("Keep the drums brighter in the next pass."),
 		).toBeNull();
 	});
 
