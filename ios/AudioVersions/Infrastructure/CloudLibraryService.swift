@@ -70,7 +70,7 @@ final class CloudLibraryService: @unchecked Sendable {
         }
 
         let update = SongJournalUpdate(
-            generalNotes: .plainText(journal),
+            generalNotes: journal,
             updatedAt: CloudTimestamp.format(.now)
         )
         let rows: [MutationResultRow] = try await client
@@ -286,7 +286,7 @@ final class CloudLibraryService: @unchecked Sendable {
                 id: row.id.uuidString.lowercased(),
                 title: row.title,
                 artist: row.artist,
-                generalNotes: row.generalNotes.plainText,
+                generalNotes: row.generalNotes,
                 updatedAt: try CloudTimestamp.parse(row.updatedAt),
                 versions: versions
             )

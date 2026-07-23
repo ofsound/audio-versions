@@ -1,5 +1,9 @@
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
-import { hasRichTextContent, normalizeRichText } from "./rich-text";
+import {
+	hasRichTextContent,
+	normalizeJournalText,
+	normalizeRichText,
+} from "./rich-text";
 import {
 	type Annotation,
 	type AudioFileRecord,
@@ -43,7 +47,7 @@ interface AudioVersionsDB extends DBSchema {
 }
 
 const DB_NAME = "audio-versions";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const SETTINGS_KEY = "app-settings";
 const LOCAL_OWNER_KEY = "cloud-owner-id";
 const IDENTITY_MIGRATION_KEY = "identity-migration-complete";
@@ -57,6 +61,10 @@ let dbPromise: Promise<IDBPDatabase<AudioVersionsDB>> | null = null;
 
 type LegacyAudioFileRecord = AudioFileRecord & {
 	masteringNote?: RichTextDoc | null;
+};
+
+type LegacySong = Omit<Song, "generalNotes"> & {
+	generalNotes: string | RichTextDoc;
 };
 
 function openAudioVersionsDb(
@@ -147,6 +155,20 @@ function openAudioVersionsDb(
 						});
 					}),
 				]);
+			}
+
+			if (oldVersion < 5) {
+				const songsStore = transaction.objectStore("songs");
+				const songs = (await songsStore.getAll()) as LegacySong[];
+
+				await Promise.all(
+					songs.map((song) =>
+						songsStore.put({
+							...song,
+							generalNotes: normalizeJournalText(song.generalNotes),
+						}),
+					),
+				);
 			}
 		},
 	});

@@ -55,7 +55,7 @@ function makeSong(id: string): Song {
 		title: "New Song",
 		artist: "New Artist",
 		project: "New Project",
-		generalNotes: EMPTY_RICH_TEXT,
+		generalNotes: "",
 		audioFileOrder: [],
 		createdAt: "2026-04-16T00:00:00.000Z",
 		updatedAt: "2026-04-16T00:00:00.000Z",
@@ -179,7 +179,7 @@ describe("LibraryView", () => {
 				title: "Midnight Choir",
 				artist: "Ada",
 				project: "LP1",
-				generalNotes: EMPTY_RICH_TEXT,
+				generalNotes: "",
 			});
 		});
 		await waitFor(() => {

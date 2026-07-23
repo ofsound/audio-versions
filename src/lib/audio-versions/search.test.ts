@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_RICH_TEXT } from "./rich-text";
 import { searchAudioVersions } from "./search";
 import { createDefaultUiSettings } from "./types";
 
@@ -13,7 +12,7 @@ describe("searchAudioVersions", () => {
 						title: "Midnight Choir",
 						artist: "Ada",
 						project: "LP1",
-						generalNotes: EMPTY_RICH_TEXT,
+						generalNotes: "",
 						audioFileOrder: [],
 						createdAt: "2026-04-16T00:00:00.000Z",
 						updatedAt: "2026-04-16T00:00:00.000Z",

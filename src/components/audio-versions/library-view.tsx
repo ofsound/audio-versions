@@ -11,10 +11,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatAudioFileSessionDateRange } from "#/lib/audio-versions/dates";
-import {
-	EMPTY_RICH_TEXT,
-	richTextPreview,
-} from "#/lib/audio-versions/rich-text";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useLibraryHeaderActionSlot } from "./app-chrome";
 import { SongModal } from "./song-modal";
@@ -141,7 +137,7 @@ export function LibraryView() {
 				title,
 				artist: showArtist ? artist : "",
 				project: showProject ? project : "",
-				generalNotes: EMPTY_RICH_TEXT,
+				generalNotes: "",
 			});
 
 			setTitle("");
@@ -238,7 +234,9 @@ export function LibraryView() {
 					) : (
 						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 							{orderedSongs.map((song) => {
-								const notesPreview = richTextPreview(song.generalNotes, "");
+								const notesPreview = song.generalNotes
+									.replace(/\s+/g, " ")
+									.trim();
 								const sessionDateRange = sessionDateRangeBySongId.get(song.id);
 
 								return (

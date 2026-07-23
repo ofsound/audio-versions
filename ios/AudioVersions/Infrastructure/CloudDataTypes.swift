@@ -118,7 +118,7 @@ struct SongRow: Decodable, Sendable {
     let id: UUID
     let title: String
     let artist: String
-    let generalNotes: RichTextDocument
+    let generalNotes: String
     let audioFileOrder: [UUID]
     let updatedAt: String
 
@@ -191,7 +191,7 @@ struct MutationResultRow: Decodable, Sendable {
 }
 
 struct SongJournalUpdate: Encodable, Sendable {
-    let generalNotes: RichTextDocument
+    let generalNotes: String
     let updatedAt: String
 
     enum CodingKeys: String, CodingKey {

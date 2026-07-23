@@ -130,7 +130,7 @@ const baseSong: Song = {
 	title: "Reload Test",
 	artist: "Tester",
 	project: "Album",
-	generalNotes: EMPTY_RICH_TEXT,
+	generalNotes: "",
 	audioFileOrder: [],
 	createdAt: "2026-04-16T00:00:00.000Z",
 	updatedAt: "2026-04-16T00:00:00.000Z",

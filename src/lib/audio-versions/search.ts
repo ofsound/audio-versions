@@ -35,7 +35,7 @@ export function searchAudioVersions(
 	const results: SearchResult[] = [];
 
 	for (const song of snapshot.songs) {
-		const songPlain = `${song.title} ${song.artist} ${song.project} ${richTextToPlainText(song.generalNotes)}`;
+		const songPlain = `${song.title} ${song.artist} ${song.project} ${song.generalNotes}`;
 		pushMatch(
 			results,
 			buildScore(song.title, songPlain, terms, 2.5),
@@ -43,7 +43,7 @@ export function searchAudioVersions(
 				.filter(Boolean)
 				.join(" · "),
 			uiSettings.showProject && song.project ? song.project : "Song",
-			richTextPreview(song.generalNotes, "Open song workspace"),
+			plainTextPreview(song.generalNotes, "Open song workspace"),
 			{
 				songId: song.id,
 			},
@@ -53,10 +53,10 @@ export function searchAudioVersions(
 
 		pushMatch(
 			results,
-			buildScore("journal", richTextToPlainText(song.generalNotes), terms, 1.3),
+			buildScore("journal", song.generalNotes, terms, 1.3),
 			`${song.title} journal`,
 			uiSettings.showProject && song.project ? song.project : "Journal",
-			richTextPreview(song.generalNotes),
+			plainTextPreview(song.generalNotes),
 			{
 				songId: song.id,
 			},
@@ -103,6 +103,15 @@ export function searchAudioVersions(
 	}
 
 	return results.sort((left, right) => right.score - left.score).slice(0, 18);
+}
+
+function plainTextPreview(value: string, fallback = "No notes yet."): string {
+	const text = value.replace(/\s+/g, " ").trim();
+	if (!text) {
+		return fallback;
+	}
+
+	return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
 
 function buildScore(

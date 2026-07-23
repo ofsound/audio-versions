@@ -77,7 +77,7 @@ export function useSongMutations({
 				title: input.title.trim(),
 				artist: input.artist.trim(),
 				project: input.project.trim(),
-				generalNotes: normalizeRichText(input.generalNotes),
+				generalNotes: input.generalNotes,
 				audioFileOrder: [],
 				createdAt: now,
 				updatedAt: now,
@@ -118,9 +118,7 @@ export function useSongMutations({
 					songs: patchEntityById(current.songs, songId, (song) => ({
 						...song,
 						...patch,
-						generalNotes: normalizeRichText(
-							patch.generalNotes ?? song.generalNotes,
-						),
+						generalNotes: patch.generalNotes ?? song.generalNotes,
 						updatedAt: new Date().toISOString(),
 					})),
 				}),

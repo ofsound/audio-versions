@@ -1,4 +1,7 @@
-import { normalizeRichText } from "#/lib/audio-versions/rich-text";
+import {
+	normalizeJournalText,
+	normalizeRichText,
+} from "#/lib/audio-versions/rich-text";
 import {
 	type AudioFileRecord,
 	type AudioVersionsSnapshot,
@@ -70,7 +73,7 @@ export async function normalizeLoadedSnapshot(
 				title: song.title,
 				artist: song.artist,
 				project: song.project,
-				generalNotes: normalizeRichText(song.generalNotes),
+				generalNotes: normalizeJournalText(song.generalNotes),
 				audioFileOrder: song.audioFileOrder,
 				createdAt: song.createdAt,
 				updatedAt: song.updatedAt,

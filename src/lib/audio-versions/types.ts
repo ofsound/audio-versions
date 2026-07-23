@@ -30,7 +30,7 @@ export interface Song {
 	title: string;
 	artist: string;
 	project: string;
-	generalNotes: RichTextDoc;
+	generalNotes: string;
 	audioFileOrder: string[];
 	createdAt: string;
 	updatedAt: string;
@@ -138,7 +138,7 @@ export interface CreateSongInput {
 	title: string;
 	artist: string;
 	project: string;
-	generalNotes: RichTextDoc;
+	generalNotes: string;
 }
 
 export interface AddAudioFileInput {

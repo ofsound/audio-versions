@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMPTY_RICH_TEXT } from "./rich-text";
+import { EMPTY_RICH_TEXT, plainTextToRichText } from "./rich-text";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -86,7 +86,7 @@ function createSong(overrides: Partial<Song> = {}): Song {
 		title: "Song",
 		artist: "Artist",
 		project: "Project",
-		generalNotes: EMPTY_RICH_TEXT,
+		generalNotes: "",
 		audioFileOrder: ["file-1"],
 		createdAt: "2026-04-16T00:00:00.000Z",
 		updatedAt: "2026-04-16T00:00:00.000Z",
@@ -325,6 +325,26 @@ describe("audio-versions db cascade helpers", () => {
 				color: "var(--color-marker-point)",
 			}),
 		]);
+	});
+
+	it("converts cached rich-text journals to plain text in v5", async () => {
+		const legacyDb = await openLegacyAudioVersionsDatabase(4);
+		const transaction = legacyDb.transaction("songs", "readwrite");
+		transaction.objectStore("songs").put({
+			...createSong(),
+			generalNotes: plainTextToRichText(
+				"First paragraph\nwith a break\n\nSecond paragraph",
+			),
+		});
+		await waitForTransaction(transaction);
+		legacyDb.close();
+
+		const db = await loadDbModule();
+		const snapshot = await db.loadSnapshot();
+
+		expect(snapshot.songs[0]?.generalNotes).toBe(
+			"First paragraph\nwith a break\n\nSecond paragraph",
+		);
 	});
 
 	it("replaces an account cache atomically and records its owner", async () => {

@@ -158,4 +158,31 @@ struct ReviewCompanionTests {
         let original = "First paragraph\nwith a break\n\nSecond paragraph"
         #expect(RichTextDocument.plainText(original).plainText == original)
     }
+
+    @Test
+    func songJournalUsesTheSharedPlainTextColumn() throws {
+        let songID = UUID()
+        let payload = """
+        {
+          "id": "\(songID.uuidString)",
+          "title": "Song",
+          "artist": "Artist",
+          "general_notes": "First line\\n\\nSecond line",
+          "audio_file_order": [],
+          "updated_at": "2026-07-23T02:00:00.000Z"
+        }
+        """
+        let row = try JSONDecoder().decode(SongRow.self, from: Data(payload.utf8))
+        #expect(row.generalNotes == "First line\n\nSecond line")
+
+        let update = SongJournalUpdate(
+            generalNotes: row.generalNotes,
+            updatedAt: row.updatedAt
+        )
+        let encoded = try JSONEncoder().encode(update)
+        let object = try #require(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        #expect(object["general_notes"] as? String == row.generalNotes)
+    }
 }

@@ -4,14 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
-	RichTextDoc,
 	SongLinkTarget,
 	SongRouteSearch,
 } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useSongRouteHeaderSlot } from "./app-chrome";
 import { InspectorPane } from "./inspector-pane";
-import { RichTextEditor, type RichTextToolbarAction } from "./rich-text-editor";
+import { JournalEditor } from "./journal-editor";
 import { SongWorkspaceFileDetailsDialog } from "./song-workspace-file-details-dialog";
 import { SongWorkspaceHeaderControls } from "./song-workspace-header-controls";
 import { useSongWorkspaceShortcuts } from "./song-workspace-shortcuts";
@@ -147,29 +146,6 @@ export function SongWorkspace({
 			: undefined) ??
 		0;
 	const persistedSecond = Math.round(currentTimeMs / 1000);
-	const journalTimestampFormatter = useMemo(
-		() =>
-			new Intl.DateTimeFormat(undefined, {
-				dateStyle: "medium",
-				timeStyle: "short",
-			}),
-		[],
-	);
-	const journalToolbarActions = useMemo<RichTextToolbarAction[]>(
-		() => [
-			{
-				label: "Add Timestamp",
-				onClick: (editor) => {
-					editor
-						.chain()
-						.focus(undefined, { scrollIntoView: false })
-						.insertContent(journalTimestampFormatter.format(new Date()))
-						.run();
-				},
-			},
-		],
-		[journalTimestampFormatter],
-	);
 	const persistWorkspacePlayhead = useDebouncedAsyncCallback({
 		callback: async (fileId: string, timeMs: number) => {
 			await updateWorkspaceState(songId, (current) => ({
@@ -194,13 +170,19 @@ export function SongWorkspace({
 		delayMs: DEBOUNCE_MS.notes,
 	});
 	const persistSongJournal = useDebouncedAsyncCallback({
-		callback: async (generalNotes: RichTextDoc) => {
+		callback: async (generalNotes: string) => {
 			await updateSong(songId, {
 				generalNotes,
 			});
 		},
-		delayMs: DEBOUNCE_MS.notes,
+		delayMs: DEBOUNCE_MS.journal,
 	});
+
+	useEffect(() => {
+		return () => {
+			void persistSongJournal.flush();
+		};
+	}, [persistSongJournal]);
 
 	useEffect(() => {
 		if (!selectedFileId) {
@@ -462,13 +444,9 @@ export function SongWorkspace({
 
 					<div className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden">
 						<div className="flex min-h-0 flex-1 flex-col">
-							<RichTextEditor
+							<JournalEditor
 								value={song.generalNotes}
 								onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
-								commitDelayMs={DEBOUNCE_MS.journal}
-								onInternalLink={openTarget}
-								focusId="journal"
-								toolbarActions={journalToolbarActions}
 							/>
 						</div>
 					</div>

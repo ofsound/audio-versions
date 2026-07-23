@@ -46,10 +46,27 @@ export function richTextToPlainText(value?: RichTextDoc | null): string {
 	return collectText(normalizeRichText(value)).replace(/\s+/g, " ").trim();
 }
 
-export function richTextToMultiline(value?: RichTextDoc | null): string {
-	return collectText(normalizeRichText(value), true)
+function richTextToMultiline(value?: RichTextDoc | null): string {
+	return collectMultilineText(normalizeRichText(value))
 		.replace(/\n{3,}/g, "\n\n")
 		.trim();
+}
+
+export function normalizeJournalText(value: unknown): string {
+	if (typeof value === "string") {
+		return value;
+	}
+
+	if (
+		value &&
+		typeof value === "object" &&
+		"type" in value &&
+		value.type === "doc"
+	) {
+		return richTextToMultiline(value as RichTextDoc);
+	}
+
+	return "";
 }
 
 export function richTextPreview(
@@ -68,28 +85,38 @@ export function hasRichTextContent(value?: RichTextDoc | null): boolean {
 	return richTextToPlainText(value).length > 0;
 }
 
-function collectText(
-	node: RichTextDoc | RichTextNode,
-	preserveBreaks = false,
-): string {
+function collectText(node: RichTextDoc | RichTextNode): string {
 	if ("text" in node && typeof node.text === "string") {
 		return node.text;
 	}
 
-	const pieces = (node.content ?? []).map((child) =>
-		collectText(child, preserveBreaks),
-	);
-	const joiner =
-		preserveBreaks &&
-		(node.type === "paragraph" ||
-			node.type === "heading" ||
-			node.type === "blockquote")
-			? "\n"
-			: " ";
+	if (node.type === "hardBreak") {
+		return " ";
+	}
+
+	return (node.content ?? []).map(collectText).join(" ");
+}
+
+function collectMultilineText(node: RichTextDoc | RichTextNode): string {
+	if ("text" in node && typeof node.text === "string") {
+		return node.text;
+	}
 
 	if (node.type === "hardBreak") {
 		return "\n";
 	}
 
-	return pieces.join(joiner);
+	const text = (node.content ?? []).map(collectMultilineText).join("");
+	if (
+		node.type === "paragraph" ||
+		node.type === "heading" ||
+		node.type === "blockquote"
+	) {
+		return `${text}\n\n`;
+	}
+	if (node.type === "listItem") {
+		return `${text}\n`;
+	}
+
+	return text;
 }

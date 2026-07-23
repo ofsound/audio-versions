@@ -128,7 +128,7 @@ describe("audio versions search", () => {
 				title: "Midnight Choir",
 				artist: "Northline",
 				project: "LP1",
-				generalNotes: plainTextToRichText("Need more lift in the chorus"),
+				generalNotes: "Need more lift in the chorus",
 				audioFileOrder: ["file-1"],
 				createdAt: "2026-04-15T00:00:00.000Z",
 				updatedAt: "2026-04-15T00:00:00.000Z",

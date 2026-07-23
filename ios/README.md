@@ -64,7 +64,8 @@ a second production identity.
 - Coalesced waveform scrubbing, skipping, and rate changes
 - Point and range annotation insertion
 - Conflict-aware annotation editing and tombstone deletion
-- Plain-text song journal and per-file note editing, stored in the shared rich-text fields
+- Plain-text song journal stored directly as shared text, plus plain-text editing
+  for per-file notes stored in the shared rich-text field
 - Pull-to-refresh and explicit refresh
 - Fixture fallback whenever cloud values are absent
 
