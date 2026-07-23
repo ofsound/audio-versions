@@ -40,7 +40,7 @@ export function WaveformThumbnail({
 			aria-label={`Select ${audioFile.title}`}
 			aria-pressed={isSelected}
 			onClick={() => onSelectFile(audioFile.id)}
-			className={`group relative w-full min-w-0 overflow-hidden border text-left transition-[border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
+			className={`waveform-thumbnail group relative w-full min-w-0 overflow-hidden border text-left transition-[border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
 				isSelected
 					? "border-[var(--color-waveform-selected)] shadow-[inset_0_0_0_1px_var(--color-waveform-selected)]"
 					: "border-[var(--color-border-plain)] hover:border-[var(--color-border-strong)]"

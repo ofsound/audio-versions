@@ -9,6 +9,7 @@ import type { PlaybackState } from "#/providers/use-audio-versions-playback";
 import { reorderAudioFileIds } from "./reorder-audio-file-ids";
 import { WaveformCard } from "./waveform-card";
 import { WaveformThumbnail } from "./waveform-thumbnail";
+import { calculateWaveformThumbnailGridLayout } from "./waveform-thumbnail-grid-layout";
 
 interface SongWorkspaceWaveformListProps {
 	activeAnnotationId?: string;
@@ -77,8 +78,14 @@ export function SongWorkspaceWaveformList({
 	onSelectAnnotation,
 	onSelectFile,
 }: SongWorkspaceWaveformListProps) {
+	const hasAudioFiles = audioFiles.length > 0;
 	const [draggingFileId, setDraggingFileId] = useState<string | null>(null);
 	const [isPhoneViewport, setIsPhoneViewport] = useState(false);
+	const [isFitGridViewport, setIsFitGridViewport] = useState(false);
+	const [thumbnailsViewportSize, setThumbnailsViewportSize] = useState({
+		height: 0,
+		width: 0,
+	});
 	const thumbnailsViewportRef = useRef<HTMLDivElement | null>(null);
 	const orderedIdsRef = useRef<string[]>([]);
 	orderedIdsRef.current = audioFiles.map((audioFile) => audioFile.id);
@@ -89,23 +96,77 @@ export function SongWorkspaceWaveformList({
 		}
 
 		const mediaQuery = window.matchMedia("(max-width: 767px)");
+		const fitGridMediaQuery = window.matchMedia("(min-width: 1280px)");
 		const updatePhoneViewport = () => setIsPhoneViewport(mediaQuery.matches);
+		const updateFitGridViewport = () =>
+			setIsFitGridViewport(fitGridMediaQuery.matches);
 		updatePhoneViewport();
+		updateFitGridViewport();
 		mediaQuery.addEventListener("change", updatePhoneViewport);
+		fitGridMediaQuery.addEventListener("change", updateFitGridViewport);
 
-		return () => mediaQuery.removeEventListener("change", updatePhoneViewport);
+		return () => {
+			mediaQuery.removeEventListener("change", updatePhoneViewport);
+			fitGridMediaQuery.removeEventListener("change", updateFitGridViewport);
+		};
 	}, []);
+
+	useEffect(() => {
+		if (!hasAudioFiles) {
+			return;
+		}
+
+		const viewport = thumbnailsViewportRef.current;
+		if (!viewport) {
+			return;
+		}
+
+		const updateViewportSize = () => {
+			const nextSize = {
+				height: viewport.clientHeight,
+				width: viewport.clientWidth,
+			};
+			setThumbnailsViewportSize((currentSize) =>
+				currentSize.height === nextSize.height &&
+				currentSize.width === nextSize.width
+					? currentSize
+					: nextSize,
+			);
+		};
+		updateViewportSize();
+
+		const observer =
+			typeof ResizeObserver === "undefined"
+				? null
+				: new ResizeObserver(updateViewportSize);
+		observer?.observe(viewport);
+		window.addEventListener("resize", updateViewportSize);
+
+		return () => {
+			observer?.disconnect();
+			window.removeEventListener("resize", updateViewportSize);
+		};
+	}, [hasAudioFiles]);
 
 	useEffect(() => {
 		if (audioFiles.length === 0 || !thumbnailsViewportRef.current) {
 			return;
 		}
 
-		thumbnailsViewportRef.current.scrollTop =
-			thumbnailsViewportRef.current.scrollHeight;
-	}, [audioFiles.length]);
+		thumbnailsViewportRef.current.scrollTop = isFitGridViewport
+			? 0
+			: thumbnailsViewportRef.current.scrollHeight;
+	}, [audioFiles.length, isFitGridViewport]);
 
-	if (audioFiles.length === 0) {
+	const thumbnailGridLayout = isFitGridViewport
+		? calculateWaveformThumbnailGridLayout({
+				height: thumbnailsViewportSize.height,
+				itemCount: audioFiles.length,
+				width: thumbnailsViewportSize.width,
+			})
+		: null;
+
+	if (!hasAudioFiles) {
 		return (
 			<div className="border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
 				Add audio to start reviewing waveforms. Each file gets its own notes,
@@ -180,11 +241,23 @@ export function SongWorkspaceWaveformList({
 		<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
 			<div
 				ref={thumbnailsViewportRef}
-				className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0"
+				className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0 xl:overflow-hidden"
 			>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+				<div
+					className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
+					data-density={thumbnailGridLayout?.density}
+					style={
+						thumbnailGridLayout
+							? {
+									gap: `${thumbnailGridLayout.gapPx}px`,
+									gridAutoRows: `${thumbnailGridLayout.rowHeightPx}px`,
+									gridTemplateColumns: `repeat(${thumbnailGridLayout.columns}, minmax(0, 1fr))`,
+								}
+							: undefined
+					}
+				>
 					{audioFiles.map((audioFile) => (
-						<div key={audioFile.id}>
+						<div className="min-h-0" key={audioFile.id}>
 							<WaveformThumbnail
 								audioFile={audioFile}
 								currentTimeMs={
