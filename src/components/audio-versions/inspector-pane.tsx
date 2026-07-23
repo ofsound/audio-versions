@@ -108,29 +108,33 @@ export function InspectorPane({
 							</div>
 						</div>
 					) : null}
-					<h4 className="field-label shrink-0">Markers And Regions</h4>
 					{annotations.length === 0 ? (
-						<p className="py-5 text-sm text-[var(--color-text-muted)]">
-							Create markers or ranges from the waveform to build that list
-							here.
-						</p>
+						<div className="grid shrink-0 gap-2">
+							<h4 className="field-label">Markers And Regions</h4>
+							<p className="text-sm italic text-[var(--color-text-muted)]">
+								Create markers or ranges from the waveform to build the list
+							</p>
+						</div>
 					) : (
-						annotations.map((annotation) => (
-							<InspectorMarkerCard
-								key={annotation.id}
-								annotation={annotation}
-								isActive={activeAnnotation?.id === annotation.id}
-								selectedFile={selectedFile}
-								songId={song.id}
-								requestTitleFocus={annotationTitleFocusId === annotation.id}
-								onTitleFocusHandled={onAnnotationTitleFocusHandled}
-								onOpenTarget={onOpenTarget}
-								onSelectAnnotation={onSelectAnnotation}
-								onUpdateAnnotation={onUpdateAnnotation}
-								onDeleteAnnotation={onDeleteAnnotation}
-								onCopyLink={copyLink}
-							/>
-						))
+						<>
+							<h4 className="field-label shrink-0">Markers And Regions</h4>
+							{annotations.map((annotation) => (
+								<InspectorMarkerCard
+									key={annotation.id}
+									annotation={annotation}
+									isActive={activeAnnotation?.id === annotation.id}
+									selectedFile={selectedFile}
+									songId={song.id}
+									requestTitleFocus={annotationTitleFocusId === annotation.id}
+									onTitleFocusHandled={onAnnotationTitleFocusHandled}
+									onOpenTarget={onOpenTarget}
+									onSelectAnnotation={onSelectAnnotation}
+									onUpdateAnnotation={onUpdateAnnotation}
+									onDeleteAnnotation={onDeleteAnnotation}
+									onCopyLink={copyLink}
+								/>
+							))}
+						</>
 					)}
 				</div>
 				<div
