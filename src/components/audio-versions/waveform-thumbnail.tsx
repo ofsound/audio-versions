@@ -52,7 +52,7 @@ export function WaveformThumbnail({
 			>
 				<canvas ref={canvasRef} className="block w-full" />
 				<div className="waveform-thumbnail__overlay pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
-					<span className="waveform-thumbnail__title self-start truncate bg-black px-1.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
+					<span className="font-title waveform-thumbnail__title self-start truncate bg-black px-1.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
 						{audioFile.title}
 					</span>
 					{sessionDateLabel ? (

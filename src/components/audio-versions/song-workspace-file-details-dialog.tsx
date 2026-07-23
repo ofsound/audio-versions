@@ -51,7 +51,7 @@ export function SongWorkspaceFileDetailsDialog({
 						value={title.draft}
 						onChange={(event) => title.setDraft(event.target.value)}
 						onBlur={() => void title.flush()}
-						className="field-input"
+						className="field-input font-title"
 						placeholder="Mix v3, ref print, master candidate..."
 						aria-label="File title"
 					/>

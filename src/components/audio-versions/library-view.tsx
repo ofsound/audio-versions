@@ -208,7 +208,7 @@ export function LibraryView() {
 							<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 								<div className="max-w-3xl">
 									<p className="eyebrow mb-3">Guided empty state</p>
-									<h2 className="text-3xl font-semibold text-[var(--color-text)]">
+									<h2 className="font-title text-3xl font-semibold text-[var(--color-text)]">
 										Start by creating a song, then upload audio files into it.
 									</h2>
 									<p className="mt-4 text-base leading-8 text-[var(--color-text-muted)]">
@@ -235,6 +235,13 @@ export function LibraryView() {
 						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 							{orderedSongs.map((song) => {
 								const sessionDateRange = sessionDateRangeBySongId.get(song.id);
+								const openSong = () =>
+									navigate({
+										to: "/songs/$songId",
+										params: {
+											songId: song.id,
+										},
+									});
 
 								return (
 									<div
@@ -244,18 +251,11 @@ export function LibraryView() {
 										<div className="flex items-start gap-2">
 											<button
 												type="button"
-												onClick={() =>
-													navigate({
-														to: "/songs/$songId",
-														params: {
-															songId: song.id,
-														},
-													})
-												}
+												onClick={openSong}
 												className="block min-w-0 flex-1 text-left"
 											>
 												<div>
-													<h2 className="text-2xl font-semibold text-[var(--color-text)]">
+													<h2 className="font-title text-2xl font-semibold text-[var(--color-text)]">
 														{song.title}
 													</h2>
 													{showArtist ? (
@@ -282,17 +282,20 @@ export function LibraryView() {
 												label={`${
 													audioFileCountBySongId.get(song.id) ?? 0
 												} files`}
+												onClick={openSong}
 											/>
 											<StatChip
 												icon={<Bookmark size={14} />}
 												label={`${
 													annotationCountBySongId.get(song.id) ?? 0
 												} markers`}
+												onClick={openSong}
 											/>
 											{sessionDateRange ? (
 												<StatChip
 													icon={<Calendar size={14} />}
 													label={sessionDateRange}
+													onClick={openSong}
 												/>
 											) : null}
 										</div>
@@ -374,11 +377,23 @@ export function LibraryView() {
 	);
 }
 
-function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
+function StatChip({
+	icon,
+	label,
+	onClick,
+}: {
+	icon: React.ReactNode;
+	label: string;
+	onClick: () => void;
+}) {
 	return (
-		<span className="surface-chip inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium">
+		<button
+			type="button"
+			onClick={onClick}
+			className="surface-chip inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:border-[var(--color-border-strong)]"
+		>
 			{icon}
 			{label}
-		</span>
+		</button>
 	);
 }

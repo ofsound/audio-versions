@@ -344,6 +344,27 @@ describe("LibraryView", () => {
 				})}`,
 			),
 		).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "2 files" }));
+		fireEvent.click(screen.getByRole("button", { name: "1 markers" }));
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: `${new Date(2026, 3, 16).toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+				})} – ${new Date(2026, 5, 2).toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+				})}`,
+			}),
+		);
+		expect(navigateMock).toHaveBeenCalledTimes(3);
+		expect(navigateMock).toHaveBeenLastCalledWith({
+			to: "/songs/$songId",
+			params: { songId: "song-1" },
+		});
 	});
 
 	it("confirms before deleting a song from the library song settings modal", async () => {

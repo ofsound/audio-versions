@@ -332,7 +332,7 @@ export function SongWorkspace({
 			<main className="w-full px-3 py-8">
 				<section className="panel-shell px-6 py-8">
 					<p className="eyebrow mb-3">Missing song</p>
-					<h1 className="text-3xl font-semibold text-[var(--color-text)]">
+					<h1 className="font-title text-3xl font-semibold text-[var(--color-text)]">
 						This song record was not found in local storage.
 					</h1>
 					<Link

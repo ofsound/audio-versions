@@ -63,7 +63,7 @@ export function WaveformCardHeader({
 						<button
 							type="button"
 							onClick={onSelectFile}
-							className="waveform-card__title min-w-0 flex-1 truncate text-left text-lg font-semibold text-[var(--color-text)]"
+							className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-lg font-semibold text-[var(--color-text)]"
 						>
 							{audioFileTitle}
 						</button>

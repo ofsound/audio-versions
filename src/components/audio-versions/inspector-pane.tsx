@@ -78,7 +78,7 @@ export function InspectorPane({
 				<div className="flex shrink-0 items-start justify-between gap-3">
 					<div className="min-w-0">
 						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							<span className="font-bold text-[var(--color-accent)]">
+							<span className="font-title font-bold text-[var(--color-accent)]">
 								{selectedFile?.title ?? song.title}
 							</span>
 						</h3>

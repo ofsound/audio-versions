@@ -61,7 +61,7 @@ export function SongSettingsDialog({
 						value={title.draft}
 						onChange={(event) => title.setDraft(event.target.value)}
 						onBlur={() => void title.flush()}
-						className="field-input"
+						className="field-input font-title"
 						placeholder="Song title"
 						aria-label="Song title"
 					/>

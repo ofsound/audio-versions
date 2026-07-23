@@ -1,5 +1,6 @@
 @theme static {
-	--font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+	--font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+	--font-title: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
 	--color-app: light-dark(
 		color-mix(in srgb, var(--color-white) 94%, var(--color-slate-50)),

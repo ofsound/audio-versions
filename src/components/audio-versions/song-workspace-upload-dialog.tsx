@@ -63,7 +63,7 @@ export function SongWorkspaceUploadDialog({
 						value={uploadTitle}
 						onChange={(event) => onUploadTitleChange(event.target.value)}
 						placeholder="Mix v3, ref print, master candidate..."
-						className="field-input"
+						className="field-input font-title"
 					/>
 				</label>
 				<label className="grid gap-2">
