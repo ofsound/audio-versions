@@ -253,7 +253,7 @@ export function JournalEditor({
 			data-audio-versions-editor="journal"
 		>
 			<div
-				className="flex shrink-0 items-center px-3 py-2"
+				className="flex h-16 shrink-0 items-center px-3"
 				data-audio-versions-toolbar
 			>
 				<button
@@ -269,7 +269,7 @@ export function JournalEditor({
 			<div
 				key={draft}
 				ref={editorRef}
-				className="journal-editor min-h-0 flex-1 overflow-y-auto bg-transparent px-4 py-4 text-base leading-7 text-[var(--color-text)] outline-none"
+				className="journal-editor min-h-0 flex-1 overflow-y-auto bg-transparent px-4 pt-0 pb-4 text-base leading-7 text-[var(--color-text)] outline-none"
 				contentEditable
 				suppressContentEditableWarning
 				role="textbox"

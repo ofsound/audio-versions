@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { copySongTargetLink } from "#/lib/audio-versions/clipboard";
+import { resolveAudioFileSessionDateLabel } from "#/lib/audio-versions/dates";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
 	Annotation,
@@ -78,14 +79,19 @@ export function InspectorPane({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-			<section className="relative flex h-full min-h-0 flex-col p-4">
+			<section className="relative flex h-full min-h-0 flex-col p-4 xl:pt-0">
 				<div className="flex shrink-0 items-start justify-between gap-3">
 					<div className="min-w-0">
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
+						<h3 className="text-xl font-semibold text-[var(--color-text)]">
 							<span className="font-title font-bold text-[var(--color-accent)]">
 								{selectedFile?.title ?? song.title}
 							</span>
 						</h3>
+						{selectedFile ? (
+							<span className="mt-1 block text-xs tabular-nums text-[var(--color-text-muted)]">
+								{resolveAudioFileSessionDateLabel(selectedFile)}
+							</span>
+						) : null}
 					</div>
 				</div>
 
@@ -113,7 +119,9 @@ export function InspectorPane({
 						</div>
 					) : null}
 					{annotations.length === 0 ? (
-						<div className="grid shrink-0 gap-2">
+						<div
+							className={`grid shrink-0 gap-2 ${selectedFile ? "mt-4" : ""}`}
+						>
 							<h4 className="field-label">Markers And Ranges</h4>
 							<p className="text-sm text-[var(--color-text-muted)]">
 								Create markers or ranges from the waveform to build the list.
@@ -121,7 +129,11 @@ export function InspectorPane({
 						</div>
 					) : (
 						<>
-							<h4 className="field-label shrink-0">Markers And Ranges</h4>
+							<h4
+								className={`field-label shrink-0 ${selectedFile ? "mt-4" : ""}`}
+							>
+								Markers And Ranges
+							</h4>
 							{annotations.map((annotation) => (
 								<InspectorMarkerCard
 									key={annotation.id}

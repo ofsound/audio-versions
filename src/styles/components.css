@@ -443,15 +443,7 @@
 @media (min-width: 1280px) {
 	.song-workspace-journal-column {
 		--journal-transition-width: 0.25rem;
-		background:
-			linear-gradient(
-				to right,
-				color-mix(in srgb, var(--color-app) 72%, var(--color-header-surface)) 0,
-				color-mix(in srgb, var(--color-app) 28%, var(--color-header-surface))
-					0.125rem,
-				transparent var(--journal-transition-width)
-			),
-			var(--background-image-panel), var(--color-header-surface);
+		background: var(--background-image-panel), var(--color-header-surface);
 	}
 
 	.song-workspace-journal-column .journal-editor-shell {
