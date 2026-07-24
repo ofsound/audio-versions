@@ -48,7 +48,7 @@ struct ReviewPlayerView: View {
                     .padding()
                 }
                 .background(Color(.systemGroupedBackground))
-                .navigationTitle(version.name)
+                .navigationTitle(song?.title ?? "Audio Versions")
                 .navigationBarTitleDisplayMode(.inline)
                 .sheet(item: $editingAnnotation) { annotation in
                     AnnotationEditorView(annotation: annotation, duration: version.duration) {
@@ -116,13 +116,8 @@ struct ReviewPlayerView: View {
 
     private func playerCard(version: AudioVersion) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(song?.title ?? "Audio Versions")
-                    .font(.title2.weight(.bold))
-                Text(version.name)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Text(version.name)
+                .font(.title2.weight(.bold))
 
             WaveformView(
                 peaks: version.waveformPeaks,
