@@ -362,7 +362,7 @@ export function JournalEditor({
 			data-audio-versions-editor="journal"
 		>
 			<div
-				className="flex h-16 shrink-0 items-center px-3"
+				className="flex h-16 shrink-0 items-center justify-end px-3"
 				data-audio-versions-toolbar
 			>
 				<button
@@ -371,7 +371,7 @@ export function JournalEditor({
 					className="action-secondary inline-flex h-8 items-center justify-center gap-2 px-3 text-xs font-semibold"
 				>
 					<Clock3 size={15} />
-					Insert time
+					Insert Timestamp
 				</button>
 			</div>
 			{/* biome-ignore lint/a11y/useSemanticElements: textarea cannot contain inline link controls */}

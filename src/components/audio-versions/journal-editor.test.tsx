@@ -21,7 +21,7 @@ describe("JournalEditor", () => {
 		selection?.removeAllRanges();
 		selection?.addRange(range);
 
-		fireEvent.click(screen.getByRole("button", { name: "Insert time" }));
+		fireEvent.click(screen.getByRole("button", { name: "Insert Timestamp" }));
 
 		const timestamp = new Intl.DateTimeFormat(undefined, {
 			dateStyle: "medium",
