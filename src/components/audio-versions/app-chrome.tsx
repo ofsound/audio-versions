@@ -1,11 +1,10 @@
 import { Link, useMatchRoute } from "@tanstack/react-router";
-import { Library, LogOut, Settings } from "lucide-react";
+import { Library, Settings } from "lucide-react";
 import { createContext, useContext, useState } from "react";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useOptionalAuth } from "#/providers/auth-provider";
 import { AudioVersionsSettingsDialog } from "./audio-versions-settings-dialog";
 import { GlobalSearch } from "./global-search";
-import { ThemeToggle } from "./theme-toggle";
 import { useCloseOnEscape } from "./use-close-on-escape";
 
 interface HeaderSlotValue {
@@ -111,17 +110,6 @@ export function AudioVersionsChrome({
 							) : null}
 
 							<div className="audio-versions-header-actions flex w-full min-w-0 items-center justify-end gap-3 xl:ml-auto xl:w-auto xl:shrink-0">
-								{cloudAvailable && user ? (
-									<button
-										type="button"
-										onClick={() => void signOut()}
-										className="audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0"
-										aria-label="Sign out"
-										title={`Sign out ${user.email ?? ""}`.trim()}
-									>
-										<LogOut size={18} />
-									</button>
-								) : null}
 								<button
 									type="button"
 									onClick={() => setIsSettingsOpen(true)}
@@ -131,7 +119,6 @@ export function AudioVersionsChrome({
 								>
 									<Settings size={18} />
 								</button>
-								<ThemeToggle />
 							</div>
 						</div>
 					</div>
@@ -160,7 +147,10 @@ export function AudioVersionsChrome({
 				{isSettingsOpen ? (
 					<AudioVersionsSettingsDialog
 						uiSettings={settings.ui}
+						canSignOut={cloudAvailable && user !== null}
+						userEmail={user?.email}
 						onClose={() => setIsSettingsOpen(false)}
+						onSignOut={signOut}
 						onUpdateUiSettings={updateUiSettings}
 					/>
 				) : null}

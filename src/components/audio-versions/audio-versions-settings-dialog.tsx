@@ -1,14 +1,19 @@
+import { LogOut, Moon, Sun } from "lucide-react";
 import { type RefObject, useRef } from "react";
 import type {
 	AudioVersionsUiSettings,
 	WaveformHeightPreset,
 } from "#/lib/audio-versions/types";
+import { useTheme } from "#/providers/theme-provider";
 import { SongModal } from "./song-modal";
 import { useBufferedInputValue } from "./use-buffered-input-value";
 
 interface AudioVersionsSettingsDialogProps {
 	uiSettings: AudioVersionsUiSettings;
+	canSignOut: boolean;
+	userEmail?: string;
 	onClose: () => void;
+	onSignOut: () => Promise<void>;
 	onUpdateUiSettings: (
 		patch:
 			| Partial<AudioVersionsUiSettings>
@@ -27,10 +32,15 @@ const WAVEFORM_OPTIONS: Array<{
 
 export function AudioVersionsSettingsDialog({
 	uiSettings,
+	canSignOut,
+	userEmail,
 	onClose,
+	onSignOut,
 	onUpdateUiSettings,
 }: AudioVersionsSettingsDialogProps) {
 	const firstColorInputRef = useRef<HTMLInputElement | null>(null);
+	const { theme, toggleTheme } = useTheme();
+	const nextTheme = theme === "dark" ? "light" : "dark";
 
 	return (
 		<SongModal
@@ -41,6 +51,65 @@ export function AudioVersionsSettingsDialog({
 			maxWidthClassName="max-w-[min(96rem,calc(100vw-2rem))]"
 		>
 			<div className="grid gap-8 p-5 sm:p-6">
+				<section className="grid gap-4">
+					<div>
+						<h3 className="text-lg font-semibold text-[var(--color-text)]">
+							App
+						</h3>
+					</div>
+					<div className="grid gap-3 md:grid-cols-2">
+						<div className="border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-4 py-4">
+							<div className="flex items-center justify-between gap-4">
+								<div>
+									<div className="text-sm font-semibold text-[var(--color-text)]">
+										Color theme
+									</div>
+									<div className="mt-1 text-sm text-[var(--color-text-muted)]">
+										Currently using {theme} mode
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={toggleTheme}
+									aria-label={`Switch to ${nextTheme} mode`}
+									className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
+								>
+									{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+									{nextTheme === "light" ? "Light" : "Dark"}
+								</button>
+							</div>
+						</div>
+
+						{canSignOut ? (
+							<div className="border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-4 py-4">
+								<div className="flex items-center justify-between gap-4">
+									<div className="min-w-0">
+										<div className="text-sm font-semibold text-[var(--color-text)]">
+											Account
+										</div>
+										{userEmail ? (
+											<div className="mt-1 truncate text-sm text-[var(--color-text-muted)]">
+												{userEmail}
+											</div>
+										) : null}
+									</div>
+									<button
+										type="button"
+										onClick={() => void onSignOut()}
+										aria-label={
+											userEmail ? `Sign out ${userEmail}` : "Sign out"
+										}
+										className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
+									>
+										<LogOut size={18} />
+										Sign out
+									</button>
+								</div>
+							</div>
+						) : null}
+					</div>
+				</section>
+
 				<section className="grid gap-4">
 					<div>
 						<p className="eyebrow mb-2">Appearance</p>

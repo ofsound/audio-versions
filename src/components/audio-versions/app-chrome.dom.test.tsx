@@ -13,6 +13,10 @@ import { AudioVersionsChrome } from "./app-chrome";
 
 const navigateMock = vi.fn();
 const updateUiSettingsMock = vi.fn().mockResolvedValue(undefined);
+const signOutMock = vi.fn().mockResolvedValue(undefined);
+const toggleThemeMock = vi.fn();
+let authUser: { email?: string } | null = { email: "listener@example.com" };
+let cloudAvailable = true;
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({
@@ -36,32 +40,40 @@ vi.mock("#/providers/audio-versions-provider", () => ({
 	}),
 }));
 
-vi.mock("./global-search", () => ({
-	GlobalSearch: () => <div data-testid="global-search" />,
+vi.mock("#/providers/auth-provider", () => ({
+	useOptionalAuth: () => ({
+		cloudAvailable,
+		ready: true,
+		signOut: signOutMock,
+		user: authUser,
+	}),
 }));
 
-vi.mock("./theme-toggle", () => ({
-	ThemeToggle: () => (
-		<button
-			type="button"
-			className="theme-toggle-button h-12 w-12 shrink-0"
-			aria-label="Switch to dark mode"
-		>
-			theme
-		</button>
-	),
+vi.mock("#/providers/theme-provider", () => ({
+	useTheme: () => ({
+		theme: "light",
+		toggleTheme: toggleThemeMock,
+	}),
+}));
+
+vi.mock("./global-search", () => ({
+	GlobalSearch: () => <div data-testid="global-search" />,
 }));
 
 describe("AudioVersionsChrome", () => {
 	beforeEach(() => {
 		updateUiSettingsMock.mockClear();
+		signOutMock.mockClear();
+		toggleThemeMock.mockClear();
+		authUser = { email: "listener@example.com" };
+		cloudAvailable = true;
 	});
 
 	afterEach(() => {
 		cleanup();
 	});
 
-	it("renders the settings button before the theme toggle and opens the modal", () => {
+	it("renders only the settings action in the header and reveals account actions in the modal", () => {
 		render(
 			<AudioVersionsChrome>
 				<main>Library</main>
@@ -71,20 +83,49 @@ describe("AudioVersionsChrome", () => {
 		const settingsButton = screen.getByRole("button", {
 			name: /open settings/i,
 		});
-		const themeButton = screen.getByRole("button", {
-			name: /switch to dark mode/i,
-		});
-
 		expect(settingsButton.className).toContain("theme-toggle-button");
-		expect(themeButton.className).toContain("theme-toggle-button");
-		expect(Array.from(settingsButton.parentElement?.children ?? [])).toEqual(
-			expect.arrayContaining([settingsButton, themeButton]),
-		);
-		expect(settingsButton.nextElementSibling).toBe(themeButton);
+		expect(settingsButton.parentElement?.children).toHaveLength(1);
+		expect(
+			screen.queryByRole("button", { name: /switch to dark mode/i }),
+		).toBeNull();
+		expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
 
 		fireEvent.click(settingsButton);
 
 		expect(screen.getByRole("dialog", { name: /settings/i })).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: /switch to dark mode/i }),
+		);
+		expect(toggleThemeMock).toHaveBeenCalledTimes(1);
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: /sign out listener@example.com/i,
+			}),
+		);
+		expect(signOutMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not show sign out in settings when cloud authentication is unavailable", () => {
+		cloudAvailable = false;
+		authUser = null;
+
+		render(
+			<AudioVersionsChrome>
+				<main>Library</main>
+			</AudioVersionsChrome>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: /open settings/i,
+			}),
+		);
+
+		expect(
+			screen.getByRole("button", { name: /switch to dark mode/i }),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
 	});
 
 	it("closes the settings modal on Escape", () => {
