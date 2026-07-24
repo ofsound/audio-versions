@@ -1,6 +1,7 @@
 import {
 	Bookmark,
 	Brackets,
+	Download,
 	Pause,
 	Play,
 	RotateCcw,
@@ -12,11 +13,14 @@ import { formatDuration } from "#/lib/audio-versions/waveform";
 
 interface WaveformCardHeaderProps {
 	audioFileTitle: string;
+	canDownloadFile: boolean;
 	deletingFile: boolean;
+	downloadingFile: boolean;
 	isPlaying: boolean;
 	onAddMarkerAtPlayhead: () => void;
 	onCancelPendingRange: () => void;
 	onDeleteFile: () => void;
+	onDownloadFile: () => void;
 	onEndRangeAtPlayhead: () => void;
 	onResetPlayhead: () => void;
 	onSelectFile: () => void;
@@ -30,11 +34,14 @@ interface WaveformCardHeaderProps {
 
 export function WaveformCardHeader({
 	audioFileTitle,
+	canDownloadFile,
 	deletingFile,
+	downloadingFile,
 	isPlaying,
 	onAddMarkerAtPlayhead,
 	onCancelPendingRange,
 	onDeleteFile,
+	onDownloadFile,
 	onEndRangeAtPlayhead,
 	onResetPlayhead,
 	onSelectFile,
@@ -162,6 +169,16 @@ export function WaveformCardHeader({
 								{audioFileTitle}
 							</button>
 						)}
+						<button
+							type="button"
+							onClick={onDownloadFile}
+							disabled={!canDownloadFile || downloadingFile}
+							className="icon-button icon-button--sm shrink-0 disabled:cursor-not-allowed disabled:opacity-55"
+							title="Download file"
+							aria-label={`Download ${audioFileTitle}`}
+						>
+							<Download size={12} />
+						</button>
 						<button
 							type="button"
 							onClick={onDeleteFile}

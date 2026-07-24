@@ -4,11 +4,13 @@ import {
 	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
 import {
 	resolveAudioFileSessionDateInputValue,
 	resolveAudioFileSessionDateLabel,
 } from "#/lib/audio-versions/dates";
+import { downloadAudioFile } from "#/lib/audio-versions/download-audio-file";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -97,6 +99,7 @@ export function WaveformCard({
 	onDrop,
 }: WaveformCardProps) {
 	const objectUrl = useAudioSource(audioFile.id, blob, audioFile.remoteMedia);
+	const [downloadingFile, setDownloadingFile] = useState(false);
 	const articleRef = useRef<HTMLElement | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -292,6 +295,29 @@ export function WaveformCard({
 	});
 	const sessionDateLabel = resolveAudioFileSessionDateLabel(audioFile);
 	const sessionDateIso = resolveAudioFileSessionDateInputValue(audioFile);
+	const canDownloadFile = Boolean(blob || audioFile.remoteMedia);
+
+	async function handleDownloadFile() {
+		if (!canDownloadFile || downloadingFile) {
+			return;
+		}
+
+		setDownloadingFile(true);
+		try {
+			await downloadAudioFile({
+				audioFile,
+				blob,
+			});
+		} catch (error) {
+			window.alert(
+				error instanceof Error
+					? error.message
+					: "Audio Versions could not download that audio file.",
+			);
+		} finally {
+			setDownloadingFile(false);
+		}
+	}
 
 	return (
 		<article
@@ -312,7 +338,9 @@ export function WaveformCard({
 		>
 			<WaveformCardHeader
 				audioFileTitle={audioFile.title}
+				canDownloadFile={canDownloadFile}
 				deletingFile={deletingFile}
+				downloadingFile={downloadingFile}
 				isPlaying={isPlaying}
 				onAddMarkerAtPlayhead={() => {
 					void handleAddMarkerAtPlayhead();
@@ -320,6 +348,9 @@ export function WaveformCard({
 				onCancelPendingRange={handleCancelPendingRange}
 				onDeleteFile={() => {
 					void onDeleteFile();
+				}}
+				onDownloadFile={() => {
+					void handleDownloadFile();
 				}}
 				onEndRangeAtPlayhead={() => {
 					void handleEndRangeAtPlayhead();

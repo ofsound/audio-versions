@@ -1153,6 +1153,42 @@ describe("SongWorkspace", () => {
 		expect(screen.getByPlaceholderText(/context for this file/i)).toBeTruthy();
 	});
 
+	it("opens the upload modal when an audio file is dropped onto the song workspace", () => {
+		currentAudioFiles = [createAudioFile()];
+
+		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
+
+		const file = new File(["tone"], "High Plains Drifter v16.wav", {
+			type: "audio/wav",
+		});
+		fireEvent.dragEnter(window, {
+			dataTransfer: {
+				types: ["Files"],
+				files: [file],
+			},
+		});
+
+		expect(screen.getByTestId("song-workspace-file-dropzone")).toBeTruthy();
+
+		fireEvent.drop(window, {
+			dataTransfer: {
+				types: ["Files"],
+				files: [file],
+			},
+		});
+
+		expect(
+			screen.getByRole("dialog", {
+				name: /add file/i,
+			}),
+		).toBeTruthy();
+		expect(screen.getByDisplayValue("High Plains Drifter v16")).toBeTruthy();
+		expect(
+			screen.getByText(/selected: high plains drifter v16\.wav/i),
+		).toBeTruthy();
+		expect(screen.queryByTestId("song-workspace-file-dropzone")).toBeNull();
+	});
+
 	it("closes the upload modal on Escape", () => {
 		currentAudioFiles = [createAudioFile()];
 

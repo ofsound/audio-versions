@@ -5,7 +5,7 @@ import {
 	File,
 	FolderOpenDot,
 	Plus,
-	Settings2,
+	Settings,
 	Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -272,7 +272,7 @@ export function LibraryView() {
 												title="Edit song settings"
 												aria-label={`Edit settings for ${song.title}`}
 											>
-												<Settings2 size={12} />
+												<Settings size={12} />
 											</button>
 										</div>
 
@@ -390,7 +390,7 @@ function StatChip({
 		<button
 			type="button"
 			onClick={onClick}
-			className="surface-chip inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:border-[var(--color-border-strong)]"
+			className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]"
 		>
 			{icon}
 			{label}

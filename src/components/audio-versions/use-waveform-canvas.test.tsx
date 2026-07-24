@@ -98,14 +98,15 @@ describe("useWaveformCanvas", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("uses the configured waveform height preset for canvas drawing", async () => {
+	it("uses fluid CSS sizing and the configured waveform height for canvas drawing", async () => {
 		render(<WaveformCanvasHarness />);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("canvas")).toHaveProperty("height", 92);
-			expect(
-				(screen.getByTestId("canvas") as HTMLCanvasElement).style.height,
-			).toBe("92px");
+			const canvas = screen.getByTestId("canvas") as HTMLCanvasElement;
+			expect(canvas).toHaveProperty("height", 92);
+			expect(canvas).toHaveProperty("width", 240);
+			expect(canvas.style.width).toBe("100%");
+			expect(canvas.style.height).toBe("100%");
 		});
 	});
 

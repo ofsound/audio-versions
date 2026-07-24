@@ -14,12 +14,14 @@ import { useSongRouteHeaderSlot } from "./app-chrome";
 import { InspectorPane } from "./inspector-pane";
 import { JournalEditor } from "./journal-editor";
 import { PanelResizeHandle } from "./panel-resize-handle";
+import { SongWorkspaceFileDropzone } from "./song-workspace-file-dropzone";
 import { SongWorkspaceHeaderControls } from "./song-workspace-header-controls";
 import { useSongWorkspaceShortcuts } from "./song-workspace-shortcuts";
 import { SongWorkspaceUploadDialog } from "./song-workspace-upload-dialog";
 import { SongWorkspaceWaveformList } from "./song-workspace-waveform-list";
 import { useCloseOnEscape } from "./use-close-on-escape";
 import { useDebouncedAsyncCallback } from "./use-debounced-async-callback";
+import { useSongWorkspaceFileDrop } from "./use-song-workspace-file-drop";
 import { useSongWorkspaceHistory } from "./use-song-workspace-history";
 import { useSongWorkspaceRouting } from "./use-song-workspace-routing";
 import { useSongWorkspaceUpload } from "./use-song-workspace-upload";
@@ -89,6 +91,7 @@ export function SongWorkspace({
 		songId,
 	});
 	const {
+		beginUploadWithFile,
 		handleUpload,
 		isUploadOpen,
 		setIsUploadOpen,
@@ -106,6 +109,10 @@ export function SongWorkspace({
 		addAudioFile,
 		patchRouteSelection,
 		songId,
+	});
+	const { isFileDragActive } = useSongWorkspaceFileDrop({
+		enabled: ready && Boolean(song) && !isUploadOpen,
+		onAudioFileDrop: beginUploadWithFile,
 	});
 
 	const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
@@ -613,6 +620,8 @@ export function SongWorkspace({
 					onUploadSessionDateChange={setUploadSessionDate}
 				/>
 			)}
+
+			<SongWorkspaceFileDropzone active={isFileDragActive} />
 		</>
 	);
 }

@@ -177,10 +177,10 @@ export function WaveformCardSurface({
 				</div>
 				<div
 					ref={canvasSurfaceRef}
-					className="relative min-h-0 border-y border-[var(--color-border-plain)]"
+					className="relative min-h-0 min-w-0 overflow-hidden border-y border-[var(--color-border-plain)]"
 					data-testid="waveform-canvas-surface"
 				>
-					<canvas ref={canvasRef} className="block w-full" />
+					<canvas ref={canvasRef} className="block h-full w-full min-w-0" />
 				</div>
 				<div
 					className="waveform-surface__gutter relative min-h-0"

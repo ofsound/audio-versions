@@ -1,4 +1,5 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { titleFromAudioFileName } from "#/lib/audio-versions/audio-file-drop";
 import { isoDateInLocalCalendar } from "#/lib/audio-versions/dates";
 import { plainTextToRichText } from "#/lib/audio-versions/rich-text";
 
@@ -54,6 +55,13 @@ export function useSongWorkspaceUpload({
 		};
 	}, [isUploadOpen]);
 
+	const beginUploadWithFile = useCallback((file: File) => {
+		setUploadFile(file);
+		setUploadTitle(titleFromAudioFileName(file.name));
+		setUploadError(null);
+		setIsUploadOpen(true);
+	}, []);
+
 	async function handleUpload(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (!uploadFile) {
@@ -90,6 +98,7 @@ export function useSongWorkspaceUpload({
 	}
 
 	return {
+		beginUploadWithFile,
 		handleUpload,
 		isUploadOpen,
 		setIsUploadOpen,

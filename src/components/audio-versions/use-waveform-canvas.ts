@@ -141,8 +141,10 @@ export function useWaveformCanvas({
 
 			canvas.width = width * ratio;
 			canvas.height = height * ratio;
-			canvas.style.width = `${width}px`;
-			canvas.style.height = `${height}px`;
+			// Keep CSS size fluid so the canvas does not lock the surface's
+			// min-content width during panel resize.
+			canvas.style.width = "100%";
+			canvas.style.height = "100%";
 
 			staticCanvas.width = width * ratio;
 			staticCanvas.height = height * ratio;

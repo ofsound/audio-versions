@@ -180,7 +180,7 @@ export function SongWorkspaceWaveformList({
 	);
 
 	const renderWaveformCard = (audioFile: AudioFileRecord) => (
-		<div key={audioFile.id}>
+		<div className="min-w-0" key={audioFile.id}>
 			<WaveformCard
 				audioFile={audioFile}
 				annotations={getAnnotationsForFile(audioFile.id)}
@@ -240,9 +240,9 @@ export function SongWorkspaceWaveformList({
 	);
 
 	return (
-		<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
+		<div className="song-workspace-file-browser flex min-h-0 min-w-0 flex-1 flex-col gap-4 xl:h-full">
 			<div
-				className="song-workspace-file-player min-h-0 shrink-0 overflow-y-auto"
+				className="song-workspace-file-player min-h-0 min-w-0 shrink-0 overflow-x-hidden overflow-y-auto"
 				data-testid={isPhoneViewport ? "mobile-file-player" : undefined}
 			>
 				{selectedAudioFile ? (

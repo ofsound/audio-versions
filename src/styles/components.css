@@ -81,6 +81,7 @@
 }
 
 .waveform-surface {
+	min-width: 0;
 	background: var(--background-image-waveform), var(--color-waveform-surface);
 }
 
@@ -92,6 +93,8 @@
 
 .waveform-card {
 	position: relative;
+	min-width: 0;
+	overflow: hidden;
 	border: 1.5px solid var(--color-border-strong);
 	background: var(--color-surface);
 	opacity: 0.4;
@@ -336,16 +339,16 @@
 
 .journal-link-chip {
 	display: inline-flex;
-	height: 1.65rem;
+	min-height: 1.65rem;
 	max-width: min(20rem, 80%);
 	align-items: center;
 	gap: 0.4rem;
 	margin: 0 0.18rem;
-	padding: 0 0.55rem;
+	padding: 0.2rem 0.55rem;
 	vertical-align: 0.1em;
 	font-size: 0.75rem;
 	font-weight: 600;
-	line-height: 1;
+	line-height: 1.25;
 	cursor: pointer;
 	border-color: color-mix(
 		in srgb,

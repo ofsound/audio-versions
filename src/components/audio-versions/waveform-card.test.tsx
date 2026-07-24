@@ -27,6 +27,12 @@ vi.mock("#/providers/theme-provider", () => ({
 	}),
 }));
 
+const downloadAudioFileMock = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("#/lib/audio-versions/download-audio-file", () => ({
+	downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
+}));
+
 const createObjectURLMock = vi.fn(() => "blob:waveform-card-test");
 const revokeObjectURLMock = vi.fn();
 
@@ -747,6 +753,25 @@ describe("WaveformCard", () => {
 		fireEvent.click(deleteButton);
 
 		expect(onDeleteFile).toHaveBeenCalledTimes(1);
+	});
+
+	it("downloads the file from the download icon beside the title", async () => {
+		downloadAudioFileMock.mockClear();
+
+		renderWaveformCard();
+
+		const downloadButton = screen.getByRole("button", {
+			name: /^download mix v1$/i,
+		});
+		expect(downloadButton.className).toContain("icon-button");
+		fireEvent.click(downloadButton);
+
+		await waitFor(() => {
+			expect(downloadAudioFileMock).toHaveBeenCalledTimes(1);
+		});
+		expect(downloadAudioFileMock.mock.calls[0]?.[0]).toMatchObject({
+			audioFile: expect.objectContaining({ id: "file-1", title: "Mix v1" }),
+		});
 	});
 
 	it("selects the file when clicking non-interactive row space", () => {

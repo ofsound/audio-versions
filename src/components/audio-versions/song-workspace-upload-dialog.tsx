@@ -56,6 +56,11 @@ export function SongWorkspaceUploadDialog({
 						}}
 						className="field-input py-3"
 					/>
+					{uploadFile ? (
+						<p className="text-sm text-[var(--color-text-muted)]">
+							Selected: {uploadFile.name}
+						</p>
+					) : null}
 				</label>
 				<label className="grid gap-2">
 					<span className="field-label">Display title</span>

@@ -343,6 +343,13 @@ export async function saveAudioBlob(
 	await db.put("blobs", blob, audioFileId);
 }
 
+export async function getAudioBlob(
+	audioFileId: string,
+): Promise<Blob | undefined> {
+	const db = await getDb();
+	return db.get("blobs", audioFileId);
+}
+
 export async function saveAnnotation(annotation: Annotation): Promise<void> {
 	const db = await getDb();
 	await db.put("annotations", annotation);
