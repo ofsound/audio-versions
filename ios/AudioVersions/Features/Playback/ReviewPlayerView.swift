@@ -5,6 +5,7 @@ struct ReviewPlayerView: View {
     @Environment(\.palette) private var palette
     @State private var editingAnnotation: ReviewAnnotation?
     @State private var isEditingFileNotes = false
+    @State private var isAddingToJournal = false
 
     let songID: String
     let versionID: String
@@ -34,6 +35,9 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
+                        AddToJournalButton {
+                            isAddingToJournal = true
+                        }
                         fileNotesCard(version: version)
                         annotationActions(version: version)
                         AnnotationListView(
@@ -63,6 +67,16 @@ struct ReviewPlayerView: View {
                         text: version.notes
                     ) { notes in
                         store.saveAudioFileNotes(notes, audioFileID: version.id)
+                    }
+                }
+                .sheet(isPresented: $isAddingToJournal) {
+                    PlainTextNoteEditorView(
+                        title: "Add to Journal",
+                        accessibilityLabel: "Add to song journal",
+                        text: "",
+                        requiresNonEmptyDraft: true
+                    ) { entry in
+                        store.appendSongJournalEntry(entry, songID: songID)
                     }
                 }
                 .task(id: linkTarget) {

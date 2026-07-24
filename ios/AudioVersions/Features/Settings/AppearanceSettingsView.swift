@@ -29,30 +29,24 @@ struct AppearanceSettingsView: View {
     }
 
     private var optionTiles: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(AppearancePreference.allCases) { preference in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            appearance.preference = preference
-                        }
-                    } label: {
-                        AppearanceOptionTile(
-                            preference: preference,
-                            isSelected: appearance.preference == preference
-                        )
+        HStack(alignment: .top, spacing: 12) {
+            ForEach(AppearancePreference.allCases) { preference in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        appearance.preference = preference
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(preference.label)
-                    .accessibilityAddTraits(
-                        appearance.preference == preference ? [.isButton, .isSelected] : .isButton
+                } label: {
+                    AppearanceOptionTile(
+                        preference: preference,
+                        isSelected: appearance.preference == preference
                     )
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(preference.label)
+                .accessibilityAddTraits(
+                    appearance.preference == preference ? [.isButton, .isSelected] : .isButton
+                )
             }
-
-            Text("System follows Display & Brightness on this device. Light and Dark stay fixed no matter what iOS is doing.")
-                .font(.footnote)
-                .foregroundStyle(palette.textSecondary)
         }
     }
 

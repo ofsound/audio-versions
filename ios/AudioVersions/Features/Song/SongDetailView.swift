@@ -4,6 +4,7 @@ struct SongDetailView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
     @Environment(\.palette) private var palette
     @State private var isEditingJournal = false
+    @State private var isAddingToJournal = false
     let songID: String
 
     private var song: Song? {
@@ -76,6 +77,14 @@ struct SongDetailView: View {
                     }
                     .listRowBackground(palette.surface)
 
+                    Section {
+                        AddToJournalButton {
+                            isAddingToJournal = true
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+
                     Section("Versions") {
                         ForEach(song.versions.sorted(by: { $0.createdAt > $1.createdAt })) { version in
                             NavigationLink(
@@ -102,6 +111,16 @@ struct SongDetailView: View {
                         text: song.generalNotes
                     ) { journal in
                         store.saveSongJournal(journal, songID: song.id)
+                    }
+                }
+                .sheet(isPresented: $isAddingToJournal) {
+                    PlainTextNoteEditorView(
+                        title: "Add to Journal",
+                        accessibilityLabel: "Add to song journal",
+                        text: "",
+                        requiresNonEmptyDraft: true
+                    ) { entry in
+                        store.appendSongJournalEntry(entry, songID: song.id)
                     }
                 }
             } else {

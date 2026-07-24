@@ -235,6 +235,20 @@ final class ReviewCompanionStore: ObservableObject {
         }
     }
 
+    func appendSongJournalEntry(_ entry: String, songID: String, at date: Date = .now) {
+        let trimmed = entry.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let song = songs.first(where: { $0.id == songID })
+        else {
+            return
+        }
+
+        saveSongJournal(
+            SongJournalEntry.appending(trimmed, to: song.generalNotes, at: date),
+            songID: songID
+        )
+    }
+
     func saveAudioFileNotes(_ notes: String, audioFileID: String) {
         guard let previousNotes = version(id: audioFileID)?.notes else { return }
         updateVersion(id: audioFileID) { version in

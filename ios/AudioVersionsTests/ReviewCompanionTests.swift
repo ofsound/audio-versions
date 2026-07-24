@@ -152,6 +152,57 @@ struct ReviewCompanionTests {
     }
 
     @Test
+    func songJournalEntryAppendsTimestampThenText() {
+        let date = Date(timeIntervalSince1970: 1_753_401_540)
+        let locale = Locale(identifier: "en_US_POSIX")
+        let stamp = SongJournalEntry.timestamp(at: date, locale: locale)
+
+        #expect(
+            SongJournalEntry.appending("Check the snare.", to: "", at: date, locale: locale)
+                == "\(stamp)\nCheck the snare."
+        )
+        #expect(
+            SongJournalEntry.appending(
+                "Bring guitars up.",
+                to: "First note",
+                at: date,
+                locale: locale
+            ) == "First note\n\n\(stamp)\nBring guitars up."
+        )
+        #expect(
+            SongJournalEntry.appending(
+                "Another take.",
+                to: "Existing\n",
+                at: date,
+                locale: locale
+            ) == "Existing\n\n\(stamp)\nAnother take."
+        )
+    }
+
+    @MainActor
+    @Test
+    func appendSongJournalEntryAddsStampedTextToTheEnd() throws {
+        let store = ReviewCompanionStore()
+        let song = try #require(store.songs.first)
+        let date = Date(timeIntervalSince1970: 1_753_401_540)
+        let stamp = SongJournalEntry.timestamp(at: date)
+
+        store.saveSongJournal("Existing notes", songID: song.id)
+        store.appendSongJournalEntry("  New thought  ", songID: song.id, at: date)
+
+        #expect(
+            store.songs.first(where: { $0.id == song.id })?.generalNotes
+                == "Existing notes\n\n\(stamp)\nNew thought"
+        )
+
+        store.appendSongJournalEntry("   ", songID: song.id, at: date)
+        #expect(
+            store.songs.first(where: { $0.id == song.id })?.generalNotes
+                == "Existing notes\n\n\(stamp)\nNew thought"
+        )
+    }
+
+    @Test
     func missingCloudConfigurationFallsBackToFixtures() {
         #expect(AppConfiguration.resolve(infoDictionary: [:]) == .fixture)
     }

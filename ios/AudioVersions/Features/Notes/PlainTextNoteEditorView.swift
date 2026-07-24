@@ -8,16 +8,24 @@ struct PlainTextNoteEditorView: View {
 
     let title: String
     let accessibilityLabel: String
+    let requiresNonEmptyDraft: Bool
     let onSave: (String) -> Void
+
+    private var canSave: Bool {
+        !requiresNonEmptyDraft
+            || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     init(
         title: String,
         accessibilityLabel: String,
         text: String,
+        requiresNonEmptyDraft: Bool = false,
         onSave: @escaping (String) -> Void
     ) {
         self.title = title
         self.accessibilityLabel = accessibilityLabel
+        self.requiresNonEmptyDraft = requiresNonEmptyDraft
         _draft = State(initialValue: text)
         self.onSave = onSave
     }
@@ -49,6 +57,7 @@ struct PlainTextNoteEditorView: View {
                             onSave(draft)
                             dismiss()
                         }
+                        .disabled(!canSave)
                     }
                 }
                 .onAppear {
