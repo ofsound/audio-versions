@@ -55,14 +55,16 @@ vi.mock("./waveform-card", () => ({
 		audioFile,
 		isSelected,
 		currentTimeMs,
-		onOpenFileDetails,
+		onDeleteFile,
+		onUpdateFile,
 		onStepVolume,
 		onSelectFile,
 	}: {
 		audioFile: AudioFileRecord;
 		isSelected: boolean;
 		currentTimeMs: number;
-		onOpenFileDetails: (fileId: string) => void;
+		onDeleteFile: () => Promise<void> | void;
+		onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
 		onStepVolume: (deltaDb: number) => Promise<void>;
 		onSelectFile: (fileId: string) => void;
 	}) => (
@@ -81,10 +83,22 @@ vi.mock("./waveform-card", () => ({
 			</button>
 			<button
 				type="button"
-				aria-label={`Edit details for ${audioFile.title}`}
-				onClick={() => onOpenFileDetails(audioFile.id)}
+				aria-label={`Delete ${audioFile.title}`}
+				onClick={() => void onDeleteFile()}
 			>
-				Edit details
+				Delete file
+			</button>
+			<button
+				type="button"
+				aria-label={`Rename ${audioFile.title}`}
+				onClick={() =>
+					void onUpdateFile({
+						title: `${audioFile.title} - Print`,
+						sessionDate: "2026-04-18",
+					})
+				}
+			>
+				Rename file
 			</button>
 			<button
 				type="button"
@@ -207,10 +221,10 @@ function createAudioFile(
 	};
 }
 
-function openFileDetails(title: string) {
+function deleteFile(title: string) {
 	fireEvent.click(
 		screen.getByRole("button", {
-			name: new RegExp(`^edit details for ${title}$`, "i"),
+			name: new RegExp(`^delete ${title}$`, "i"),
 		}),
 	);
 }
@@ -510,8 +524,7 @@ describe("SongWorkspace", () => {
 		updateWorkspaceStateMock.mockClear();
 		navigateMock.mockClear();
 
-		openFileDetails("Mix B");
-		fireEvent.click(screen.getByRole("button", { name: /^delete file$/i }));
+		deleteFile("Mix B");
 
 		await waitFor(() => {
 			expect(confirmSpy).toHaveBeenCalledWith("Delete this file?");
@@ -570,8 +583,7 @@ describe("SongWorkspace", () => {
 		updateWorkspaceStateMock.mockClear();
 		navigateMock.mockClear();
 
-		openFileDetails("Mix B");
-		fireEvent.click(screen.getByRole("button", { name: /^delete file$/i }));
+		deleteFile("Mix B");
 
 		await waitFor(() => {
 			expect(deleteAudioFile).toHaveBeenCalledWith("file-2");
@@ -601,8 +613,7 @@ describe("SongWorkspace", () => {
 		updateWorkspaceStateMock.mockClear();
 		navigateMock.mockClear();
 
-		openFileDetails("Only Mix");
-		fireEvent.click(screen.getByRole("button", { name: /^delete file$/i }));
+		deleteFile("Only Mix");
 
 		await waitFor(() => {
 			expect(deleteAudioFile).toHaveBeenCalledWith("file-1");
@@ -645,8 +656,7 @@ describe("SongWorkspace", () => {
 		updateWorkspaceStateMock.mockClear();
 		navigateMock.mockClear();
 
-		openFileDetails("Mix A");
-		fireEvent.click(screen.getByRole("button", { name: /^delete file$/i }));
+		deleteFile("Mix A");
 
 		await waitFor(() => {
 			expect(confirmSpy).toHaveBeenCalledWith("Delete this file?");
@@ -671,38 +681,17 @@ describe("SongWorkspace", () => {
 		});
 	});
 
-	it("opens the file details modal from the waveform card and edits file metadata there", async () => {
+	it("updates file metadata from the waveform card", async () => {
 		currentAudioFiles = [createAudioFile({ title: "Mix A" })];
 		updateAudioFile.mockResolvedValue(undefined);
 
 		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
 
-		expect(
-			screen.queryByRole("dialog", {
-				name: /file details/i,
-			}),
-		).toBeNull();
-
-		openFileDetails("Mix A");
-
-		expect(
-			screen.getByRole("dialog", {
-				name: /file details/i,
-			}),
-		).toBeTruthy();
-
-		fireEvent.change(screen.getByLabelText(/file title/i), {
-			target: { value: "Mix A - Print" },
-		});
-		fireEvent.change(screen.getByLabelText(/file date/i), {
-			target: { value: "2026-04-18" },
-		});
+		fireEvent.click(screen.getByRole("button", { name: /^rename mix a$/i }));
 
 		await waitFor(() => {
 			expect(updateAudioFile).toHaveBeenCalledWith("file-1", {
 				title: "Mix A - Print",
-			});
-			expect(updateAudioFile).toHaveBeenCalledWith("file-1", {
 				sessionDate: "2026-04-18",
 			});
 		});
@@ -1174,35 +1163,6 @@ describe("SongWorkspace", () => {
 
 		fireEvent.keyDown(window, { key: "Escape" });
 		expect(screen.queryByRole("dialog", { name: /add file/i })).toBeNull();
-	});
-
-	it("closes the file details modal when dismiss is clicked", () => {
-		currentAudioFiles = [createAudioFile({ title: "Mix A" })];
-
-		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
-
-		openFileDetails("Mix A");
-		fireEvent.click(
-			screen.getByRole("button", { name: /dismiss file details/i }),
-		);
-
-		expect(
-			screen.queryByRole("dialog", {
-				name: /file details/i,
-			}),
-		).toBeNull();
-	});
-
-	it("closes the file details modal on Escape", () => {
-		currentAudioFiles = [createAudioFile({ title: "Mix A" })];
-
-		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
-
-		openFileDetails("Mix A");
-		expect(screen.getByRole("dialog", { name: /file details/i })).toBeTruthy();
-
-		fireEvent.keyDown(window, { key: "Escape" });
-		expect(screen.queryByRole("dialog", { name: /file details/i })).toBeNull();
 	});
 
 	it("renders the journal editor without an outer journal shell", () => {

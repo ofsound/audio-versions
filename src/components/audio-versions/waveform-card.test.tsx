@@ -104,7 +104,8 @@ function renderWaveformCard({
 	onSeek = vi.fn().mockResolvedValue(undefined),
 	onUpdateAnnotation = vi.fn().mockResolvedValue(undefined),
 	onDeleteAnnotation = vi.fn().mockResolvedValue(undefined),
-	onOpenFileDetails = vi.fn(),
+	onUpdateFile = vi.fn().mockResolvedValue(undefined),
+	onDeleteFile = vi.fn(),
 	onSelectFile = vi.fn(),
 	onSelectAnnotation = vi.fn(),
 	onDragStart = vi.fn(),
@@ -124,7 +125,8 @@ function renderWaveformCard({
 		patch: Partial<Annotation>,
 	) => Promise<void>;
 	onDeleteAnnotation?: (annotationId: string) => Promise<void>;
-	onOpenFileDetails?: (fileId: string) => void;
+	onUpdateFile?: (patch: Partial<AudioFileRecord>) => Promise<void>;
+	onDeleteFile?: () => void;
 	onSelectFile?: (fileId: string) => void;
 	onSelectAnnotation?: (annotationId: string) => void;
 	onDragStart?: () => void;
@@ -152,18 +154,13 @@ function renderWaveformCard({
 			onRegisterAudioElement={vi.fn()}
 			onReportPlayback={onReportPlayback}
 			onStepVolume={onStepVolume}
-			onOpenFileDetails={onOpenFileDetails}
+			onUpdateFile={onUpdateFile}
+			onDeleteFile={onDeleteFile}
 			onDragStart={onDragStart}
 			onDragEnd={vi.fn()}
 			onDrop={vi.fn()}
 		/>,
 	);
-}
-
-function getEditDetailsButton(title: string) {
-	return screen.getByRole("button", {
-		name: new RegExp(`^edit details for ${title}$`, "i"),
-	});
 }
 
 const WAVEFORM_MARKER_GUTTER_HEIGHT_PX = 16.5;
@@ -343,7 +340,8 @@ describe("WaveformCard", () => {
 				onRegisterAudioElement={vi.fn()}
 				onReportPlayback={vi.fn()}
 				onStepVolume={onStepVolume}
-				onOpenFileDetails={vi.fn()}
+				onUpdateFile={vi.fn().mockResolvedValue(undefined)}
+				onDeleteFile={vi.fn()}
 				onDragStart={vi.fn()}
 				onDragEnd={vi.fn()}
 				onDrop={vi.fn()}
@@ -399,7 +397,8 @@ describe("WaveformCard", () => {
 				onRegisterAudioElement={vi.fn()}
 				onReportPlayback={vi.fn()}
 				onStepVolume={vi.fn().mockResolvedValue(undefined)}
-				onOpenFileDetails={vi.fn()}
+				onUpdateFile={vi.fn().mockResolvedValue(undefined)}
+				onDeleteFile={vi.fn()}
 				onDragStart={vi.fn()}
 				onDragEnd={vi.fn()}
 				onDrop={vi.fn()}
@@ -691,18 +690,63 @@ describe("WaveformCard", () => {
 		).toBeNull();
 	});
 
-	it("opens file details from the gear button in the title row", () => {
-		const onOpenFileDetails = vi.fn();
+	it("renames the file from a double-click on the title", async () => {
+		const onUpdateFile = vi.fn().mockResolvedValue(undefined);
 
 		renderWaveformCard({
-			onOpenFileDetails,
+			onUpdateFile,
 		});
 
-		const editDetailsButton = getEditDetailsButton("Mix v1");
-		expect(editDetailsButton.className).toContain("icon-button");
-		fireEvent.click(editDetailsButton);
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Mix v1" }));
+		const titleInput = screen.getByLabelText(/file title/i);
+		fireEvent.change(titleInput, { target: { value: "Mix v1 - Print" } });
+		fireEvent.blur(titleInput);
 
-		expect(onOpenFileDetails).toHaveBeenCalledWith("file-1");
+		await waitFor(() => {
+			expect(onUpdateFile).toHaveBeenCalledWith({
+				title: "Mix v1 - Print",
+			});
+		});
+	});
+
+	it("edits the file date from a double-click on the date label", async () => {
+		const onUpdateFile = vi.fn().mockResolvedValue(undefined);
+		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
+
+		renderWaveformCard({
+			onUpdateFile,
+		});
+
+		fireEvent.doubleClick(screen.getByRole("button", { name: dateLabel }));
+		const dateInput = screen.getByLabelText(/file date/i);
+		fireEvent.change(dateInput, { target: { value: "2026-04-18" } });
+		fireEvent.blur(dateInput);
+
+		await waitFor(() => {
+			expect(onUpdateFile).toHaveBeenCalledWith({
+				sessionDate: "2026-04-18",
+			});
+		});
+	});
+
+	it("deletes the file from the trash icon beside the title", () => {
+		const onDeleteFile = vi.fn();
+
+		renderWaveformCard({
+			onDeleteFile,
+		});
+
+		const deleteButton = screen.getByRole("button", {
+			name: /^delete mix v1$/i,
+		});
+		expect(deleteButton.className).toContain("icon-button");
+		fireEvent.click(deleteButton);
+
+		expect(onDeleteFile).toHaveBeenCalledTimes(1);
 	});
 
 	it("selects the file when clicking non-interactive row space", () => {

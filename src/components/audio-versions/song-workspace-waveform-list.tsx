@@ -51,7 +51,8 @@ interface SongWorkspaceWaveformListProps {
 		patch: Partial<AudioFileRecord>,
 	) => Promise<void>;
 	workspacePlayheadMsByFileId: Record<string, number>;
-	onOpenFileDetails: (fileId: string) => void;
+	onDeleteFile: (fileId: string) => Promise<void> | void;
+	deletingFileId: string | null;
 	onSelectFile: (fileId: string) => void;
 	onSelectAnnotation: (fileId: string, annotationId: string) => void;
 }
@@ -74,7 +75,8 @@ export function SongWorkspaceWaveformList({
 	deleteAnnotation,
 	updateAudioFile,
 	workspacePlayheadMsByFileId,
-	onOpenFileDetails,
+	onDeleteFile,
+	deletingFileId,
 	onSelectAnnotation,
 	onSelectFile,
 }: SongWorkspaceWaveformListProps) {
@@ -211,7 +213,9 @@ export function SongWorkspaceWaveformList({
 						volumeDb: normalizeVolumeDb(audioFile.volumeDb + deltaDb),
 					})
 				}
-				onOpenFileDetails={onOpenFileDetails}
+				onUpdateFile={(patch) => updateAudioFile(audioFile.id, patch)}
+				onDeleteFile={() => onDeleteFile(audioFile.id)}
+				deletingFile={deletingFileId === audioFile.id}
 				onDragStart={() => setDraggingFileId(audioFile.id)}
 				onDragEnd={() => setDraggingFileId(null)}
 				onDrop={() => {

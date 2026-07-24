@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
@@ -14,7 +14,6 @@ import { useSongRouteHeaderSlot } from "./app-chrome";
 import { InspectorPane } from "./inspector-pane";
 import { JournalEditor } from "./journal-editor";
 import { PanelResizeHandle } from "./panel-resize-handle";
-import { SongWorkspaceFileDetailsDialog } from "./song-workspace-file-details-dialog";
 import { SongWorkspaceHeaderControls } from "./song-workspace-header-controls";
 import { useSongWorkspaceShortcuts } from "./song-workspace-shortcuts";
 import { SongWorkspaceUploadDialog } from "./song-workspace-upload-dialog";
@@ -110,7 +109,6 @@ export function SongWorkspace({
 	});
 
 	const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
-	const [editingFileId, setEditingFileId] = useState<string | null>(null);
 	const [panelWidths, setPanelWidths] = useState<{
 		left: number;
 		center: number;
@@ -185,30 +183,9 @@ export function SongWorkspace({
 		[],
 	);
 
-	const editingFile = useMemo(
-		() =>
-			editingFileId
-				? (audioFiles.find((audioFile) => audioFile.id === editingFileId) ??
-					null)
-				: null,
-		[audioFiles, editingFileId],
-	);
-
-	useEffect(() => {
-		if (editingFileId && !editingFile) {
-			setEditingFileId(null);
-		}
-	}, [editingFile, editingFileId]);
-
-	const isFileDetailsOpen = Boolean(editingFile);
-	const isModalOpen = isUploadOpen || isFileDetailsOpen;
+	const isModalOpen = isUploadOpen;
 
 	useCloseOnEscape(isModalOpen, () => {
-		if (isFileDetailsOpen) {
-			setEditingFileId(null);
-			return;
-		}
-
 		setIsUploadOpen(false);
 	});
 
@@ -420,19 +397,6 @@ export function SongWorkspace({
 		return annotation;
 	}
 
-	const handleOpenFileDetails = useCallback(
-		(fileId: string) => {
-			if (fileId !== selectedFileId) {
-				patchRouteSelection({
-					fileId,
-					clearPlaybackParams: true,
-				});
-			}
-			setEditingFileId(fileId);
-		},
-		[patchRouteSelection, selectedFileId],
-	);
-
 	async function handleDeleteFile(fileId: string) {
 		if (!window.confirm("Delete this file?")) {
 			return;
@@ -447,7 +411,6 @@ export function SongWorkspace({
 		setDeletingFileId(fileId);
 		try {
 			await deleteAudioFile(fileId);
-			setEditingFileId((current) => (current === fileId ? null : current));
 			patchRouteSelection({
 				fileId: fallbackFileId,
 				clearPlaybackParams: true,
@@ -550,7 +513,8 @@ export function SongWorkspace({
 							deleteAnnotation={deleteAnnotation}
 							updateAudioFile={updateAudioFile}
 							workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
-							onOpenFileDetails={handleOpenFileDetails}
+							onDeleteFile={handleDeleteFile}
+							deletingFileId={deletingFileId}
 							onSelectFile={(fileId) =>
 								patchRouteSelection({
 									fileId,
@@ -649,16 +613,6 @@ export function SongWorkspace({
 					onUploadSessionDateChange={setUploadSessionDate}
 				/>
 			)}
-
-			{editingFile ? (
-				<SongWorkspaceFileDetailsDialog
-					audioFile={editingFile}
-					deletingFile={deletingFileId === editingFile.id}
-					onClose={() => setEditingFileId(null)}
-					onDeleteFile={() => handleDeleteFile(editingFile.id)}
-					onUpdateFile={(patch) => updateAudioFile(editingFile.id, patch)}
-				/>
-			) : null}
 		</>
 	);
 }

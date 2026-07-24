@@ -5,7 +5,10 @@ import {
 	useMemo,
 	useRef,
 } from "react";
-import { resolveAudioFileSessionDateLabel } from "#/lib/audio-versions/dates";
+import {
+	resolveAudioFileSessionDateInputValue,
+	resolveAudioFileSessionDateLabel,
+} from "#/lib/audio-versions/dates";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -60,7 +63,9 @@ interface WaveformCardProps {
 		currentTimeMs?: number;
 	}) => void;
 	onStepVolume: (deltaDb: number) => Promise<void>;
-	onOpenFileDetails: (fileId: string) => void;
+	onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
+	onDeleteFile: () => Promise<void> | void;
+	deletingFile?: boolean;
 	onDragStart: () => void;
 	onDragEnd: () => void;
 	onDrop: () => void;
@@ -84,7 +89,9 @@ export function WaveformCard({
 	onRegisterAudioElement,
 	onReportPlayback,
 	onStepVolume,
-	onOpenFileDetails,
+	onUpdateFile,
+	onDeleteFile,
+	deletingFile = false,
 	onDragStart,
 	onDragEnd,
 	onDrop,
@@ -284,6 +291,7 @@ export function WaveformCard({
 		onSelectFile,
 	});
 	const sessionDateLabel = resolveAudioFileSessionDateLabel(audioFile);
+	const sessionDateIso = resolveAudioFileSessionDateInputValue(audioFile);
 
 	return (
 		<article
@@ -304,15 +312,18 @@ export function WaveformCard({
 		>
 			<WaveformCardHeader
 				audioFileTitle={audioFile.title}
+				deletingFile={deletingFile}
 				isPlaying={isPlaying}
 				onAddMarkerAtPlayhead={() => {
 					void handleAddMarkerAtPlayhead();
 				}}
 				onCancelPendingRange={handleCancelPendingRange}
+				onDeleteFile={() => {
+					void onDeleteFile();
+				}}
 				onEndRangeAtPlayhead={() => {
 					void handleEndRangeAtPlayhead();
 				}}
-				onOpenFileDetails={() => onOpenFileDetails(audioFile.id)}
 				onResetPlayhead={() => {
 					onSelectFile(audioFile.id);
 					void onSeek(0, false);
@@ -323,7 +334,11 @@ export function WaveformCard({
 					onSelectFile(audioFile.id);
 					void onTogglePlayback();
 				}}
+				onUpdateFile={(patch) => {
+					void onUpdateFile(patch);
+				}}
 				pendingRangeStartMs={pendingRangeStartMs}
+				sessionDateIso={sessionDateIso}
 				sessionDateLabel={sessionDateLabel}
 			/>
 
