@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
@@ -11,6 +12,7 @@ import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useSongRouteHeaderSlot } from "./app-chrome";
 import { InspectorPane } from "./inspector-pane";
 import { JournalEditor } from "./journal-editor";
+import { PanelResizeHandle } from "./panel-resize-handle";
 import { SongWorkspaceFileDetailsDialog } from "./song-workspace-file-details-dialog";
 import { SongWorkspaceHeaderControls } from "./song-workspace-header-controls";
 import { useSongWorkspaceShortcuts } from "./song-workspace-shortcuts";
@@ -101,6 +103,12 @@ export function SongWorkspace({
 
 	const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 	const [editingFileId, setEditingFileId] = useState<string | null>(null);
+	const [panelWidths, setPanelWidths] = useState<{
+		left: number;
+		center: number;
+		right: number;
+	} | null>(null);
+	const workspaceGridRef = useRef<HTMLElement | null>(null);
 	const [annotationTitleFocusId, setAnnotationTitleFocusId] = useState<
 		string | null
 	>(null);
@@ -109,6 +117,62 @@ export function SongWorkspace({
 	}, []);
 	const previousSelectedFileIdRef = useRef<string | undefined>(selectedFileId);
 	const previousIsPlayingRef = useRef(playback.isPlaying);
+
+	const resizePanels = useCallback(
+		(boundary: "left" | "right", deltaX: number) => {
+			const grid = workspaceGridRef.current;
+			if (!grid || window.innerWidth < 1280) {
+				return;
+			}
+
+			setPanelWidths((current) => {
+				const panels =
+					current ??
+					(() => {
+						const [left, center, right] = [
+							...grid.querySelectorAll<HTMLElement>(
+								"[data-song-workspace-panel]",
+							),
+						];
+						if (!left || !center || !right) {
+							return null;
+						}
+						return {
+							left: left.getBoundingClientRect().width,
+							center: center.getBoundingClientRect().width,
+							right: right.getBoundingClientRect().width,
+						};
+					})();
+				if (!panels) {
+					return current;
+				}
+
+				const minimumWidth = 240;
+				if (boundary === "left") {
+					const nextLeft = Math.min(
+						Math.max(panels.left + deltaX, minimumWidth),
+						panels.left + panels.center - minimumWidth,
+					);
+					return {
+						...panels,
+						left: nextLeft,
+						center: panels.left + panels.center - nextLeft,
+					};
+				}
+
+				const nextCenter = Math.min(
+					Math.max(panels.center + deltaX, minimumWidth),
+					panels.center + panels.right - minimumWidth,
+				);
+				return {
+					...panels,
+					center: nextCenter,
+					right: panels.center + panels.right - nextCenter,
+				};
+			});
+		},
+		[],
+	);
 
 	const editingFile = useMemo(
 		() =>
@@ -369,8 +433,23 @@ export function SongWorkspace({
 				}`}
 				aria-hidden={isModalOpen}
 			>
-				<section className="song-workspace-scroll-region grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_minmax(280px,1fr)_420px] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
-					<div className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
+				<section
+					ref={workspaceGridRef}
+					className="song-workspace-scroll-region song-workspace-panel-grid grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch"
+					style={
+						panelWidths
+							? ({
+									"--song-workspace-left-panel-width": `${panelWidths.left}px`,
+									"--song-workspace-center-panel-width": `${panelWidths.center}px`,
+									"--song-workspace-right-panel-width": `${panelWidths.right}px`,
+								} as CSSProperties)
+							: undefined
+					}
+				>
+					<div
+						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]"
+						data-song-workspace-panel="left"
+					>
 						<SongWorkspaceWaveformList
 							activeAnnotationId={activeAnnotationId}
 							audioFiles={audioFiles}
@@ -412,7 +491,15 @@ export function SongWorkspace({
 						/>
 					</div>
 
-					<div className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:py-8">
+					<PanelResizeHandle
+						label="Resize thumbnails and details panels"
+						onResize={(deltaX) => resizePanels("left", deltaX)}
+					/>
+
+					<div
+						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:py-8"
+						data-song-workspace-panel="center"
+					>
 						<div className="flex min-h-0 flex-1 flex-col pr-1">
 							<InspectorPane
 								song={song}
@@ -442,7 +529,15 @@ export function SongWorkspace({
 						</div>
 					</div>
 
-					<div className="song-workspace-journal-column flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden">
+					<PanelResizeHandle
+						label="Resize details and journal panels"
+						onResize={(deltaX) => resizePanels("right", deltaX)}
+					/>
+
+					<div
+						className="song-workspace-journal-column flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden"
+						data-song-workspace-panel="right"
+					>
 						<div className="flex min-h-0 flex-1 flex-col">
 							<JournalEditor
 								value={song.generalNotes}
