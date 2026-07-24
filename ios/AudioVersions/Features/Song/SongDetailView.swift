@@ -32,7 +32,8 @@ struct SongDetailView: View {
                                 .foregroundStyle(
                                     song.generalNotes.isEmpty ? palette.textSecondary : palette.textPrimary
                                 )
-                                .lineLimit(6)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
 
                                 Label(
                                     song.generalNotes.isEmpty ? "Add journal" : "Edit journal",
