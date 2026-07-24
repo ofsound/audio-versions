@@ -75,19 +75,20 @@ export function volumeDbToGain(volumeDb: number): number {
 	return 10 ** (normalizeVolumeDb(volumeDb) / 20);
 }
 
-export async function generateWaveformFromFile(
+export function isAudioDecodingSupported(): boolean {
+	return Boolean(getAudioContextCtor());
+}
+
+/** Decodes `file` and hands the buffer to `read` before the context is closed. */
+export async function withDecodedAudio<Result>(
 	file: Blob,
-	peakCount = DEFAULT_PEAK_COUNT,
-): Promise<WaveformData> {
+	read: (audioBuffer: AudioBuffer) => Result,
+): Promise<Result> {
 	if (typeof window === "undefined") {
 		throw new Error("Audio decoding is only available in the browser.");
 	}
 
-	const AudioContextCtor =
-		window.AudioContext ||
-		(window as Window & { webkitAudioContext?: typeof AudioContext })
-			.webkitAudioContext;
-
+	const AudioContextCtor = getAudioContextCtor();
 	if (!AudioContextCtor) {
 		throw new Error("This browser does not support Web Audio decoding.");
 	}
@@ -95,20 +96,8 @@ export async function generateWaveformFromFile(
 	const context = new AudioContextCtor();
 	try {
 		const browserAudioBlob = await normalizeAudioBlobForBrowser(file);
-		const audioBuffer = await context.decodeAudioData(
-			await browserAudioBlob.arrayBuffer(),
-		);
-		const peaks = extractPeaks(audioBuffer, peakCount);
-		const durationMs = Math.round(audioBuffer.duration * 1000);
-
-		return normalizeWaveformData(
-			{
-				peaks,
-				peakCount: peaks.length,
-				durationMs,
-				sampleRate: audioBuffer.sampleRate,
-			},
-			durationMs,
+		return read(
+			await context.decodeAudioData(await browserAudioBlob.arrayBuffer()),
 		);
 	} catch {
 		throw new Error(
@@ -117,6 +106,33 @@ export async function generateWaveformFromFile(
 	} finally {
 		await context.close().catch(() => undefined);
 	}
+}
+
+export function extractWaveformFromAudioBuffer(
+	audioBuffer: AudioBuffer,
+	peakCount = DEFAULT_PEAK_COUNT,
+): WaveformData {
+	const peaks = extractPeaks(audioBuffer, peakCount);
+	const durationMs = Math.round(audioBuffer.duration * 1000);
+
+	return normalizeWaveformData(
+		{
+			peaks,
+			peakCount: peaks.length,
+			durationMs,
+			sampleRate: audioBuffer.sampleRate,
+		},
+		durationMs,
+	);
+}
+
+export async function generateWaveformFromFile(
+	file: Blob,
+	peakCount = DEFAULT_PEAK_COUNT,
+): Promise<WaveformData> {
+	return withDecodedAudio(file, (audioBuffer) =>
+		extractWaveformFromAudioBuffer(audioBuffer, peakCount),
+	);
 }
 
 export async function normalizeAudioBlobForBrowser(file: Blob): Promise<Blob> {
@@ -137,6 +153,18 @@ export function formatDuration(ms: number): string {
 
 export function clampTime(timeMs: number, durationMs: number): number {
 	return Math.max(0, Math.min(durationMs, timeMs));
+}
+
+function getAudioContextCtor(): typeof AudioContext | undefined {
+	if (typeof window === "undefined") {
+		return undefined;
+	}
+
+	return (
+		window.AudioContext ||
+		(window as Window & { webkitAudioContext?: typeof AudioContext })
+			.webkitAudioContext
+	);
 }
 
 function extractPeaks(audioBuffer: AudioBuffer, targetPeaks: number): number[] {

@@ -1,3 +1,4 @@
+import { normalizeLoudnessMetrics } from "#/lib/audio-versions/loudness";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -30,6 +31,7 @@ interface AudioFileRow {
 	volume_db: number;
 	duration_ms: number;
 	waveform: AudioFileRecord["waveform"];
+	loudness: AudioFileRecord["loudness"] | null;
 	blob_pathname: string | null;
 	blob_content_type: string | null;
 	blob_size: number | null;
@@ -107,6 +109,7 @@ function audioFileToRow(userId: string, audioFile: AudioFileRecord) {
 		volume_db: audioFile.volumeDb,
 		duration_ms: audioFile.durationMs,
 		waveform: audioFile.waveform,
+		loudness: audioFile.loudness ?? null,
 		blob_pathname: audioFile.remoteMedia?.pathname ?? null,
 		blob_content_type: audioFile.remoteMedia?.contentType ?? null,
 		blob_size: audioFile.remoteMedia?.size ?? null,
@@ -155,6 +158,7 @@ function audioFileFromRow(row: AudioFileRow): AudioFileRecord {
 			row.blob_size != null &&
 			row.blob_original_name,
 	);
+	const loudness = normalizeLoudnessMetrics(row.loudness);
 
 	return {
 		id: row.id,
@@ -165,6 +169,7 @@ function audioFileFromRow(row: AudioFileRow): AudioFileRecord {
 		volumeDb: row.volume_db,
 		durationMs: row.duration_ms,
 		waveform: row.waveform,
+		...(loudness ? { loudness } : {}),
 		...(hasRemoteMedia
 			? {
 					remoteMedia: {

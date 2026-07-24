@@ -1,4 +1,6 @@
 import { Minus, Plus } from "lucide-react";
+import { describeStreamingNormalization } from "#/lib/audio-versions/loudness";
+import type { LoudnessMetrics } from "#/lib/audio-versions/types";
 import {
 	formatDuration,
 	MAX_VOLUME_DB,
@@ -9,6 +11,8 @@ interface WaveformCardFooterProps {
 	audioFileTitle: string;
 	currentTimeMs: number;
 	durationMs: number;
+	loudness?: LoudnessMetrics;
+	measuringLoudness: boolean;
 	onStepVolume: (deltaDb: number) => Promise<void>;
 	volumeDb: number;
 }
@@ -17,14 +21,18 @@ export function WaveformCardFooter({
 	audioFileTitle,
 	currentTimeMs,
 	durationMs,
+	loudness,
+	measuringLoudness,
 	onStepVolume,
 	volumeDb,
 }: WaveformCardFooterProps) {
 	return (
-		<div className="waveform-card__footer mt-3 flex items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
+		<div className="waveform-card__footer mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-[var(--color-text-muted)]">
 			<span className="text-sm tabular-nums text-[var(--color-text)]">
 				{formatDuration(currentTimeMs)} / {formatDuration(durationMs)}
 			</span>
+			{loudness ? <LoudnessReadout loudness={loudness} /> : null}
+			{!loudness && measuringLoudness ? <span>Measuring loudness…</span> : null}
 			<div className="inline-flex items-center gap-1.5">
 				<button
 					type="button"
@@ -51,6 +59,37 @@ export function WaveformCardFooter({
 					<Plus size={12} />
 				</button>
 			</div>
+		</div>
+	);
+}
+
+function LoudnessReadout({ loudness }: { loudness: LoudnessMetrics }) {
+	return (
+		<div
+			className="inline-flex items-center gap-1.5 tabular-nums"
+			data-testid="waveform-loudness"
+		>
+			<span
+				title={`Integrated loudness\n${describeStreamingNormalization(loudness.integratedLufs)}`}
+			>
+				{loudness.integratedLufs.toFixed(1)} LUFS
+			</span>
+			<span aria-hidden="true" className="opacity-40">
+				·
+			</span>
+			<span
+				title={`Loudness range\nShort-term max ${loudness.shortTermMaxLufs.toFixed(1)} LUFS`}
+			>
+				{loudness.loudnessRangeLu.toFixed(1)} LU
+			</span>
+			<span aria-hidden="true" className="opacity-40">
+				·
+			</span>
+			<span
+				title={`True peak\nSample peak ${loudness.samplePeakDb.toFixed(1)} dBFS`}
+			>
+				{loudness.truePeakDb.toFixed(1)} dBTP
+			</span>
 		</div>
 	);
 }

@@ -10,6 +10,10 @@ import {
 	saveSettings,
 	saveSong,
 } from "#/lib/audio-versions/db";
+import {
+	measureLoudnessFromAudioBuffer,
+	normalizeLoudnessMetrics,
+} from "#/lib/audio-versions/loudness";
 import { normalizeRichText } from "#/lib/audio-versions/rich-text";
 import {
 	type AddAudioFileInput,
@@ -24,9 +28,10 @@ import {
 	type WorkspaceState,
 } from "#/lib/audio-versions/types";
 import {
-	generateWaveformFromFile,
+	extractWaveformFromAudioBuffer,
 	normalizeAudioBlobForBrowser,
 	normalizeVolumeDb,
+	withDecodedAudio,
 } from "#/lib/audio-versions/waveform";
 import { deleteRemoteAudio, uploadRemoteAudio } from "#/lib/cloud/media";
 import type { CloudPersistence } from "#/lib/cloud/persistence";
@@ -232,7 +237,13 @@ export function useAudioFileMutations({
 		async (songId: string, input: AddAudioFileInput) => {
 			setError(null);
 			const browserAudioBlob = await normalizeAudioBlobForBrowser(input.file);
-			const waveform = await generateWaveformFromFile(browserAudioBlob);
+			const { loudness, waveform } = await withDecodedAudio(
+				browserAudioBlob,
+				(audioBuffer) => ({
+					loudness: measureLoudnessFromAudioBuffer(audioBuffer) ?? undefined,
+					waveform: extractWaveformFromAudioBuffer(audioBuffer),
+				}),
+			);
 			const now = new Date().toISOString();
 			const sessionDate = input.sessionDate.trim() || isoDateInLocalCalendar();
 			const audioFileId = crypto.randomUUID();
@@ -248,6 +259,7 @@ export function useAudioFileMutations({
 				volumeDb: 0,
 				durationMs: waveform.durationMs,
 				waveform,
+				...(loudness ? { loudness } : {}),
 				...(remoteMedia ? { remoteMedia } : {}),
 				createdAt: now,
 				updatedAt: now,
@@ -301,6 +313,9 @@ export function useAudioFileMutations({
 							...patch,
 							notes: normalizeRichText(patch.notes ?? audioFile.notes),
 							volumeDb: normalizeVolumeDb(patch.volumeDb ?? audioFile.volumeDb),
+							loudness: normalizeLoudnessMetrics(
+								patch.loudness ?? audioFile.loudness,
+							),
 							updatedAt: new Date().toISOString(),
 						}),
 					),

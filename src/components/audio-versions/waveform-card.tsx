@@ -17,6 +17,7 @@ import type {
 	CreateAnnotationInput,
 } from "#/lib/audio-versions/types";
 import { normalizeWaveformData } from "#/lib/audio-versions/waveform";
+import { useAudioFileLoudness } from "./use-audio-file-loudness";
 import { useAudioSource } from "./use-audio-source";
 import { useWaveformAudioGraph } from "./use-waveform-audio-graph";
 import { useWaveformCanvas } from "./use-waveform-canvas";
@@ -293,6 +294,12 @@ export function WaveformCard({
 		onSeek,
 		onSelectFile,
 	});
+	const measuringLoudness = useAudioFileLoudness({
+		audioFileId: audioFile.id,
+		blob,
+		loudness: audioFile.loudness,
+		onMeasured: (loudness) => onUpdateFile({ loudness }),
+	});
 	const sessionDateLabel = resolveAudioFileSessionDateLabel(audioFile);
 	const sessionDateIso = resolveAudioFileSessionDateInputValue(audioFile);
 	const canDownloadFile = Boolean(blob || audioFile.remoteMedia);
@@ -415,6 +422,8 @@ export function WaveformCard({
 				audioFileTitle={audioFile.title}
 				currentTimeMs={currentTimeMs}
 				durationMs={audioFile.durationMs}
+				loudness={audioFile.loudness}
+				measuringLoudness={measuringLoudness}
 				onStepVolume={onStepVolume}
 				volumeDb={audioFile.volumeDb}
 			/>

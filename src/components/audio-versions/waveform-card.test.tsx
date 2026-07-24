@@ -85,6 +85,13 @@ function createAudioFile(
 			durationMs: 180000,
 			sampleRate: 44100,
 		},
+		loudness: {
+			integratedLufs: -9.42,
+			loudnessRangeLu: 6.18,
+			shortTermMaxLufs: -7.31,
+			samplePeakDb: -0.51,
+			truePeakDb: -0.27,
+		},
 		createdAt: "2026-04-16T00:00:00.000Z",
 		updatedAt: "2026-04-16T00:00:00.000Z",
 		...overrides,
@@ -362,6 +369,21 @@ describe("WaveformCard", () => {
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
+	});
+
+	it("shows the loudness metrics between the time readout and the volume stepper", () => {
+		renderWaveformCard();
+
+		const loudnessReadout = screen.getByTestId("waveform-loudness");
+		expect(loudnessReadout.textContent).toBe("-9.4 LUFS·6.2 LU·-0.3 dBTP");
+		expect(
+			within(loudnessReadout).getByTitle(/Spotify, YouTube, Tidal, Amazon/),
+		).toBeTruthy();
+
+		const footer = loudnessReadout.parentElement as HTMLElement;
+		const children = Array.from(footer.children);
+		expect(children.indexOf(loudnessReadout)).toBe(1);
+		expect(children).toHaveLength(3);
 	});
 
 	it("updates the gain node when the stored decibel value changes", async () => {

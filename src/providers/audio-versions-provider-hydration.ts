@@ -1,3 +1,4 @@
+import { normalizeLoudnessMetrics } from "#/lib/audio-versions/loudness";
 import {
 	normalizeJournalText,
 	normalizeRichText,
@@ -34,6 +35,7 @@ export async function normalizeLoadedSnapshot(
 				sessionDate: normalizeLoadedSessionDate(audioFile),
 				notes: normalizeRichText(audioFile.notes),
 				volumeDb: normalizeVolumeDb(audioFile.volumeDb),
+				loudness: normalizeLoudnessMetrics(audioFile.loudness),
 				waveform: normalizeWaveformData(
 					audioFile.waveform,
 					audioFile.durationMs,

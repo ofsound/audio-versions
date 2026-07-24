@@ -25,6 +25,20 @@ export interface WaveformData {
 	sampleRate: number;
 }
 
+/** Whole-file loudness measurements (ITU-R BS.1770-4 / EBU Tech 3342). */
+export interface LoudnessMetrics {
+	/** Gated program loudness in LUFS. */
+	integratedLufs: number;
+	/** Loudness range in LU. */
+	loudnessRangeLu: number;
+	/** Loudest gated 3 s window in LUFS. */
+	shortTermMaxLufs: number;
+	/** Highest sample value in dBFS. */
+	samplePeakDb: number;
+	/** Highest 4x oversampled value in dBTP. */
+	truePeakDb: number;
+}
+
 export interface Song {
 	id: string;
 	title: string;
@@ -46,6 +60,7 @@ export interface AudioFileRecord {
 	volumeDb: number;
 	durationMs: number;
 	waveform: WaveformData;
+	loudness?: LoudnessMetrics;
 	remoteMedia?: {
 		pathname: string;
 		contentType: string;
