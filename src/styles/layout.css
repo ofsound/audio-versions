@@ -283,7 +283,12 @@
 		gap: 0.25rem;
 	}
 
-	.song-workspace-file-player .waveform-card__actions > button {
+	.song-workspace-file-player .waveform-card__playback,
+	.song-workspace-file-player .waveform-card__annotations {
+		gap: 0.25rem;
+	}
+
+	.song-workspace-file-player .waveform-card__actions button {
 		min-width: 0;
 		height: 2rem;
 		gap: 0.25rem;
@@ -291,10 +296,8 @@
 		font-size: 0.6875rem;
 	}
 
-	.song-workspace-file-player .waveform-card__actions > button:last-child,
-	.song-workspace-file-player
-		.waveform-card__actions
-		> button:nth-last-child(2) {
+	.song-workspace-file-player .waveform-card__playback > button,
+	.song-workspace-file-player .waveform-card__annotations > button.w-9 {
 		width: 2rem;
 		padding-inline: 0;
 	}
