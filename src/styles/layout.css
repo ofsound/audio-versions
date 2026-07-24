@@ -63,6 +63,8 @@
 
 @media (min-width: 1280px) {
 	.song-workspace-panel-grid {
+		--song-workspace-resize-handle-height: 1rem;
+		--song-workspace-resize-gutter-height: 2.5rem;
 		grid-template-columns:
 			var(--song-workspace-left-panel-width, minmax(0, 50%))
 			0
@@ -70,6 +72,10 @@
 			0
 			var(--song-workspace-right-panel-width, 420px);
 		gap: 0;
+	}
+
+	.song-workspace-panel-grid > [data-song-workspace-panel] {
+		padding-bottom: var(--song-workspace-resize-gutter-height);
 	}
 
 	.song-workspace-panel-resizer {
@@ -85,11 +91,17 @@
 
 	.song-workspace-panel-resizer__button {
 		position: absolute;
-		bottom: 0.5rem;
+		bottom: calc(
+			(
+				var(--song-workspace-resize-gutter-height) -
+				var(--song-workspace-resize-handle-height)
+			) /
+			2
+		);
 		left: 50%;
 		display: flex;
-		width: 1rem;
-		height: 1.5rem;
+		width: 0.875rem;
+		height: var(--song-workspace-resize-handle-height);
 		align-items: center;
 		justify-content: center;
 		transform: translateX(-50%);

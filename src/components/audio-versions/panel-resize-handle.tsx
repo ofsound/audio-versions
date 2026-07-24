@@ -57,7 +57,7 @@ export function PanelResizeHandle({
 				onPointerUp={finishResize}
 				onPointerCancel={finishResize}
 			>
-				<Pause aria-hidden="true" fill="currentColor" size={13} />
+				<Pause aria-hidden="true" fill="currentColor" size={11} />
 			</button>
 		</div>
 	);
