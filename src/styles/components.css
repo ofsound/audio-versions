@@ -109,24 +109,6 @@
 	cursor: default;
 }
 
-.waveform-card__tab {
-	position: absolute;
-	top: 50%;
-	right: calc(var(--song-workspace-waveform-tab-width) * -1);
-	width: var(--song-workspace-waveform-tab-width);
-	height: 28px;
-	transform: translateY(-50%);
-	background: var(--color-waveform-selected);
-	clip-path: polygon(0 0, 100% 50%, 0 100%);
-	pointer-events: none;
-	opacity: 0;
-	transition: opacity 220ms ease;
-}
-
-.waveform-card--selected .waveform-card__tab {
-	opacity: 1;
-}
-
 .range-hint-pill {
 	border: 1px solid var(--color-range-hint-border);
 	background: var(--color-range-hint-surface);
@@ -443,7 +425,7 @@
 @media (min-width: 1280px) {
 	.song-workspace-journal-column {
 		--journal-transition-width: 0.25rem;
-		background: var(--background-image-panel), var(--color-header-surface);
+		background: var(--color-header-surface);
 	}
 
 	.song-workspace-journal-column .journal-editor-shell {
@@ -457,11 +439,5 @@
 
 	.song-workspace-journal-column .journal-editor {
 		padding-left: calc(1rem + var(--journal-transition-width));
-	}
-}
-
-@media (max-width: 1279px) {
-	.waveform-card__tab {
-		display: none;
 	}
 }

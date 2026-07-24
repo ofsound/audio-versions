@@ -523,7 +523,7 @@ export function SongWorkspace({
 					}
 				>
 					<div
-						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]"
+						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-1"
 						data-song-workspace-panel="left"
 					>
 						<SongWorkspaceWaveformList

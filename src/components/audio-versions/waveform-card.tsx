@@ -302,7 +302,6 @@ export function WaveformCard({
 			onDrop={handleDrop}
 			className={`waveform-card ${isSelected ? "waveform-card--selected" : ""}`}
 		>
-			<span className="waveform-card__tab" aria-hidden="true" />
 			<WaveformCardHeader
 				audioFileTitle={audioFile.title}
 				isPlaying={isPlaying}

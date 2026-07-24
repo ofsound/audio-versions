@@ -21,12 +21,18 @@
 	overflow: hidden;
 }
 
+.audio-versions-shell--workspace .header-shell {
+	background: var(--color-header-surface);
+	backdrop-filter: none;
+}
+
 .song-workspace-panel-resizer {
 	display: none;
 }
 
 .song-workspace-file-player .waveform-card {
 	border-color: transparent;
+	padding-right: 0;
 }
 
 .song-workspace-file-player .waveform-card,
