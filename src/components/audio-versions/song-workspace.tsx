@@ -493,7 +493,7 @@ export function SongWorkspace({
 					}
 				>
 					<div
-						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-1"
+						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pt-4 xl:pr-1"
 						data-song-workspace-panel="left"
 					>
 						<SongWorkspaceWaveformList
@@ -544,7 +544,7 @@ export function SongWorkspace({
 					/>
 
 					<div
-						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:py-8"
+						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:pt-4"
 						data-song-workspace-panel="center"
 					>
 						<div className="song-workspace-primary-surface flex min-h-0 flex-1 flex-col pr-1">

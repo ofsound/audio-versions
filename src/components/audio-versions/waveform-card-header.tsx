@@ -151,7 +151,7 @@ export function WaveformCardHeader({
 									}
 								}}
 								onClick={(event) => event.stopPropagation()}
-								className="field-input font-title waveform-card__title min-w-0 flex-1 py-1 text-2xl font-semibold"
+								className="field-input font-title waveform-card__title min-w-0 flex-1 py-1 text-3xl font-semibold"
 								aria-label="File title"
 							/>
 						) : (
@@ -163,7 +163,7 @@ export function WaveformCardHeader({
 									event.stopPropagation();
 									setEditingField("title");
 								}}
-								className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-2xl font-semibold text-[var(--color-text)]"
+								className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-3xl font-semibold text-[var(--color-text)]"
 								title="Double-click to rename"
 							>
 								{audioFileTitle}
@@ -210,7 +210,7 @@ export function WaveformCardHeader({
 								}
 							}}
 							onClick={(event) => event.stopPropagation()}
-							className="field-input field-input--compact waveform-card__date mt-0.5 w-auto max-w-[11rem] text-sm"
+							className="field-input field-input--compact waveform-card__date mt-0.5 w-auto max-w-[11rem] text-base"
 							aria-label="File date"
 						/>
 					) : (
@@ -222,7 +222,7 @@ export function WaveformCardHeader({
 								event.stopPropagation();
 								setEditingField("date");
 							}}
-							className="waveform-card__date mt-0.5 w-fit whitespace-nowrap text-left text-sm tabular-nums text-[var(--color-text-muted)]"
+							className="waveform-card__date mt-0.5 w-fit whitespace-nowrap text-left text-base tabular-nums text-[var(--color-text-muted)]"
 							title="Double-click to edit date"
 						>
 							{sessionDateLabel}
