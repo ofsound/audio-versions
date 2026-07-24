@@ -17,18 +17,6 @@ struct SongDetailView: View {
         Group {
             if let song {
                 List {
-                    Section {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(song.artist)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text("Choose a version to listen, scrub the waveform, and leave time-based feedback.")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 5)
-                    }
-
                     Section("Journal") {
                         Button {
                             isEditingJournal = true

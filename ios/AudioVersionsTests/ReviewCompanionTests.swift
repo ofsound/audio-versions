@@ -31,6 +31,22 @@ struct ReviewCompanionTests {
         #expect(store.currentTime == 0)
     }
 
+    @MainActor
+    @Test
+    func resetPlayheadReturnsToStartWithoutStartingPlayback() throws {
+        let store = ReviewCompanionStore()
+        let song = try #require(store.songs.first)
+        let version = try #require(song.versions.first)
+
+        store.seek(to: 42, in: version)
+        #expect(store.currentTime == 42)
+        #expect(!store.isPlaying)
+
+        store.seek(to: 0, in: version)
+        #expect(store.currentTime == 0)
+        #expect(!store.isPlaying)
+    }
+
     @Test
     func playbackTimelineRejectsInvalidTimesAndClampsBounds() {
         #expect(PlaybackTimeline.clamp(-1, duration: 30) == 0)

@@ -53,7 +53,7 @@ a second production identity.
 - Playback audio session that remains audible through Silent mode and while the
   phone is locked or the app is backgrounded
 - Lock Screen, Control Center, headset, Bluetooth, and AirPlay controls for
-  play/pause, ±10-second skips, seeking, and playback rate
+  play/pause, restart-to-start, ±10-second skips, seeking, and playback rate
 - Now Playing song/version metadata and an in-app AirPlay route picker
 - Safe interruption behavior for calls and Siri, including conditional resume
 - Automatic pause when headphones or Bluetooth audio disconnect

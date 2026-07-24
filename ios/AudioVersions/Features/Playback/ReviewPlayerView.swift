@@ -165,7 +165,18 @@ struct ReviewPlayerView: View {
                 }
             }
 
-            HStack(spacing: 26) {
+            HStack(spacing: 22) {
+                Button {
+                    store.seek(to: 0, in: version)
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .foregroundStyle(.orange)
+                        .background(Color.orange.opacity(0.14), in: Circle())
+                }
+                .accessibilityLabel("Reset playhead")
+
                 Button {
                     store.skip(by: -10, in: version)
                 } label: {
