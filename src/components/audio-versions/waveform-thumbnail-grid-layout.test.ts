@@ -70,6 +70,19 @@ describe("calculateWaveformThumbnailGridLayout", () => {
 		});
 	});
 
+	it("never exceeds the file-player waveform height cap", () => {
+		expect(
+			calculateWaveformThumbnailGridLayout({
+				height: 800,
+				itemCount: 2,
+				maxRowHeightPx: 92,
+				width: 900,
+			}),
+		).toMatchObject({
+			rowHeightPx: 92,
+		});
+	});
+
 	it("returns no layout for an unmeasurable viewport", () => {
 		expect(
 			calculateWaveformThumbnailGridLayout({

@@ -1,3 +1,5 @@
+import { getWaveformHeightPx } from "#/lib/audio-versions/ui-settings";
+
 type WaveformThumbnailGridDensity =
 	| "comfortable"
 	| "compact"
@@ -15,12 +17,14 @@ interface WaveformThumbnailGridLayout {
 interface CalculateWaveformThumbnailGridLayoutOptions {
 	height: number;
 	itemCount: number;
+	/** Cap row height so thumbnails never exceed the file-player waveform. */
+	maxRowHeightPx?: number;
 	width: number;
 }
 
 const TARGET_ASPECT_RATIO = 5;
 const MIN_COLUMN_WIDTH_PX = 112;
-const MAX_ROW_HEIGHT_PX = 164;
+const DEFAULT_MAX_ROW_HEIGHT_PX = getWaveformHeightPx("large");
 
 function getGapPx(itemCount: number) {
 	if (itemCount >= 30) {
@@ -57,12 +61,14 @@ function getDensity(rowHeightPx: number): WaveformThumbnailGridDensity {
 export function calculateWaveformThumbnailGridLayout({
 	height,
 	itemCount,
+	maxRowHeightPx = DEFAULT_MAX_ROW_HEIGHT_PX,
 	width,
 }: CalculateWaveformThumbnailGridLayoutOptions): WaveformThumbnailGridLayout | null {
 	if (height <= 0 || itemCount <= 0 || width <= 0) {
 		return null;
 	}
 
+	const cappedMaxRowHeightPx = Math.max(1, maxRowHeightPx);
 	const gapPx = getGapPx(itemCount);
 	const maxColumns = Math.min(
 		itemCount,
@@ -77,7 +83,7 @@ export function calculateWaveformThumbnailGridLayout({
 		const rowHeightPx = Math.max(
 			1,
 			Math.min(
-				MAX_ROW_HEIGHT_PX,
+				cappedMaxRowHeightPx,
 				columnWidthPx / TARGET_ASPECT_RATIO,
 				availableRowHeightPx,
 			),

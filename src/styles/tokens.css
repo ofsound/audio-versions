@@ -263,6 +263,7 @@
 	--accent-light-strong-base: #0284c7;
 	--accent-dark-primary-base: #6ee7b7;
 	--accent-dark-strong-base: #38bdf8;
+	--waveform-ruler-height: 18px;
 	--waveform-marker-gutter-height: 20.5px;
 	--waveform-marker-gutter-padding: 2px;
 	/* Hit targets fill the full gutter; range visuals draw 6px shorter and vertically centered, while point triangles shrink inside their original SVG bounds. */

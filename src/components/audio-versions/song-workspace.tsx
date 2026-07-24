@@ -474,7 +474,7 @@ export function SongWorkspace({
 		<>
 			{renderedSongHeaderControls}
 			<main
-				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-8 xl:py-0 xl:pr-0 ${
+				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-2.5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-4 xl:py-0 xl:pr-0 ${
 					isModalOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
 				}`}
 				aria-hidden={isModalOpen}
@@ -493,7 +493,7 @@ export function SongWorkspace({
 					}
 				>
 					<div
-						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pt-4 xl:pr-1"
+						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pt-2 xl:pr-1"
 						data-song-workspace-panel="left"
 					>
 						<SongWorkspaceWaveformList
@@ -544,7 +544,7 @@ export function SongWorkspace({
 					/>
 
 					<div
-						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:pt-4"
+						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:pt-2"
 						data-song-workspace-panel="center"
 					>
 						<div className="song-workspace-primary-surface flex min-h-0 flex-1 flex-col pr-1">

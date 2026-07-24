@@ -146,6 +146,7 @@
 
 	.song-workspace-file-player {
 		--song-workspace-waveform-height: 88px;
+		--waveform-ruler-height: 16px;
 		position: absolute;
 		z-index: 20;
 		right: 0;
@@ -265,6 +266,7 @@
 
 	.song-workspace-file-player {
 		--song-workspace-waveform-height: 44px;
+		--waveform-ruler-height: 14px;
 		--waveform-marker-gutter-height: 16px;
 		--waveform-marker-gutter-padding: 1px;
 		max-height: calc(100% - 0.5rem);
@@ -340,6 +342,7 @@
 
 	.waveform-thumbnail-grid[data-density] .waveform-thumbnail__surface {
 		height: 100%;
+		max-height: var(--song-workspace-waveform-height);
 		min-height: 0;
 		aspect-ratio: auto;
 	}

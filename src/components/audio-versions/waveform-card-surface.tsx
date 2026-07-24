@@ -7,6 +7,7 @@ import type {
 } from "react";
 import type { Annotation, AudioFileRecord } from "#/lib/audio-versions/types";
 import { WaveformCardAnnotationLayer } from "./waveform-card-annotation-layer";
+import { WaveformRuler } from "./waveform-ruler";
 
 interface GutterHoverState {
 	position: "top" | "bottom";
@@ -130,10 +131,11 @@ export function WaveformCardSurface({
 	updateHoveredAnnotationPosition,
 }: WaveformCardSurfaceProps) {
 	return (
-		<div>
+		<div className="overflow-hidden border border-[var(--color-border-plain)]">
+			<WaveformRuler durationMs={audioFile.durationMs} />
 			{/* biome-ignore lint/a11y/useSemanticElements: the waveform surface contains nested marker buttons, so a semantic button wrapper is not valid */}
 			<div
-				className="waveform-surface relative grid overflow-hidden border border-[var(--color-border-plain)]"
+				className="waveform-surface relative grid overflow-hidden border-t border-[var(--color-border-plain)]"
 				style={{
 					height:
 						"calc(var(--song-workspace-waveform-height) + 2 * var(--waveform-marker-gutter-height))",
