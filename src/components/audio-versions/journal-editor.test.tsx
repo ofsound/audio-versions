@@ -94,4 +94,27 @@ describe("JournalEditor", () => {
 		).toBeTruthy();
 		expect(screen.queryByText(href)).toBeNull();
 	});
+
+	it("supports keyboard undo and redo for journal edits", () => {
+		const onChange = vi.fn();
+		const onLocalHistoryAction = vi.fn();
+		render(
+			<JournalEditor
+				value="Original"
+				onChange={onChange}
+				onLocalHistoryAction={onLocalHistoryAction}
+			/>,
+		);
+		const editor = screen.getByRole("textbox", { name: "Song journal" });
+
+		editor.textContent = "Changed";
+		fireEvent.input(editor);
+		fireEvent.keyDown(editor, { key: "z", metaKey: true });
+		expect(onChange).toHaveBeenLastCalledWith("Original");
+		expect(onLocalHistoryAction).toHaveBeenLastCalledWith("undo");
+
+		fireEvent.keyDown(editor, { key: "z", metaKey: true, shiftKey: true });
+		expect(onChange).toHaveBeenLastCalledWith("Changed");
+		expect(onLocalHistoryAction).toHaveBeenLastCalledWith("redo");
+	});
 });

@@ -486,6 +486,27 @@ export function useAnnotationMutations({
 		[cloud, commitSnapshot],
 	);
 
+	const restoreAnnotation = useCallback(
+		async (annotation: Annotation) => {
+			await commitSnapshot(
+				(current) => ({
+					...current,
+					annotations: [
+						...removeEntityById(current.annotations, annotation.id),
+						annotation,
+					],
+				}),
+				async () => {
+					await Promise.all([
+						saveAnnotation(annotation),
+						cloud?.saveAnnotation(annotation),
+					]);
+				},
+			);
+		},
+		[cloud, commitSnapshot],
+	);
+
 	const updateAnnotation = useCallback(
 		async (annotationId: string, patch: Partial<Annotation>) => {
 			await commitSnapshot(
@@ -541,9 +562,10 @@ export function useAnnotationMutations({
 		() => ({
 			createAnnotation,
 			deleteAnnotation,
+			restoreAnnotation,
 			updateAnnotation,
 		}),
-		[createAnnotation, deleteAnnotation, updateAnnotation],
+		[createAnnotation, deleteAnnotation, restoreAnnotation, updateAnnotation],
 	);
 }
 

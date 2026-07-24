@@ -6,6 +6,8 @@ interface UseSongWorkspaceShortcutsOptions {
 	activeAnnotationId?: string;
 	isModalOpen: boolean;
 	onDeleteActiveAnnotation: () => Promise<void>;
+	onRedo: () => Promise<boolean>;
+	onUndo: () => Promise<boolean>;
 	selectedFileId?: string;
 	songId: string;
 	togglePlayback: (fileId: string) => Promise<void>;
@@ -26,6 +28,8 @@ export function useSongWorkspaceShortcuts({
 	activeAnnotationId,
 	isModalOpen,
 	onDeleteActiveAnnotation,
+	onRedo,
+	onUndo,
 	selectedFileId,
 	songId,
 	togglePlayback,
@@ -36,6 +40,25 @@ export function useSongWorkspaceShortcuts({
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (isModalOpen) {
+				return;
+			}
+
+			const commandKey = event.metaKey || event.ctrlKey;
+			const key = event.key.toLowerCase();
+			const isUndo = commandKey && key === "z" && !event.shiftKey;
+			const isRedo =
+				commandKey &&
+				((key === "z" && event.shiftKey) ||
+					(key === "y" && !event.metaKey && !event.shiftKey));
+			if (
+				(isUndo || isRedo) &&
+				!event.altKey &&
+				!event.repeat &&
+				!event.isComposing &&
+				!isEditableElement(event.target)
+			) {
+				event.preventDefault();
+				void (isUndo ? onUndo() : onRedo());
 				return;
 			}
 
@@ -137,6 +160,8 @@ export function useSongWorkspaceShortcuts({
 		isModalOpen,
 		jumpBetweenAnnotations,
 		onDeleteActiveAnnotation,
+		onRedo,
+		onUndo,
 		patchRouteSelection,
 		seekActiveBy,
 		selectedFileId,

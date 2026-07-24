@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
+	Annotation,
 	SongLinkTarget,
 	SongRouteSearch,
 } from "#/lib/audio-versions/types";
@@ -20,6 +21,7 @@ import { SongWorkspaceUploadDialog } from "./song-workspace-upload-dialog";
 import { SongWorkspaceWaveformList } from "./song-workspace-waveform-list";
 import { useCloseOnEscape } from "./use-close-on-escape";
 import { useDebouncedAsyncCallback } from "./use-debounced-async-callback";
+import { useSongWorkspaceHistory } from "./use-song-workspace-history";
 import { useSongWorkspaceRouting } from "./use-song-workspace-routing";
 import { useSongWorkspaceUpload } from "./use-song-workspace-upload";
 
@@ -46,9 +48,10 @@ export function SongWorkspace({
 		updateAudioFile,
 		deleteAudioFile,
 		reorderAudioFiles,
-		createAnnotation,
-		updateAnnotation,
-		deleteAnnotation,
+		createAnnotation: persistCreateAnnotation,
+		restoreAnnotation,
+		updateAnnotation: persistUpdateAnnotation,
+		deleteAnnotation: persistDeleteAnnotation,
 		updateWorkspaceState,
 		registerAudioElement,
 		reportPlaybackState,
@@ -60,6 +63,11 @@ export function SongWorkspace({
 
 	const song = getSongById(songId);
 	const audioFiles = getSongAudioFiles(songId);
+	const annotationsRef = useRef<Annotation[]>([]);
+	annotationsRef.current = audioFiles.flatMap((audioFile) =>
+		getAnnotationsForFile(audioFile.id),
+	);
+	const history = useSongWorkspaceHistory(songId);
 	const workspace = getWorkspaceState(songId);
 	const {
 		activeAnnotation,
@@ -112,6 +120,11 @@ export function SongWorkspace({
 	const [annotationTitleFocusId, setAnnotationTitleFocusId] = useState<
 		string | null
 	>(null);
+	const [journalHistoryValue, setJournalHistoryValue] = useState<{
+		revision: number;
+		value: string;
+	}>();
+	const journalHistoryRevisionRef = useRef(0);
 	const handleAnnotationTitleFocusHandled = useCallback(() => {
 		setAnnotationTitleFocusId(null);
 	}, []);
@@ -242,6 +255,65 @@ export function SongWorkspace({
 		delayMs: DEBOUNCE_MS.journal,
 	});
 
+	const recordJournalChange = useCallback(
+		(previousValue: string, nextValue: string) => {
+			const applyJournalHistory = async (value: string) => {
+				persistSongJournal.cancel();
+				journalHistoryRevisionRef.current += 1;
+				setJournalHistoryValue({
+					revision: journalHistoryRevisionRef.current,
+					value,
+				});
+				await updateSong(songId, { generalNotes: value });
+			};
+			history.record({
+				mergeKey: `journal:${songId}`,
+				undo: () => applyJournalHistory(previousValue),
+				redo: () => applyJournalHistory(nextValue),
+			});
+		},
+		[history, persistSongJournal, songId, updateSong],
+	);
+
+	const updateAnnotation = useCallback(
+		async (annotationId: string, patch: Partial<Annotation>) => {
+			const before = annotationsRef.current.find(
+				(annotation) => annotation.id === annotationId,
+			);
+			if (!before) {
+				await persistUpdateAnnotation(annotationId, patch);
+				return;
+			}
+			const previousPatch = Object.fromEntries(
+				Object.keys(patch).map((key) => [key, before[key as keyof Annotation]]),
+			) as Partial<Annotation>;
+			await persistUpdateAnnotation(annotationId, patch);
+			history.record({
+				mergeKey: `annotation:${annotationId}:${Object.keys(patch).sort().join(",")}`,
+				undo: () => persistUpdateAnnotation(annotationId, previousPatch),
+				redo: () => persistUpdateAnnotation(annotationId, patch),
+			});
+		},
+		[history, persistUpdateAnnotation],
+	);
+
+	const deleteAnnotation = useCallback(
+		async (annotationId: string) => {
+			const annotation = annotationsRef.current.find(
+				(entry) => entry.id === annotationId,
+			);
+			await persistDeleteAnnotation(annotationId);
+			if (!annotation) {
+				return;
+			}
+			history.record({
+				undo: () => restoreAnnotation(annotation),
+				redo: () => persistDeleteAnnotation(annotationId),
+			});
+		},
+		[history, persistDeleteAnnotation, restoreAnnotation],
+	);
+
 	useEffect(() => {
 		return () => {
 			void persistSongJournal.flush();
@@ -323,6 +395,8 @@ export function SongWorkspace({
 		isModalOpen,
 		jumpBetweenAnnotations,
 		onDeleteActiveAnnotation: handleDeleteActiveAnnotation,
+		onRedo: history.redo,
+		onUndo: history.undo,
 		patchRouteSelection,
 		seekActiveBy,
 		selectedFileId,
@@ -332,9 +406,13 @@ export function SongWorkspace({
 
 	async function handleCreateAnnotation(
 		fileId: string,
-		input: Parameters<typeof createAnnotation>[0],
+		input: Parameters<typeof persistCreateAnnotation>[0],
 	) {
-		const annotation = await createAnnotation(input);
+		const annotation = await persistCreateAnnotation(input);
+		history.record({
+			undo: () => persistDeleteAnnotation(annotation.id),
+			redo: () => restoreAnnotation(annotation),
+		});
 		patchRouteSelection({
 			fileId,
 			annotationId: annotation.id,
@@ -540,8 +618,11 @@ export function SongWorkspace({
 					>
 						<div className="flex min-h-0 flex-1 flex-col">
 							<JournalEditor
+								historyValue={journalHistoryValue}
 								value={song.generalNotes}
 								onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
+								onHistoryChange={recordJournalChange}
+								onLocalHistoryAction={history.acceptLocalHistoryAction}
 								onInternalLink={(target) => openTarget(target)}
 							/>
 						</div>

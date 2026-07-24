@@ -3,6 +3,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -14,6 +15,9 @@ import { formatDuration } from "#/lib/audio-versions/waveform";
 interface JournalEditorProps {
 	value: string;
 	onChange: (value: string) => void;
+	onHistoryChange?: (previousValue: string, nextValue: string) => void;
+	onLocalHistoryAction?: (action: "undo" | "redo") => void;
+	historyValue?: { revision: number; value: string };
 	onInternalLink?: (target: SongLinkTarget) => void;
 }
 
@@ -162,12 +166,20 @@ function readJournal(root: HTMLElement): string {
 export function JournalEditor({
 	value,
 	onChange,
+	onHistoryChange,
+	onLocalHistoryAction,
+	historyValue,
 	onInternalLink,
 }: JournalEditorProps) {
 	const [draft, setDraft] = useState(value);
+	const [historyFocusRevision, setHistoryFocusRevision] = useState(0);
 	const editorRef = useRef<HTMLDivElement | null>(null);
 	const draftRef = useRef(draft);
 	const hasPendingLocalChangeRef = useRef(false);
+	const undoStackRef = useRef<string[]>([]);
+	const redoStackRef = useRef<string[]>([]);
+	const lastHistoryAtRef = useRef(0);
+	const restoreFocusAfterHistoryRef = useRef(false);
 	const timestampFormatter = useMemo(
 		() =>
 			new Intl.DateTimeFormat(undefined, {
@@ -191,25 +203,84 @@ export function JournalEditor({
 		}
 	}, [value]);
 
-	const commitEditor = useCallback(() => {
+	useEffect(() => {
+		if (!historyValue) {
+			return;
+		}
+		hasPendingLocalChangeRef.current = false;
+		draftRef.current = historyValue.value;
+		setDraft(historyValue.value);
+	}, [historyValue]);
+
+	useLayoutEffect(() => {
+		if (historyFocusRevision === 0) {
+			return;
+		}
+		if (!restoreFocusAfterHistoryRef.current) {
+			return;
+		}
+		restoreFocusAfterHistoryRef.current = false;
 		const editor = editorRef.current;
 		if (!editor) {
 			return;
 		}
-		const nextValue = readJournal(editor);
-		const renderedLinkCount = editor.querySelectorAll(
-			"[data-journal-source]",
-		).length;
-		if (
-			countParsableJournalLinks(nextValue) > renderedLinkCount &&
-			nextValue !== draftRef.current
-		) {
+		editor.focus({ preventScroll: true });
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.selectNodeContents(editor);
+		range.collapse(false);
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	}, [historyFocusRevision]);
+
+	const applyHistoryValue = useCallback(
+		(nextValue: string) => {
+			hasPendingLocalChangeRef.current = true;
+			restoreFocusAfterHistoryRef.current = true;
+			setHistoryFocusRevision((current) => current + 1);
+			draftRef.current = nextValue;
 			setDraft(nextValue);
-		}
-		hasPendingLocalChangeRef.current = true;
-		draftRef.current = nextValue;
-		onChange(nextValue);
-	}, [onChange]);
+			onChange(nextValue);
+		},
+		[onChange],
+	);
+
+	const commitEditor = useCallback(
+		(forceHistoryBoundary = false) => {
+			const editor = editorRef.current;
+			if (!editor) {
+				return;
+			}
+			const nextValue = readJournal(editor);
+			const renderedLinkCount = editor.querySelectorAll(
+				"[data-journal-source]",
+			).length;
+			if (
+				countParsableJournalLinks(nextValue) > renderedLinkCount &&
+				nextValue !== draftRef.current
+			) {
+				setDraft(nextValue);
+			}
+			const previousValue = draftRef.current;
+			if (nextValue === previousValue) {
+				return;
+			}
+			const now = Date.now();
+			if (forceHistoryBoundary || now - lastHistoryAtRef.current > 750) {
+				undoStackRef.current.push(previousValue);
+				if (undoStackRef.current.length > 100) {
+					undoStackRef.current.shift();
+				}
+			}
+			lastHistoryAtRef.current = now;
+			redoStackRef.current = [];
+			hasPendingLocalChangeRef.current = true;
+			draftRef.current = nextValue;
+			onChange(nextValue);
+			onHistoryChange?.(previousValue, nextValue);
+		},
+		[onChange, onHistoryChange],
+	);
 
 	const insertTimestamp = useCallback(() => {
 		const editor = editorRef.current;
@@ -244,7 +315,7 @@ export function JournalEditor({
 		nextRange.collapse(true);
 		selection?.removeAllRanges();
 		selection?.addRange(nextRange);
-		commitEditor();
+		commitEditor(true);
 	}, [commitEditor, timestampFormatter]);
 
 	return (
@@ -278,7 +349,41 @@ export function JournalEditor({
 				aria-multiline="true"
 				data-placeholder="Write a note…"
 				spellCheck
-				onInput={commitEditor}
+				onBlur={() => {
+					lastHistoryAtRef.current = 0;
+				}}
+				onPaste={() => {
+					lastHistoryAtRef.current = 0;
+				}}
+				onInput={() => commitEditor()}
+				onKeyDown={(event) => {
+					const commandKey = event.metaKey || event.ctrlKey;
+					const key = event.key.toLowerCase();
+					const undo = commandKey && key === "z" && !event.shiftKey;
+					const redo =
+						commandKey &&
+						((key === "z" && event.shiftKey) ||
+							(key === "y" && !event.metaKey && !event.shiftKey));
+					if (
+						(!undo && !redo) ||
+						event.altKey ||
+						event.nativeEvent.isComposing
+					) {
+						return;
+					}
+
+					const source = undo ? undoStackRef.current : redoStackRef.current;
+					const nextValue = source.pop();
+					if (nextValue === undefined) {
+						return;
+					}
+					event.preventDefault();
+					const target = undo ? redoStackRef.current : undoStackRef.current;
+					target.push(draftRef.current);
+					lastHistoryAtRef.current = 0;
+					applyHistoryValue(nextValue);
+					onLocalHistoryAction?.(undo ? "undo" : "redo");
+				}}
 			>
 				{renderJournal(draft, onInternalLink)}
 			</div>

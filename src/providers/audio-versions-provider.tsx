@@ -57,6 +57,7 @@ interface AudioVersionsContextValue extends AudioVersionsSnapshot {
 	deleteAudioFile: (audioFileId: string) => Promise<void>;
 	reorderAudioFiles: (songId: string, orderedIds: string[]) => Promise<void>;
 	createAnnotation: (input: CreateAnnotationInput) => Promise<Annotation>;
+	restoreAnnotation: (annotation: Annotation) => Promise<void>;
 	updateAnnotation: (
 		annotationId: string,
 		patch: Partial<Annotation>,
