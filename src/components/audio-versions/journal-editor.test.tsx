@@ -7,13 +7,19 @@ import { JournalEditor } from "./journal-editor";
 afterEach(cleanup);
 
 describe("JournalEditor", () => {
-	it("uses a plain textarea with timestamp insertion as its only action", () => {
+	it("uses a plain-text editor with timestamp insertion as its only action", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="Alpha Beta" onChange={onChange} />);
 
 		const editor = screen.getByRole("textbox", { name: "Song journal" });
 		editor.focus();
-		(editor as HTMLTextAreaElement).setSelectionRange(6, 6);
+		const text = editor.firstElementChild?.firstChild;
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.setStart(text as Text, 6);
+		range.collapse(true);
+		selection?.removeAllRanges();
+		selection?.addRange(range);
 
 		fireEvent.click(screen.getByRole("button", { name: "Insert time" }));
 
@@ -21,9 +27,7 @@ describe("JournalEditor", () => {
 			dateStyle: "medium",
 			timeStyle: "short",
 		}).format(new Date());
-		expect((editor as HTMLTextAreaElement).value).toBe(
-			`Alpha ${timestamp} Beta`,
-		);
+		expect(editor.textContent).toBe(`Alpha ${timestamp} Beta`);
 		expect(onChange).toHaveBeenLastCalledWith(`Alpha ${timestamp} Beta`);
 		expect(screen.queryByRole("button", { name: "Bold" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Italic" })).toBeNull();
@@ -33,9 +37,10 @@ describe("JournalEditor", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="First line" onChange={onChange} />);
 
-		fireEvent.change(screen.getByRole("textbox", { name: "Song journal" }), {
-			target: { value: "First line\n\nSecond line" },
-		});
+		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		editor.innerHTML =
+			"<div>First line</div><div><br></div><div>Second line</div>";
+		fireEvent.input(editor);
 
 		expect(onChange).toHaveBeenLastCalledWith("First line\n\nSecond line");
 	});
@@ -58,6 +63,12 @@ describe("JournalEditor", () => {
 				name: "Jump to Mix B - Marker 0:54",
 			}),
 		);
+		expect(
+			screen.queryByText(
+				"http://localhost:3000/songs/song-1?fileId=file-2&annotationId=annotation-7&timeMs=54000&autoplay=1",
+			),
+		).toBeNull();
+		expect(screen.getByText("0:54")).toBeTruthy();
 
 		expect(onInternalLink).toHaveBeenCalledWith({
 			songId: "song-1",
@@ -66,5 +77,21 @@ describe("JournalEditor", () => {
 			timeMs: 54000,
 			autoplay: true,
 		});
+	});
+
+	it("converts a newly pasted marker URL into an inline chip", () => {
+		const href =
+			"http://localhost:3000/songs/song-1?fileId=file-2&annotationId=annotation-7&timeMs=54000&autoplay=1";
+		const onChange = vi.fn();
+		render(<JournalEditor value="Existing note" onChange={onChange} />);
+
+		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		editor.innerHTML = `<div>Existing note</div><div>${href}</div>`;
+		fireEvent.input(editor);
+
+		expect(
+			screen.getByRole("button", { name: "Jump to Existing note" }),
+		).toBeTruthy();
+		expect(screen.queryByText(href)).toBeNull();
 	});
 });

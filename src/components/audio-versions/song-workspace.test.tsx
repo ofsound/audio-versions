@@ -1208,6 +1208,7 @@ describe("SongWorkspace", () => {
 		expect(journalEditor).toBeTruthy();
 		expect(journalEditor?.closest(".panel-shell")).toBeNull();
 		expect(journalColumn?.className).toContain("xl:min-h-0");
+		expect(journalColumn?.className).toContain("song-workspace-journal-column");
 	});
 
 	it("renders the song controls into the header slot when one is available", () => {

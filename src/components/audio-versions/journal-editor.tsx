@@ -1,7 +1,15 @@
 import { Clock3, Link2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { parseSongTarget } from "#/lib/audio-versions/links";
 import type { SongLinkTarget } from "#/lib/audio-versions/types";
+import { formatDuration } from "#/lib/audio-versions/waveform";
 
 interface JournalEditorProps {
 	value: string;
@@ -12,41 +20,143 @@ interface JournalEditorProps {
 interface JournalLink {
 	href: string;
 	label: string;
+	source: string;
 	target: SongLinkTarget;
 }
 
 const JOURNAL_URL_PATTERN = /(?:https?:\/\/[^\s]+|\/songs\/[^\s]+)/g;
 const JOURNAL_URL_PREFIX_PATTERN = /(?:https?:\/\/|\/songs\/)/;
 
-function extractJournalLinks(value: string): JournalLink[] {
-	const lines = value.split(/\r?\n/);
-	const links: JournalLink[] = [];
-	const seenHrefs = new Set<string>();
+function countParsableJournalLinks(value: string): number {
+	return [...value.matchAll(JOURNAL_URL_PATTERN)].filter((match) =>
+		parseSongTarget(match[0].replace(/[),.;!?]+$/, "")),
+	).length;
+}
 
-	for (const [lineIndex, line] of lines.entries()) {
-		for (const match of line.matchAll(JOURNAL_URL_PATTERN)) {
-			const href = match[0].replace(/[),.;!?]+$/, "");
-			const target = parseSongTarget(href);
-			if (!target || seenHrefs.has(href)) {
+function getJournalLink(
+	lines: string[],
+	lineIndex: number,
+	match: RegExpMatchArray,
+): JournalLink | null {
+	const href = match[0].replace(/[),.;!?]+$/, "");
+	const target = parseSongTarget(href);
+	if (!target) {
+		return null;
+	}
+
+	const previousLine = lines[lineIndex - 1]?.trim();
+	const isStandaloneUrl = lines[lineIndex].trim() === match[0];
+	const hasStandaloneLabel =
+		isStandaloneUrl &&
+		previousLine &&
+		!JOURNAL_URL_PREFIX_PATTERN.test(previousLine);
+	const label = hasStandaloneLabel
+		? previousLine
+		: target.annotationId
+			? "Marker link"
+			: "Song link";
+
+	return {
+		href,
+		label,
+		source: hasStandaloneLabel ? `${lines[lineIndex - 1]}\n${href}` : href,
+		target,
+	};
+}
+
+function renderJournal(
+	value: string,
+	onInternalLink?: (target: SongLinkTarget) => void,
+): ReactNode[] {
+	const lines = value.split(/\r?\n/);
+	const rendered: ReactNode[] = [];
+
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+		const line = lines[lineIndex];
+		const matches = [...line.matchAll(JOURNAL_URL_PATTERN)];
+		const standaloneLink =
+			matches.length === 1
+				? getJournalLink(lines, lineIndex, matches[0])
+				: null;
+
+		if (standaloneLink?.source.includes("\n") && rendered.length > 0) {
+			rendered.pop();
+		}
+
+		const content: ReactNode[] = [];
+		let offset = 0;
+		for (const [matchIndex, match] of matches.entries()) {
+			const link = getJournalLink(lines, lineIndex, match);
+			if (!link || match.index === undefined) {
 				continue;
 			}
 
-			const previousLine = lines[lineIndex - 1]?.trim();
-			const isStandaloneUrl = line.trim() === match[0] || line.trim() === href;
-			const label =
-				isStandaloneUrl &&
-				previousLine &&
-				!JOURNAL_URL_PREFIX_PATTERN.test(previousLine)
-					? previousLine
-					: target.annotationId
-						? "Marker link"
-						: "Song link";
-			seenHrefs.add(href);
-			links.push({ href, label, target });
+			if (match.index > offset) {
+				content.push(line.slice(offset, match.index));
+			}
+			content.push(
+				<button
+					key={`${link.href}-${matchIndex}`}
+					type="button"
+					className="journal-link-chip surface-chip"
+					contentEditable={false}
+					data-journal-source={link.source}
+					aria-label={`Jump to ${link.label}`}
+					title={link.href}
+					onClick={() => onInternalLink?.(link.target)}
+					onKeyDown={(event) => {
+						if (event.key === "Enter" || event.key === " ") {
+							event.preventDefault();
+							onInternalLink?.(link.target);
+						}
+					}}
+				>
+					<Link2 size={14} />
+					<span className="journal-link-label">{link.label}</span>
+					{typeof link.target.timeMs === "number" ? (
+						<span className="journal-link-time">
+							{formatDuration(link.target.timeMs)}
+						</span>
+					) : null}
+				</button>,
+			);
+			offset = match.index + match[0].length;
 		}
+		content.push(line.slice(offset));
+
+		rendered.push(
+			<div key={`${lineIndex}-${line}`}>
+				{content.length > 0 ? content : <br />}
+			</div>,
+		);
 	}
 
-	return links;
+	return rendered;
+}
+
+function readJournal(root: HTMLElement): string {
+	function readNode(node: Node): string {
+		if (node.nodeType === Node.TEXT_NODE) {
+			return node.textContent ?? "";
+		}
+		if (!(node instanceof HTMLElement)) {
+			return "";
+		}
+		const source = node.dataset.journalSource;
+		if (source !== undefined) {
+			return source;
+		}
+		if (node.tagName === "BR") {
+			return "\n";
+		}
+		return Array.from(node.childNodes).map(readNode).join("");
+	}
+
+	return Array.from(root.childNodes)
+		.map((node) => readNode(node))
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.replace(/\n$/, "");
 }
 
 export function JournalEditor({
@@ -55,7 +165,7 @@ export function JournalEditor({
 	onInternalLink,
 }: JournalEditorProps) {
 	const [draft, setDraft] = useState(value);
-	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const editorRef = useRef<HTMLDivElement | null>(null);
 	const draftRef = useRef(draft);
 	const hasPendingLocalChangeRef = useRef(false);
 	const timestampFormatter = useMemo(
@@ -66,7 +176,6 @@ export function JournalEditor({
 			}),
 		[],
 	);
-	const journalLinks = useMemo(() => extractJournalLinks(draft), [draft]);
 
 	useEffect(() => {
 		draftRef.current = draft;
@@ -77,43 +186,66 @@ export function JournalEditor({
 			hasPendingLocalChangeRef.current = false;
 			return;
 		}
-
 		if (!hasPendingLocalChangeRef.current) {
 			setDraft(value);
 		}
 	}, [value]);
 
-	const commitDraft = useCallback(
-		(nextValue: string) => {
-			hasPendingLocalChangeRef.current = true;
-			draftRef.current = nextValue;
-			setDraft(nextValue);
-			onChange(nextValue);
-		},
-		[onChange],
-	);
-
-	const insertTimestamp = useCallback(() => {
-		const textarea = textareaRef.current;
-		if (!textarea) {
+	const commitEditor = useCallback(() => {
+		const editor = editorRef.current;
+		if (!editor) {
 			return;
 		}
+		const nextValue = readJournal(editor);
+		const renderedLinkCount = editor.querySelectorAll(
+			"[data-journal-source]",
+		).length;
+		if (
+			countParsableJournalLinks(nextValue) > renderedLinkCount &&
+			nextValue !== draftRef.current
+		) {
+			setDraft(nextValue);
+		}
+		hasPendingLocalChangeRef.current = true;
+		draftRef.current = nextValue;
+		onChange(nextValue);
+	}, [onChange]);
 
+	const insertTimestamp = useCallback(() => {
+		const editor = editorRef.current;
+		if (!editor) {
+			return;
+		}
+		editor.focus({ preventScroll: true });
+		const selection = window.getSelection();
+		const range =
+			selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 		const timestamp = timestampFormatter.format(new Date());
-		const selectionStart = textarea.selectionStart;
-		const selectionEnd = textarea.selectionEnd;
-		const before = draftRef.current.slice(0, selectionStart);
-		const after = draftRef.current.slice(selectionEnd);
-		const insertion = `${before && !/\s$/.test(before) ? " " : ""}${timestamp}${after && !/^\s/.test(after) ? " " : ""}`;
-		const nextValue = `${before}${insertion}${after}`;
-		const nextSelection = selectionStart + insertion.length;
+		const adjacentText =
+			range?.startContainer.nodeType === Node.TEXT_NODE
+				? (range.startContainer.textContent ?? "")
+				: "";
+		const before =
+			adjacentText[range?.startOffset ? range.startOffset - 1 : -1];
+		const after = adjacentText[range?.endOffset ?? 0];
+		const insertion = `${before && !/\s/.test(before) ? " " : ""}${timestamp}${
+			after && !/\s/.test(after) ? " " : ""
+		}`;
+		const text = document.createTextNode(insertion);
 
-		commitDraft(nextValue);
-		requestAnimationFrame(() => {
-			textarea.focus({ preventScroll: true });
-			textarea.setSelectionRange(nextSelection, nextSelection);
-		});
-	}, [commitDraft, timestampFormatter]);
+		if (range && editor.contains(range.commonAncestorContainer)) {
+			range.deleteContents();
+			range.insertNode(text);
+		} else {
+			editor.append(text);
+		}
+		const nextRange = document.createRange();
+		nextRange.setStartAfter(text);
+		nextRange.collapse(true);
+		selection?.removeAllRanges();
+		selection?.addRange(nextRange);
+		commitEditor();
+	}, [commitEditor, timestampFormatter]);
 
 	return (
 		<div
@@ -121,7 +253,7 @@ export function JournalEditor({
 			data-audio-versions-editor="journal"
 		>
 			<div
-				className="flex shrink-0 items-center border-b border-[var(--color-border-plain)] px-3 py-2"
+				className="flex shrink-0 items-center px-3 py-2"
 				data-audio-versions-toolbar
 			>
 				<button
@@ -133,32 +265,23 @@ export function JournalEditor({
 					Insert time
 				</button>
 			</div>
-			{onInternalLink && journalLinks.length > 0 ? (
-				<div className="flex shrink-0 gap-2 overflow-x-auto border-b border-[var(--color-border-plain)] px-3 py-2">
-					{journalLinks.map((link) => (
-						<button
-							key={link.href}
-							type="button"
-							className="surface-chip inline-flex h-8 max-w-72 shrink-0 items-center gap-2 px-3 text-xs font-semibold transition-colors hover:border-[var(--color-border-strong)]"
-							aria-label={`Jump to ${link.label}`}
-							title={link.href}
-							onClick={() => onInternalLink(link.target)}
-						>
-							<Link2 size={14} className="shrink-0" />
-							<span className="truncate">{link.label}</span>
-						</button>
-					))}
-				</div>
-			) : null}
-			<textarea
-				ref={textareaRef}
-				value={draft}
-				onChange={(event) => commitDraft(event.currentTarget.value)}
-				className="journal-editor min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-4 text-base leading-7 text-[var(--color-text)] outline-none"
+			{/* biome-ignore lint/a11y/useSemanticElements: textarea cannot contain inline link controls */}
+			<div
+				key={draft}
+				ref={editorRef}
+				className="journal-editor min-h-0 flex-1 overflow-y-auto bg-transparent px-4 py-4 text-base leading-7 text-[var(--color-text)] outline-none"
+				contentEditable
+				suppressContentEditableWarning
+				role="textbox"
+				tabIndex={0}
 				aria-label="Song journal"
-				placeholder="Write a note…"
+				aria-multiline="true"
+				data-placeholder="Write a note…"
 				spellCheck
-			/>
+				onInput={commitEditor}
+			>
+				{renderJournal(draft, onInternalLink)}
+			</div>
 		</div>
 	);
 }

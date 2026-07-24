@@ -364,13 +364,13 @@ export function SongWorkspace({
 		<>
 			{renderedSongHeaderControls}
 			<main
-				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-8 ${
+				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-8 xl:py-0 xl:pr-0 ${
 					isModalOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
 				}`}
 				aria-hidden={isModalOpen}
 			>
 				<section className="song-workspace-scroll-region grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-columns:minmax(0,50%)_minmax(280px,1fr)_420px] xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch">
-					<div className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
+					<div className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:py-8 xl:pr-[calc(0.25rem+var(--song-workspace-waveform-tab-width))]">
 						<SongWorkspaceWaveformList
 							activeAnnotationId={activeAnnotationId}
 							audioFiles={audioFiles}
@@ -412,7 +412,7 @@ export function SongWorkspace({
 						/>
 					</div>
 
-					<div className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden">
+					<div className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:py-8">
 						<div className="flex min-h-0 flex-1 flex-col pr-1">
 							<InspectorPane
 								song={song}
@@ -442,7 +442,7 @@ export function SongWorkspace({
 						</div>
 					</div>
 
-					<div className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden">
+					<div className="song-workspace-journal-column flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden">
 						<div className="flex min-h-0 flex-1 flex-col">
 							<JournalEditor
 								value={song.generalNotes}

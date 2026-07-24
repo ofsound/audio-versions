@@ -57,10 +57,7 @@
     <!-- 'V' Right Leg -->
     <path d="M 376 136 L 280 376 C 274 391 238 391 232 376 L 196 286 L 240 270 L 256 312 L 332 136 Z" fill="url(#sky-grad-01)"/>
 
-    <!-- Interlocking Center Crossbar & Audio Waveform Nodes -->
-    <path d="M 190 276 L 322 276 C 330 276 336 282 336 290 C 336 298 330 304 322 304 L 190 304 C 182 304 176 298 176 290 C 176 282 182 276 190 276 Z" fill="url(#cross-grad-01)" filter="url(#glow-01)"/>
-
-    <!-- Audio Wave Lines on 'A' Crossbar -->
+    <!-- Audio Wave Lines on the interlocking ribbons -->
     <rect x="216" y="260" width="6" height="32" rx="3" fill="#ffffff" opacity="0.9"/>
     <rect x="232" y="248" width="6" height="56" rx="3" fill="#ffffff"/>
     <rect x="248" y="236" width="6" height="80" rx="3" fill="#6ee7b7" filter="url(#glow-01)"/>

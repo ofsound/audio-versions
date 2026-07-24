@@ -18,7 +18,7 @@ export function SongWorkspaceHeaderControls({
 			<button
 				type="button"
 				onClick={onOpenUpload}
-				className="song-workspace-add-file action-primary inline-flex h-12 shrink-0 items-center justify-center gap-2 px-5 text-sm font-semibold leading-none"
+				className="song-workspace-add-file action-primary inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-semibold leading-none"
 			>
 				<Upload size={16} />
 				Add file

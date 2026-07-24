@@ -78,7 +78,7 @@ export function InspectorPane({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-			<section className="relative flex h-full min-h-0 flex-col border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-4">
+			<section className="relative flex h-full min-h-0 flex-col p-4">
 				<div className="flex shrink-0 items-start justify-between gap-3">
 					<div className="min-w-0">
 						<h3 className="text-lg font-semibold text-[var(--color-text)]">

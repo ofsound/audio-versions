@@ -17,6 +17,26 @@
 	color: var(--color-text-inverse);
 }
 
+.song-workspace-add-file {
+	border: 1px solid color-mix(in srgb, var(--color-accent) 72%, white);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--color-accent) 92%, white),
+		var(--color-accent),
+		color-mix(in srgb, var(--color-accent) 78%, black)
+	);
+	color: var(--color-white);
+	box-shadow: 0 8px 20px -14px var(--color-accent-strong);
+	transition:
+		filter 160ms ease,
+		box-shadow 160ms ease;
+}
+
+.song-workspace-add-file:hover {
+	filter: saturate(1.12) brightness(1.08);
+	box-shadow: 0 10px 24px -14px var(--color-accent-strong);
+}
+
 .theme-toggle-button {
 	display: inline-flex;
 	align-items: center;
@@ -323,6 +343,70 @@
 	overscroll-behavior: contain;
 	scrollbar-gutter: stable;
 	scrollbar-width: thin;
+	white-space: pre-wrap;
+}
+
+.journal-editor:empty::before {
+	color: var(--color-text-muted);
+	content: attr(data-placeholder);
+	pointer-events: none;
+}
+
+.journal-link-chip {
+	display: inline-flex;
+	height: 1.65rem;
+	max-width: min(20rem, 80%);
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0.18rem;
+	padding: 0 0.55rem;
+	vertical-align: 0.1em;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	border-color: color-mix(
+		in srgb,
+		var(--color-accent) 42%,
+		var(--color-border-plain)
+	);
+	background: color-mix(
+		in srgb,
+		var(--color-accent-surface) 62%,
+		var(--color-surface-elevated)
+	);
+	color: var(--color-text);
+	transition:
+		border-color 160ms ease,
+		background-color 160ms ease;
+}
+
+.journal-link-chip:hover,
+.journal-link-chip:focus-visible {
+	border-color: var(--color-accent-strong);
+	background: color-mix(
+		in srgb,
+		var(--color-accent-surface) 82%,
+		var(--color-surface-elevated)
+	);
+}
+
+.journal-link-chip > svg {
+	color: var(--color-accent-strong);
+}
+
+.journal-link-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.journal-link-time {
+	flex: none;
+	border-left: 1px solid var(--color-border-plain);
+	padding-left: 0.45rem;
+	color: var(--color-text-muted);
+	font-variant-numeric: tabular-nums;
 }
 
 .journal-editor::-webkit-scrollbar {
@@ -354,6 +438,34 @@
 
 [data-audio-versions-editor="journal"] [data-audio-versions-toolbar] {
 	flex: 0 0 auto;
+}
+
+@media (min-width: 1280px) {
+	.song-workspace-journal-column {
+		--journal-transition-width: 0.25rem;
+		background:
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--color-app) 72%, var(--color-header-surface)) 0,
+				color-mix(in srgb, var(--color-app) 28%, var(--color-header-surface))
+					0.125rem,
+				transparent var(--journal-transition-width)
+			),
+			var(--background-image-panel), var(--color-header-surface);
+	}
+
+	.song-workspace-journal-column .journal-editor-shell {
+		border-width: 0;
+		background: transparent;
+	}
+
+	.song-workspace-journal-column [data-audio-versions-toolbar] {
+		padding-left: calc(0.75rem + var(--journal-transition-width));
+	}
+
+	.song-workspace-journal-column .journal-editor {
+		padding-left: calc(1rem + var(--journal-transition-width));
+	}
 }
 
 @media (max-width: 1279px) {
