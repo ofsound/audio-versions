@@ -724,46 +724,12 @@ describe("WaveformCard", () => {
 		expect(onSelectFile).toHaveBeenCalledTimes(2);
 	});
 
-	it("arms row dragging from the handle and uses the full row as the drag image", () => {
-		const onDragStart = vi.fn();
+	it("hides the row reorder handle", () => {
+		renderWaveformCard();
 
-		renderWaveformCard({
-			onDragStart,
-		});
-
-		const waveformCard = screen.getByRole("article");
-		const dragHandle = screen.getByRole("button", {
-			name: /reorder mix v1/i,
-		});
-		expect(dragHandle.className).toContain("icon-button");
-		mockWaveformBounds(waveformCard, { left: 10, width: 240 });
-		const dataTransfer = {
-			effectAllowed: "none",
-			setData: vi.fn(),
-			setDragImage: vi.fn(),
-		};
-
-		fireEvent.pointerDown(dragHandle, { clientX: 46, clientY: 22 });
-
-		expect(waveformCard).toHaveProperty("draggable", true);
-
-		fireEvent.dragStart(waveformCard, {
-			dataTransfer,
-			clientX: 46,
-			clientY: 22,
-		});
-
-		expect(dataTransfer.effectAllowed).toBe("move");
-		expect(dataTransfer.setData).toHaveBeenCalledWith("text/plain", "file-1");
-		expect(dataTransfer.setDragImage).toHaveBeenCalledWith(
-			waveformCard,
-			24,
-			24,
-		);
-		expect(onDragStart).toHaveBeenCalledTimes(1);
-
-		fireEvent.dragEnd(waveformCard);
-		expect(waveformCard).toHaveProperty("draggable", false);
+		expect(
+			screen.queryByRole("button", { name: /reorder mix v1/i }),
+		).toBeNull();
 	});
 
 	it("seeks to center on Enter and ignores Space key presses", async () => {

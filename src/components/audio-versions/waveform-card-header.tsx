@@ -1,7 +1,6 @@
 import {
 	Bookmark,
 	Brackets,
-	GripVertical,
 	Pause,
 	Play,
 	RotateCcw,
@@ -14,11 +13,9 @@ interface WaveformCardHeaderProps {
 	audioFileTitle: string;
 	isPlaying: boolean;
 	onAddMarkerAtPlayhead: () => void;
-	onArmDrag: () => void;
 	onCancelPendingRange: () => void;
 	onEndRangeAtPlayhead: () => void;
 	onOpenFileDetails: () => void;
-	onReleaseDrag: () => void;
 	onResetPlayhead: () => void;
 	onSelectFile: () => void;
 	onStartRangeAtPlayhead: () => void;
@@ -31,11 +28,9 @@ export function WaveformCardHeader({
 	audioFileTitle,
 	isPlaying,
 	onAddMarkerAtPlayhead,
-	onArmDrag,
 	onCancelPendingRange,
 	onEndRangeAtPlayhead,
 	onOpenFileDetails,
-	onReleaseDrag,
 	onResetPlayhead,
 	onSelectFile,
 	onStartRangeAtPlayhead,
@@ -45,25 +40,13 @@ export function WaveformCardHeader({
 }: WaveformCardHeaderProps) {
 	return (
 		<div className="waveform-card__header mb-4 flex flex-wrap items-center justify-between gap-3">
-			<div className="waveform-card__identity flex min-w-0 items-center gap-3">
-				<button
-					type="button"
-					aria-label={`Reorder ${audioFileTitle}`}
-					onPointerDown={onArmDrag}
-					onPointerUp={onReleaseDrag}
-					onPointerCancel={onReleaseDrag}
-					onBlur={onReleaseDrag}
-					className="waveform-card__reorder icon-button h-10 w-10 shrink-0"
-					title="Drag to reorder"
-				>
-					<GripVertical size={16} />
-				</button>
+			<div className="waveform-card__identity flex w-full min-w-0 items-center gap-3">
 				<div className="flex min-w-0 flex-1 flex-col">
 					<div className="flex min-w-0 items-baseline gap-2">
 						<button
 							type="button"
 							onClick={onSelectFile}
-							className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-lg font-semibold text-[var(--color-text)]"
+							className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-2xl font-semibold text-[var(--color-text)]"
 						>
 							{audioFileTitle}
 						</button>
@@ -78,14 +61,14 @@ export function WaveformCardHeader({
 						</button>
 					</div>
 					{sessionDateLabel ? (
-						<span className="waveform-card__date whitespace-nowrap text-xs tabular-nums text-[var(--color-text-muted)]">
+						<span className="waveform-card__date whitespace-nowrap text-sm tabular-nums text-[var(--color-text-muted)]">
 							{sessionDateLabel}
 						</span>
 					) : null}
 				</div>
 			</div>
 
-			<div className="waveform-card__actions flex flex-wrap items-center gap-2">
+			<div className="waveform-card__actions ml-auto flex flex-wrap items-center gap-2">
 				<button
 					type="button"
 					aria-label={`Add marker at playhead for ${audioFileTitle}`}

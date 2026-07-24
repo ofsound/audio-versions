@@ -224,20 +224,15 @@ export function WaveformCard({
 		);
 	}
 
-	const {
-		handleArmDrag,
-		handleDragEnd,
-		handleDragStart,
-		handleDrop,
-		handleReleaseDrag,
-	} = useWaveformCardDragHandle({
-		articleRef,
-		audioFileId: audioFile.id,
-		onDragEnd,
-		onDragStart,
-		onDrop,
-		onSelectFile,
-	});
+	const { handleDragEnd, handleDragStart, handleDrop } =
+		useWaveformCardDragHandle({
+			articleRef,
+			audioFileId: audioFile.id,
+			onDragEnd,
+			onDragStart,
+			onDrop,
+			onSelectFile,
+		});
 	const {
 		clearGutterHover,
 		gutterHover,
@@ -314,13 +309,11 @@ export function WaveformCard({
 				onAddMarkerAtPlayhead={() => {
 					void handleAddMarkerAtPlayhead();
 				}}
-				onArmDrag={handleArmDrag}
 				onCancelPendingRange={handleCancelPendingRange}
 				onEndRangeAtPlayhead={() => {
 					void handleEndRangeAtPlayhead();
 				}}
 				onOpenFileDetails={() => onOpenFileDetails(audioFile.id)}
-				onReleaseDrag={handleReleaseDrag}
 				onResetPlayhead={() => {
 					onSelectFile(audioFile.id);
 					void onSeek(0, false);
