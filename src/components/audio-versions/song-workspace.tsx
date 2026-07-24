@@ -139,23 +139,21 @@ export function SongWorkspace({
 			}
 
 			setPanelWidths((current) => {
-				const panels =
-					current ??
-					(() => {
-						const [left, center, right] = [
-							...grid.querySelectorAll<HTMLElement>(
-								"[data-song-workspace-panel]",
-							),
-						];
-						if (!left || !center || !right) {
-							return null;
-						}
-						return {
-							left: left.getBoundingClientRect().width,
-							center: center.getBoundingClientRect().width,
-							right: right.getBoundingClientRect().width,
-						};
-					})();
+				const panels = (() => {
+					const [left, center, right] = [
+						...grid.querySelectorAll<HTMLElement>(
+							"[data-song-workspace-panel]",
+						),
+					];
+					if (!left || !center || !right) {
+						return null;
+					}
+					return {
+						left: left.getBoundingClientRect().width,
+						center: center.getBoundingClientRect().width,
+						right: right.getBoundingClientRect().width,
+					};
+				})();
 				if (!panels) {
 					return current;
 				}
@@ -519,7 +517,7 @@ export function SongWorkspace({
 							? ({
 									"--song-workspace-left-panel-width": `${panelWidths.left}px`,
 									"--song-workspace-center-panel-width": `${panelWidths.center}px`,
-									"--song-workspace-right-panel-width": `${panelWidths.right}px`,
+									"--song-workspace-right-panel-width": `minmax(${panelWidths.right}px, 1fr)`,
 								} as CSSProperties)
 							: undefined
 					}
@@ -578,7 +576,7 @@ export function SongWorkspace({
 						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:py-8"
 						data-song-workspace-panel="center"
 					>
-						<div className="flex min-h-0 flex-1 flex-col pr-1">
+						<div className="song-workspace-primary-surface flex min-h-0 flex-1 flex-col pr-1">
 							<InspectorPane
 								song={song}
 								selectedFile={selectedFile}

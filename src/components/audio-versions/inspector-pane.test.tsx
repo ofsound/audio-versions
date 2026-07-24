@@ -113,6 +113,14 @@ describe("InspectorPane", () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
+	it("starts with notes instead of repeating the selected file title and date", () => {
+		renderInspector({ selectedFile: baseAudioFile });
+
+		expect(screen.queryByText("Mix v1")).toBeNull();
+		expect(screen.queryByText("Apr 16, 2026")).toBeNull();
+		expect(screen.getByText("Notes")).toBeTruthy();
+	});
+
 	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {
 		const { onUpdateAnnotation } = renderInspector();
 

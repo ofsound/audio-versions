@@ -367,9 +367,20 @@ describe("SongWorkspace", () => {
 
 		expect(screen.getAllByTestId("waveform-thumbnail")).toHaveLength(3);
 		expect(screen.getAllByTestId("waveform-card")).toHaveLength(1);
+		expect(
+			screen
+				.getAllByTestId("waveform-thumbnail")
+				.map((thumbnail) => thumbnail.textContent),
+		).toEqual(["Mix C:true", "Mix B:false", "Mix A:false"]);
 		expect(screen.getByTestId("waveform-card").textContent).toContain(
 			"Mix C:true",
 		);
+		const player = screen.getByTestId("waveform-card");
+		const firstThumbnail = screen.getAllByTestId("waveform-thumbnail")[0];
+		expect(
+			player.compareDocumentPosition(firstThumbnail) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
 	});
 
 	it("uses the single-player layout on phone viewports", async () => {
@@ -1209,6 +1220,54 @@ describe("SongWorkspace", () => {
 		expect(journalEditor?.closest(".panel-shell")).toBeNull();
 		expect(journalColumn?.className).toContain("xl:min-h-0");
 		expect(journalColumn?.className).toContain("song-workspace-journal-column");
+	});
+
+	it("lets the journal pane absorb extra width after panels are resized", () => {
+		currentAudioFiles = [createAudioFile()];
+		const originalInnerWidth = window.innerWidth;
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			value: 1600,
+		});
+
+		const { container } = render(
+			<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />,
+		);
+		const panels = [
+			...container.querySelectorAll<HTMLElement>("[data-song-workspace-panel]"),
+		];
+		for (const [index, panel] of panels.entries()) {
+			vi.spyOn(panel, "getBoundingClientRect").mockReturnValue({
+				bottom: 0,
+				height: 0,
+				left: 0,
+				right: 0,
+				toJSON: () => ({}),
+				top: 0,
+				width: [600, 500, 420][index],
+				x: 0,
+				y: 0,
+			});
+		}
+
+		fireEvent.keyDown(
+			screen.getByRole("button", {
+				name: "Resize details and journal panels",
+			}),
+			{ key: "ArrowLeft" },
+		);
+
+		const grid = container.querySelector<HTMLElement>(
+			".song-workspace-panel-grid",
+		);
+		expect(
+			grid?.style.getPropertyValue("--song-workspace-right-panel-width"),
+		).toBe("minmax(436px, 1fr)");
+
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			value: originalInnerWidth,
+		});
 	});
 
 	it("renders the song controls into the header slot when one is available", () => {

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { copySongTargetLink } from "#/lib/audio-versions/clipboard";
-import { resolveAudioFileSessionDateLabel } from "#/lib/audio-versions/dates";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
 	Annotation,
@@ -80,24 +79,9 @@ export function InspectorPane({
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
 			<section className="relative flex h-full min-h-0 flex-col p-4 xl:pt-0">
-				<div className="flex shrink-0 items-start justify-between gap-3">
-					<div className="min-w-0">
-						<h3 className="text-xl font-semibold text-[var(--color-text)]">
-							<span className="font-title font-bold text-[var(--color-accent)]">
-								{selectedFile?.title ?? song.title}
-							</span>
-						</h3>
-						{selectedFile ? (
-							<span className="mt-1 block text-xs tabular-nums text-[var(--color-text-muted)]">
-								{resolveAudioFileSessionDateLabel(selectedFile)}
-							</span>
-						) : null}
-					</div>
-				</div>
-
 				<div
 					ref={scrollerRef}
-					className="-mx-4 mt-1 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
+					className="-mx-4 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
 				>
 					{selectedFile ? (
 						<div className="shrink-0">

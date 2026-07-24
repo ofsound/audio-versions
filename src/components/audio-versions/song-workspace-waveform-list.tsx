@@ -153,10 +153,8 @@ export function SongWorkspaceWaveformList({
 			return;
 		}
 
-		thumbnailsViewportRef.current.scrollTop = isFitGridViewport
-			? 0
-			: thumbnailsViewportRef.current.scrollHeight;
-	}, [audioFiles.length, isFitGridViewport]);
+		thumbnailsViewportRef.current.scrollTop = 0;
+	}, [audioFiles.length]);
 
 	const thumbnailGridLayout = isFitGridViewport
 		? calculateWaveformThumbnailGridLayout({
@@ -240,39 +238,6 @@ export function SongWorkspaceWaveformList({
 	return (
 		<div className="song-workspace-file-browser flex min-h-0 flex-1 flex-col gap-4 xl:h-full">
 			<div
-				ref={thumbnailsViewportRef}
-				className="song-workspace-file-browser__list min-h-[9rem] flex-1 overflow-y-auto xl:min-h-0 xl:overflow-hidden"
-			>
-				<div
-					className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
-					data-density={thumbnailGridLayout?.density}
-					style={
-						thumbnailGridLayout
-							? {
-									gap: `${thumbnailGridLayout.gapPx}px`,
-									gridAutoRows: `${thumbnailGridLayout.rowHeightPx}px`,
-									gridTemplateColumns: `repeat(${thumbnailGridLayout.columns}, minmax(0, 1fr))`,
-								}
-							: undefined
-					}
-				>
-					{audioFiles.map((audioFile) => (
-						<div className="min-h-0" key={audioFile.id}>
-							<WaveformThumbnail
-								audioFile={audioFile}
-								currentTimeMs={
-									playback.currentTimeByFileId[audioFile.id] ??
-									workspacePlayheadMsByFileId[audioFile.id] ??
-									0
-								}
-								isSelected={selectedFileId === audioFile.id}
-								onSelectFile={onSelectFile}
-							/>
-						</div>
-					))}
-				</div>
-			</div>
-			<div
 				className="song-workspace-file-player min-h-0 shrink-0 overflow-y-auto"
 				data-testid={isPhoneViewport ? "mobile-file-player" : undefined}
 			>
@@ -280,9 +245,44 @@ export function SongWorkspaceWaveformList({
 					renderWaveformCard(selectedAudioFile)
 				) : (
 					<div className="border border-dashed border-[var(--color-border-plain)] px-5 py-6 text-sm text-[var(--color-text-muted)]">
-						Select a file above to open its player.
+						Select a file below to open its player.
 					</div>
 				)}
+			</div>
+			<div className="song-workspace-version-tray flex min-h-[9rem] flex-1 p-3 xl:min-h-0">
+				<div
+					ref={thumbnailsViewportRef}
+					className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden"
+				>
+					<div
+						className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
+						data-density={thumbnailGridLayout?.density}
+						style={
+							thumbnailGridLayout
+								? {
+										gap: `${thumbnailGridLayout.gapPx}px`,
+										gridAutoRows: `${thumbnailGridLayout.rowHeightPx}px`,
+										gridTemplateColumns: `repeat(${thumbnailGridLayout.columns}, minmax(0, 1fr))`,
+									}
+								: undefined
+						}
+					>
+						{[...audioFiles].reverse().map((audioFile) => (
+							<div className="min-h-0" key={audioFile.id}>
+								<WaveformThumbnail
+									audioFile={audioFile}
+									currentTimeMs={
+										playback.currentTimeByFileId[audioFile.id] ??
+										workspacePlayheadMsByFileId[audioFile.id] ??
+										0
+									}
+									isSelected={selectedFileId === audioFile.id}
+									onSelectFile={onSelectFile}
+								/>
+							</div>
+						))}
+					</div>
+				</div>
 			</div>
 		</div>
 	);

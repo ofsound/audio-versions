@@ -30,6 +30,29 @@ interface JournalLink {
 
 const JOURNAL_URL_PATTERN = /(?:https?:\/\/[^\s]+|\/songs\/[^\s]+)/g;
 const JOURNAL_URL_PREFIX_PATTERN = /(?:https?:\/\/|\/songs\/)/;
+const JOURNAL_INLINE_FORMAT_PATTERN = /(\*\*[^*\n]+\*\*|_[^_\n]+_)/g;
+
+function renderJournalText(value: string): ReactNode[] {
+	const rendered: ReactNode[] = [];
+	let offset = 0;
+	for (const match of value.matchAll(JOURNAL_INLINE_FORMAT_PATTERN)) {
+		if (match.index > offset) {
+			rendered.push(value.slice(offset, match.index));
+		}
+		const part = match[0];
+		const key = `${match.index}-${part}`;
+		if (part.startsWith("**")) {
+			rendered.push(<strong key={key}>{part.slice(2, -2)}</strong>);
+		} else {
+			rendered.push(<em key={key}>{part.slice(1, -1)}</em>);
+		}
+		offset = match.index + part.length;
+	}
+	if (offset < value.length) {
+		rendered.push(value.slice(offset));
+	}
+	return rendered;
+}
 
 function countParsableJournalLinks(value: string): number {
 	return [...value.matchAll(JOURNAL_URL_PATTERN)].filter((match) =>
@@ -96,7 +119,7 @@ function renderJournal(
 			}
 
 			if (match.index > offset) {
-				content.push(line.slice(offset, match.index));
+				content.push(...renderJournalText(line.slice(offset, match.index)));
 			}
 			content.push(
 				<button
@@ -126,7 +149,7 @@ function renderJournal(
 			);
 			offset = match.index + match[0].length;
 		}
-		content.push(line.slice(offset));
+		content.push(...renderJournalText(line.slice(offset)));
 
 		rendered.push(
 			<div key={`${lineIndex}-${line}`}>
@@ -153,13 +176,28 @@ function readJournal(root: HTMLElement): string {
 		if (node.tagName === "BR") {
 			return "\n";
 		}
-		return Array.from(node.childNodes).map(readNode).join("");
+		const content = Array.from(node.childNodes).map(readNode).join("");
+		if (node.tagName === "STRONG" || node.tagName === "B") {
+			return `**${content}**`;
+		}
+		if (node.tagName === "EM" || node.tagName === "I") {
+			return `_${content}_`;
+		}
+		return content;
 	}
 
 	return Array.from(root.childNodes)
-		.map((node) => readNode(node))
+		.map((node) => {
+			if (
+				node instanceof HTMLElement &&
+				node.childNodes.length === 1 &&
+				node.firstChild instanceof HTMLBRElement
+			) {
+				return "";
+			}
+			return readNode(node);
+		})
 		.join("\n")
-		.replace(/\n{3,}/g, "\n\n")
 		.replace(/\n$/, "");
 }
 

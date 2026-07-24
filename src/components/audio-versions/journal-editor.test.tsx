@@ -45,6 +45,39 @@ describe("JournalEditor", () => {
 		expect(onChange).toHaveBeenLastCalledWith("First line\n\nSecond line");
 	});
 
+	it("preserves blank paragraphs and common inline formatting on reload", () => {
+		const onChange = vi.fn();
+		const { rerender } = render(
+			<JournalEditor value="First line" onChange={onChange} />,
+		);
+		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		editor.innerHTML =
+			"<div>First line</div><div><br></div><div><b>Timestamp</b></div><div><br></div><div><i>Final thought</i></div>";
+		fireEvent.input(editor);
+
+		const persistedValue = "First line\n\n**Timestamp**\n\n_Final thought_";
+		expect(onChange).toHaveBeenLastCalledWith(persistedValue);
+
+		rerender(
+			<JournalEditor
+				value={persistedValue}
+				onChange={onChange}
+				historyValue={{ revision: 1, value: persistedValue }}
+			/>,
+		);
+		const reloadedEditor = screen.getByRole("textbox", {
+			name: "Song journal",
+		});
+		expect(reloadedEditor.querySelector("strong")?.textContent).toBe(
+			"Timestamp",
+		);
+		expect(reloadedEditor.querySelector("em")?.textContent).toBe(
+			"Final thought",
+		);
+		expect(reloadedEditor.querySelectorAll("div")).toHaveLength(5);
+		expect(reloadedEditor.querySelectorAll("div > br")).toHaveLength(2);
+	});
+
 	it("turns pasted marker URLs into cross-file jump controls", () => {
 		const onInternalLink = vi.fn();
 		render(
