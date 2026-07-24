@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AnnotationEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
     @FocusState private var focusedField: Field?
     @State private var annotation: ReviewAnnotation
 
@@ -58,6 +59,7 @@ struct AnnotationEditorView: View {
                         )
                     }
                 }
+                .listRowBackground(palette.surface)
 
                 Section("Feedback") {
                     TextField("Title", text: $annotation.title)
@@ -67,9 +69,13 @@ struct AnnotationEditorView: View {
                         .lineLimit(4...9)
                         .focused($focusedField, equals: .body)
                 }
+                .listRowBackground(palette.surface)
             }
+            .scrollContentBackground(.hidden)
+            .appCanvas()
             .navigationTitle(annotation.title.isEmpty ? "New annotation" : "Edit annotation")
             .navigationBarTitleDisplayMode(.inline)
+            .presentationBackground(palette.canvas)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

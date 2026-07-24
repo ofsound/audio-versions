@@ -11,7 +11,9 @@ struct AudioVersionsApp: App {
 
 @MainActor
 private struct AudioVersionsRootView: View {
+    @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var store: ReviewCompanionStore
+    @StateObject private var appearance = AppearanceStore()
     @State private var authentication: AuthenticationStore?
 
     private let environment: ReviewCloudEnvironment?
@@ -36,6 +38,10 @@ private struct AudioVersionsRootView: View {
         )
     }
 
+    private var palette: AppPalette {
+        .forScheme(appearance.preference.resolvedScheme(systemScheme: systemColorScheme))
+    }
+
     var body: some View {
         Group {
             if let environment, let authentication {
@@ -45,7 +51,10 @@ private struct AudioVersionsRootView: View {
                     .environmentObject(store)
             }
         }
-        .tint(.orange)
+        .environmentObject(appearance)
+        .environment(\.palette, palette)
+        .tint(palette.accent)
+        .preferredColorScheme(appearance.preference.colorScheme)
         .onOpenURL { url in
             store.openSongLink(url)
         }
@@ -58,6 +67,10 @@ private struct AudioVersionsRootView: View {
     ) -> some View {
         if authentication.isRestoringSession {
             ProgressView("Restoring your library…")
+                .tint(palette.accent)
+                .foregroundStyle(palette.textSecondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .appCanvas()
         } else if authentication.user == nil {
             EmailSignInView(authentication: authentication)
         } else {

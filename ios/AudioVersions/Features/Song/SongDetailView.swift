@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SongDetailView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @Environment(\.palette) private var palette
     @State private var isEditingJournal = false
     let songID: String
 
@@ -28,7 +29,7 @@ struct SongDetailView: View {
                                         : song.generalNotes
                                 )
                                 .foregroundStyle(
-                                    song.generalNotes.isEmpty ? .secondary : .primary
+                                    song.generalNotes.isEmpty ? palette.textSecondary : palette.textPrimary
                                 )
                                 .lineLimit(6)
 
@@ -37,7 +38,7 @@ struct SongDetailView: View {
                                     systemImage: "square.and.pencil"
                                 )
                                 .font(.footnote.weight(.medium))
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(palette.accentText)
                             }
                             .padding(.vertical, 5)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -50,22 +51,22 @@ struct SongDetailView: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     Image(systemName: "link")
-                                        .foregroundStyle(.orange)
+                                        .foregroundStyle(palette.accentText)
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(link.label)
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(.primary)
+                                            .foregroundStyle(palette.textPrimary)
                                             .lineLimit(1)
                                         if let time = link.target.time {
                                             Text("Jump to \(time.playbackTimestamp)")
                                                 .font(.caption.monospacedDigit())
-                                                .foregroundStyle(.secondary)
+                                                .foregroundStyle(palette.textSecondary)
                                         }
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.tertiary)
+                                        .foregroundStyle(palette.textTertiary)
                                 }
                                 .contentShape(Rectangle())
                             }
@@ -73,6 +74,7 @@ struct SongDetailView: View {
                             .accessibilityHint("Opens the linked version and marker position")
                         }
                     }
+                    .listRowBackground(palette.surface)
 
                     Section("Versions") {
                         ForEach(song.versions.sorted(by: { $0.createdAt > $1.createdAt })) { version in
@@ -87,7 +89,10 @@ struct SongDetailView: View {
                             }
                         }
                     }
+                    .listRowBackground(palette.surface)
                 }
+                .scrollContentBackground(.hidden)
+                .appCanvas()
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.large)
                 .sheet(isPresented: $isEditingJournal) {
@@ -111,12 +116,14 @@ struct SongDetailView: View {
 }
 
 private struct VersionRow: View {
+    @Environment(\.palette) private var palette
     let version: AudioVersion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(version.name)
                 .font(.headline)
+                .foregroundStyle(palette.textPrimary)
 
             HStack(spacing: 7) {
                 Label(version.duration.playbackTimestamp, systemImage: "clock")
@@ -124,7 +131,7 @@ private struct VersionRow: View {
                 Text(version.createdAt, style: .date)
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(palette.textSecondary)
 
             if version.annotationCount > 0 {
                 Label(
@@ -132,7 +139,7 @@ private struct VersionRow: View {
                     systemImage: "text.bubble"
                 )
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(palette.accentText)
             }
         }
         .padding(.vertical, 5)

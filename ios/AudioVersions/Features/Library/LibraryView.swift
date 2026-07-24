@@ -2,7 +2,10 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @EnvironmentObject private var appearance: AppearanceStore
+    @Environment(\.palette) private var palette
     @State private var searchText = ""
+    @State private var isShowingAppearanceSettings = false
 
     let accountEmail: String?
     let onSignOut: (() -> Void)?
@@ -33,13 +36,17 @@ struct LibraryView: View {
                         NavigationLink(value: LibraryDestination.song(id: song.id)) {
                             LibrarySongRow(song: song)
                         }
+                        .listRowBackground(palette.canvas)
+                        .listRowSeparatorTint(palette.hairline)
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                     .refreshable {
                         await store.refreshCloudLibrary()
                     }
                 }
             }
+            .appCanvas()
             .navigationTitle("Audio Versions")
             .searchable(text: $searchText, prompt: "Search songs")
             .toolbar {
@@ -56,6 +63,10 @@ struct LibraryView: View {
                                     await store.refreshCloudLibrary()
                                 }
                             }
+                        }
+                        Divider()
+                        Button("Appearance", systemImage: appearance.preference.symbolName) {
+                            isShowingAppearanceSettings = true
                         }
                         if let onSignOut {
                             Divider()
@@ -82,9 +93,14 @@ struct LibraryView: View {
                 }
             }
         }
+        .sheet(isPresented: $isShowingAppearanceSettings) {
+            AppearanceSettingsView(appearance: appearance)
+        }
         .overlay {
             if store.isCloudLoading, store.songs.isEmpty {
                 ProgressView("Loading your library…")
+                    .tint(palette.accent)
+                    .foregroundStyle(palette.textSecondary)
             }
         }
         .alert(
@@ -108,25 +124,27 @@ struct LibraryView: View {
 }
 
 private struct LibrarySongRow: View {
+    @Environment(\.palette) private var palette
     let song: Song
 
     var body: some View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.orange.gradient)
+                .fill(palette.brandTile)
                 .frame(width: 54, height: 54)
                 .overlay {
                     Image(systemName: "waveform")
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(palette.onAccent)
                 }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(song.title)
                     .font(.headline)
+                    .foregroundStyle(palette.textPrimary)
                 Text(song.latestVersion?.name ?? "No versions")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                     .lineLimit(1)
 
                 HStack(spacing: 5) {
@@ -135,7 +153,7 @@ private struct LibrarySongRow: View {
                     Text(song.updatedAt, style: .relative)
                 }
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(palette.textTertiary)
             }
             .padding(.vertical, 5)
         }
@@ -147,5 +165,8 @@ private struct LibraryViewPreviews: PreviewProvider {
     static var previews: some View {
         LibraryView()
             .environmentObject(ReviewCompanionStore())
+            .environmentObject(AppearanceStore())
+            .environment(\.palette, .dark)
+            .preferredColorScheme(.dark)
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReviewPlayerView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @Environment(\.palette) private var palette
     @State private var editingAnnotation: ReviewAnnotation?
     @State private var isEditingFileNotes = false
 
@@ -47,7 +48,7 @@ struct ReviewPlayerView: View {
                     }
                     .padding()
                 }
-                .background(Color(.systemGroupedBackground))
+                .appCanvas()
                 .navigationTitle(song?.title ?? "Audio Versions")
                 .navigationBarTitleDisplayMode(.inline)
                 .sheet(item: $editingAnnotation) { annotation in
@@ -94,22 +95,22 @@ struct ReviewPlayerView: View {
                 HStack {
                     Label("File Notes", systemImage: "note.text")
                         .font(.headline)
+                        .foregroundStyle(palette.textPrimary)
                     Spacer()
                     Text(version.notes.isEmpty ? "Add" : "Edit")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(palette.accentText)
                 }
 
                 Text(version.notes.isEmpty ? "Add context for this audio file." : version.notes)
                     .font(.subheadline)
-                    .foregroundStyle(version.notes.isEmpty ? .secondary : .primary)
+                    .foregroundStyle(version.notes.isEmpty ? palette.textSecondary : palette.textPrimary)
                     .multilineTextAlignment(.leading)
                     .lineLimit(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(18)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .appCard()
         }
         .buttonStyle(.plain)
     }
@@ -118,6 +119,7 @@ struct ReviewPlayerView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text(version.name)
                 .font(.title2.weight(.bold))
+                .foregroundStyle(palette.textPrimary)
 
             WaveformView(
                 peaks: version.waveformPeaks,
@@ -133,18 +135,19 @@ struct ReviewPlayerView: View {
                 Text("−\((version.duration - store.currentTime).playbackTimestamp)")
             }
             .font(.caption.monospacedDigit())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(palette.textSecondary)
 
             if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
                 HStack(spacing: 8) {
                     if store.isPreparingPlayback || status == "Buffering…" {
                         ProgressView()
                             .controlSize(.small)
+                            .tint(palette.accent)
                     }
                     Text(status)
                 }
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
 
@@ -152,11 +155,12 @@ struct ReviewPlayerView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(palette.danger)
                     Button("Retry playback") {
                         store.retryPlayback(for: version)
                     }
                     .buttonStyle(.bordered)
+                    .tint(palette.accent)
                 }
             }
 
@@ -167,8 +171,8 @@ struct ReviewPlayerView: View {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.title3.weight(.semibold))
                         .frame(width: 44, height: 44)
-                        .foregroundStyle(.orange)
-                        .background(Color.orange.opacity(0.14), in: Circle())
+                        .foregroundStyle(palette.accentText)
+                        .background(palette.accentSoft, in: Circle())
                 }
                 .accessibilityLabel("Reset playhead")
 
@@ -176,6 +180,7 @@ struct ReviewPlayerView: View {
                     store.skip(by: -10, in: version)
                 } label: {
                     Image(systemName: "gobackward.10")
+                        .foregroundStyle(palette.accentText)
                 }
                 .accessibilityLabel("Skip back 10 seconds")
 
@@ -185,15 +190,16 @@ struct ReviewPlayerView: View {
                     Group {
                         if store.isPreparingPlayback {
                             ProgressView()
-                                .tint(.white)
+                                .tint(palette.onAccent)
                         } else {
                             Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
                         }
                     }
                     .font(.title2)
                     .frame(width: 58, height: 58)
-                    .foregroundStyle(.white)
-                    .background(.orange, in: Circle())
+                    .foregroundStyle(palette.onAccent)
+                    .background(palette.accent, in: Circle())
+                    .shadow(color: palette.accentGlow, radius: 14, y: 4)
                 }
                 .disabled(store.isPreparingPlayback)
                 .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
@@ -202,6 +208,7 @@ struct ReviewPlayerView: View {
                     store.skip(by: 10, in: version)
                 } label: {
                     Image(systemName: "goforward.10")
+                        .foregroundStyle(palette.accentText)
                 }
                 .accessibilityLabel("Skip forward 10 seconds")
             }
@@ -210,10 +217,10 @@ struct ReviewPlayerView: View {
 
             HStack {
                 Image(systemName: "speaker.wave.2")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                 Text(store.outputRouteName)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                     .lineLimit(1)
                 AudioRoutePicker()
                     .frame(width: 28, height: 28)
@@ -235,13 +242,13 @@ struct ReviewPlayerView: View {
                     Text("\(store.playbackRate.formatted())×")
                         .font(.subheadline.weight(.medium))
                         .monospacedDigit()
+                        .foregroundStyle(palette.accentText)
                 }
                 .accessibilityLabel("Playback speed")
             }
         }
         .padding(18)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .appCard()
     }
 
     private func annotationActions(version: AudioVersion) -> some View {
@@ -250,17 +257,21 @@ struct ReviewPlayerView: View {
                 editingAnnotation = newAnnotation(kind: .point, version: version)
             } label: {
                 Label("Add point", systemImage: "mappin.and.ellipse")
+                    .foregroundStyle(palette.onAccent)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .tint(palette.accent)
 
             Button {
                 editingAnnotation = newAnnotation(kind: .range, version: version)
             } label: {
                 Label("Add range", systemImage: "selection.pin.in.out")
+                    .foregroundStyle(palette.accentText)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .tint(palette.accent)
         }
         .controlSize(.large)
     }

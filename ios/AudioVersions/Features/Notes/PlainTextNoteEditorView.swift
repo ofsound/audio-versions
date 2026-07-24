@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlainTextNoteEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
     @FocusState private var isEditorFocused: Bool
     @State private var draft: String
 
@@ -26,12 +27,17 @@ struct PlainTextNoteEditorView: View {
             TextEditor(text: $draft)
                 .focused($isEditorFocused)
                 .font(.body)
+                .foregroundStyle(palette.textPrimary)
+                .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .appCard()
+                .padding(16)
+                .appCanvas()
                 .accessibilityLabel(accessibilityLabel)
                 .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
+                .presentationBackground(palette.canvas)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {

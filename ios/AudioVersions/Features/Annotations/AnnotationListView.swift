@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AnnotationListView: View {
+    @Environment(\.palette) private var palette
+
     let annotations: [ReviewAnnotation]
     let activeTime: TimeInterval
     let onSelect: (ReviewAnnotation) -> Void
@@ -12,10 +14,11 @@ struct AnnotationListView: View {
             HStack {
                 Text("Annotations")
                     .font(.title3.weight(.semibold))
+                    .foregroundStyle(palette.textPrimary)
                 Spacer()
                 Text(annotations.count, format: .number)
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
             }
 
             if annotations.isEmpty {
@@ -49,6 +52,8 @@ struct AnnotationListView: View {
 }
 
 private struct AnnotationCard: View {
+    @Environment(\.palette) private var palette
+
     let annotation: ReviewAnnotation
     let isActive: Bool
     let onSelect: () -> Void
@@ -60,38 +65,33 @@ private struct AnnotationCard: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: annotation.kind == .range ? "selection.pin.in.out" : "mappin")
                     .font(.callout.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(palette.accentText)
                     .frame(width: 22, height: 22)
-                    .background(.orange.opacity(0.12), in: Circle())
+                    .background(palette.accentSoft, in: Circle())
 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(annotation.title)
                             .font(.headline)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(palette.textPrimary)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 8)
                         Text(annotation.timeLabel)
                             .font(.caption.monospacedDigit())
-                            .foregroundStyle(isActive ? .orange : .secondary)
+                            .foregroundStyle(isActive ? palette.accentText : palette.textSecondary)
                     }
 
                     if !annotation.body.isEmpty {
                         Text(annotation.body)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.textSecondary)
                             .multilineTextAlignment(.leading)
                             .lineLimit(3)
                     }
                 }
             }
             .padding(13)
-            .background(isActive ? Color.orange.opacity(0.1) : Color.secondary.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isActive ? Color.orange.opacity(0.5) : .clear, lineWidth: 1)
-            }
+            .appInsetCard(isHighlighted: isActive)
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -106,7 +106,7 @@ private struct AnnotationCard: View {
             Button(action: onEdit) {
                 Label("Edit", systemImage: "pencil")
             }
-            .tint(.orange)
+            .tint(palette.accent)
         }
     }
 }

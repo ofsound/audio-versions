@@ -67,6 +67,10 @@ a second production identity.
 - Plain-text song journal stored directly as shared text, plus plain-text editing
   for per-file notes stored in the shared rich-text field
 - Pull-to-refresh and explicit refresh
+- Light, Dark, or System appearance, chosen under **Account → Appearance** and
+  remembered between launches. Light keeps the warm orange accent; Dark uses a
+  mint accent on a near-black canvas with layered surfaces, hairline edges, and a
+  mint waveform gradient.
 - Fixture fallback whenever cloud values are absent
 
 Real downloads, offline mutation queues, Google OAuth, full rich-text editing,
