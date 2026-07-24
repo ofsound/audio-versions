@@ -168,7 +168,6 @@
 		var(--color-accent-surface)
 	);
 	border-color: var(--color-waveform-selected);
-	box-shadow: inset 6px 0 0 0 var(--color-waveform-selected);
 }
 
 .marker-card .field-input {

@@ -194,117 +194,124 @@ export function LibraryView() {
 				}`}
 				aria-hidden={isModalOpen}
 			>
-				<div className="flex min-w-0 flex-col gap-8">
-					{error && (
-						<div className="callout-danger px-5 py-4 text-sm">{error}</div>
-					)}
+				{error && (
+					<div className="callout-danger px-5 py-4 text-sm">{error}</div>
+				)}
 
-					{!ready ? (
-						<section className="panel-shell px-6 py-8 text-sm text-[var(--color-text-muted)]">
+				{!ready ? (
+					<div className="flex min-h-[calc(100dvh-9rem)] flex-1 items-center justify-center">
+						<section className="panel-shell w-fit max-w-[min(28rem,100%)] px-6 py-5 text-sm text-[var(--color-text-muted)]">
 							Loading your local Audio Versions library...
 						</section>
-					) : songs.length === 0 ? (
-						<section className="panel-shell px-7 py-10">
-							<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-								<div className="max-w-3xl">
-									<p className="eyebrow mb-3">Guided empty state</p>
-									<h2 className="font-title text-3xl font-semibold text-[var(--color-text)]">
-										Start by creating a song, then upload audio files into it.
-									</h2>
-									<p className="mt-4 text-base leading-8 text-[var(--color-text-muted)]">
-										Each audio file becomes a full waveform lane. You can seek,
-										create point markers or regions, keep file-level notes, and
-										maintain a persistent song journal on the right.
-									</p>
-								</div>
-								<div className="border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] px-5 py-5">
-									<div className="flex items-start gap-3 text-sm leading-7 text-[var(--color-text-muted)]">
-										<Sparkles
-											size={16}
-											className="mt-1 text-[var(--color-accent)]"
-										/>
-										<div>
-											Use the global search bar once you have content. It jumps
-											across songs, notes, and time-based annotations.
+					</div>
+				) : (
+					<div className="flex min-w-0 flex-col gap-8">
+						{songs.length === 0 ? (
+							<section className="panel-shell px-7 py-10">
+								<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+									<div className="max-w-3xl">
+										<p className="eyebrow mb-3">Guided empty state</p>
+										<h2 className="font-title text-3xl font-semibold text-[var(--color-text)]">
+											Start by creating a song, then upload audio files into it.
+										</h2>
+										<p className="mt-4 text-base leading-8 text-[var(--color-text-muted)]">
+											Each audio file becomes a full waveform lane. You can
+											seek, create point markers or regions, keep file-level
+											notes, and maintain a persistent song journal on the
+											right.
+										</p>
+									</div>
+									<div className="border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] px-5 py-5">
+										<div className="flex items-start gap-3 text-sm leading-7 text-[var(--color-text-muted)]">
+											<Sparkles
+												size={16}
+												className="mt-1 text-[var(--color-accent)]"
+											/>
+											<div>
+												Use the global search bar once you have content. It
+												jumps across songs, notes, and time-based annotations.
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
-						</section>
-					) : (
-						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-							{orderedSongs.map((song) => {
-								const sessionDateRange = sessionDateRangeBySongId.get(song.id);
-								const openSong = () =>
-									navigate({
-										to: "/songs/$songId",
-										params: {
-											songId: song.id,
-										},
-									});
+							</section>
+						) : (
+							<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+								{orderedSongs.map((song) => {
+									const sessionDateRange = sessionDateRangeBySongId.get(
+										song.id,
+									);
+									const openSong = () =>
+										navigate({
+											to: "/songs/$songId",
+											params: {
+												songId: song.id,
+											},
+										});
 
-								return (
-									<div
-										key={song.id}
-										className="panel-shell panel-shell--plain panel-shell-action h-full w-full p-6 text-left"
-									>
-										<div className="flex items-start gap-2">
-											<button
-												type="button"
-												onClick={openSong}
-												className="block min-w-0 flex-1 text-left"
-											>
-												<div>
-													<h2 className="font-title text-2xl font-semibold text-[var(--color-text)]">
-														{song.title}
-													</h2>
-													{showArtist ? (
-														<p className="mt-2 text-sm text-[var(--color-text-muted)]">
-															{song.artist || "No artist set"}
-														</p>
-													) : null}
-												</div>
-											</button>
-											<button
-												type="button"
-												onClick={() => setEditingSongId(song.id)}
-												className="icon-button icon-button--sm -mt-0.5 shrink-0"
-												title="Edit song settings"
-												aria-label={`Edit settings for ${song.title}`}
-											>
-												<Settings size={12} />
-											</button>
-										</div>
+									return (
+										<div
+											key={song.id}
+											className="panel-shell panel-shell--plain panel-shell-action h-full w-full p-6 text-left"
+										>
+											<div className="flex items-start gap-2">
+												<button
+													type="button"
+													onClick={openSong}
+													className="block min-w-0 flex-1 text-left"
+												>
+													<div>
+														<h2 className="font-title text-2xl font-semibold text-[var(--color-text)]">
+															{song.title}
+														</h2>
+														{showArtist ? (
+															<p className="mt-2 text-sm text-[var(--color-text-muted)]">
+																{song.artist || "No artist set"}
+															</p>
+														) : null}
+													</div>
+												</button>
+												<button
+													type="button"
+													onClick={() => setEditingSongId(song.id)}
+													className="icon-button icon-button--sm -mt-0.5 shrink-0"
+													title="Edit song settings"
+													aria-label={`Edit settings for ${song.title}`}
+												>
+													<Settings size={12} />
+												</button>
+											</div>
 
-										<div className="mt-6 flex flex-wrap items-center gap-2">
-											<StatChip
-												icon={<File size={14} />}
-												label={`${
-													audioFileCountBySongId.get(song.id) ?? 0
-												} files`}
-												onClick={openSong}
-											/>
-											<StatChip
-												icon={<Bookmark size={14} />}
-												label={`${
-													annotationCountBySongId.get(song.id) ?? 0
-												} markers`}
-												onClick={openSong}
-											/>
-											{sessionDateRange ? (
+											<div className="mt-6 flex flex-wrap items-center gap-2">
 												<StatChip
-													icon={<Calendar size={14} />}
-													label={sessionDateRange}
+													icon={<File size={14} />}
+													label={`${
+														audioFileCountBySongId.get(song.id) ?? 0
+													} files`}
 													onClick={openSong}
 												/>
-											) : null}
+												<StatChip
+													icon={<Bookmark size={14} />}
+													label={`${
+														annotationCountBySongId.get(song.id) ?? 0
+													} markers`}
+													onClick={openSong}
+												/>
+												{sessionDateRange ? (
+													<StatChip
+														icon={<Calendar size={14} />}
+														label={sessionDateRange}
+														onClick={openSong}
+													/>
+												) : null}
+											</div>
 										</div>
-									</div>
-								);
-							})}
-						</section>
-					)}
-				</div>
+									);
+								})}
+							</section>
+						)}
+					</div>
+				)}
 			</main>
 
 			{isCreateSongOpen && (
