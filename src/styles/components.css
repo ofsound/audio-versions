@@ -313,12 +313,11 @@
 	overflow: hidden;
 }
 
-.journal-editor-shell:has(.journal-editor:focus-visible) {
+.journal-editor-frame:focus-visible {
 	box-shadow: inset 0 0 0 3px var(--color-focus-ring);
 }
 
-[data-reduce-keyboard-focus]
-	.journal-editor-shell:has(.journal-editor:focus-visible) {
+[data-reduce-keyboard-focus] .journal-editor-frame:focus-visible {
 	box-shadow: none;
 }
 
@@ -430,16 +429,11 @@
 		background: var(--color-header-surface);
 	}
 
-	.song-workspace-journal-column .journal-editor-shell {
-		border-width: 0;
-		background: transparent;
-	}
-
 	.song-workspace-journal-column [data-audio-versions-toolbar] {
 		padding-left: calc(0.75rem + var(--journal-transition-width));
 	}
 
-	.song-workspace-journal-column .journal-editor {
-		padding-left: calc(1rem + var(--journal-transition-width));
+	.song-workspace-journal-column .journal-editor-frame-wrap {
+		padding-left: calc(0.75rem + var(--journal-transition-width));
 	}
 }

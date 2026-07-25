@@ -358,7 +358,7 @@ export function JournalEditor({
 
 	return (
 		<div
-			className="journal-editor-shell min-h-0 flex-1 overflow-hidden border border-[var(--color-border-strong)] bg-[var(--color-surface)]"
+			className="journal-editor-shell flex min-h-0 flex-1 flex-col overflow-hidden"
 			data-audio-versions-editor="journal"
 		>
 			<div
@@ -375,56 +375,58 @@ export function JournalEditor({
 					Insert Timestamp
 				</button>
 			</div>
-			{/* biome-ignore lint/a11y/useSemanticElements: textarea cannot contain inline link controls */}
-			<div
-				key={draft}
-				ref={editorRef}
-				className="journal-editor min-h-0 flex-1 overflow-y-auto bg-transparent px-4 pt-0 pb-4 text-base leading-7 text-[var(--color-text)] outline-none"
-				contentEditable
-				suppressContentEditableWarning
-				role="textbox"
-				tabIndex={0}
-				aria-label="Song notes"
-				aria-multiline="true"
-				data-placeholder="Write a note…"
-				spellCheck
-				onBlur={() => {
-					lastHistoryAtRef.current = 0;
-				}}
-				onPaste={() => {
-					lastHistoryAtRef.current = 0;
-				}}
-				onInput={() => commitEditor()}
-				onKeyDown={(event) => {
-					const commandKey = event.metaKey || event.ctrlKey;
-					const key = event.key.toLowerCase();
-					const undo = commandKey && key === "z" && !event.shiftKey;
-					const redo =
-						commandKey &&
-						((key === "z" && event.shiftKey) ||
-							(key === "y" && !event.metaKey && !event.shiftKey));
-					if (
-						(!undo && !redo) ||
-						event.altKey ||
-						event.nativeEvent.isComposing
-					) {
-						return;
-					}
+			<div className="journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-3 pb-3">
+				{/* biome-ignore lint/a11y/useSemanticElements: textarea cannot contain inline link controls */}
+				<div
+					key={draft}
+					ref={editorRef}
+					className="journal-editor journal-editor-frame min-h-0 flex-1 overflow-y-auto border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-3 text-base leading-7 text-[var(--color-text)] outline-none"
+					contentEditable
+					suppressContentEditableWarning
+					role="textbox"
+					tabIndex={0}
+					aria-label="Song notes"
+					aria-multiline="true"
+					data-placeholder="Write a note…"
+					spellCheck
+					onBlur={() => {
+						lastHistoryAtRef.current = 0;
+					}}
+					onPaste={() => {
+						lastHistoryAtRef.current = 0;
+					}}
+					onInput={() => commitEditor()}
+					onKeyDown={(event) => {
+						const commandKey = event.metaKey || event.ctrlKey;
+						const key = event.key.toLowerCase();
+						const undo = commandKey && key === "z" && !event.shiftKey;
+						const redo =
+							commandKey &&
+							((key === "z" && event.shiftKey) ||
+								(key === "y" && !event.metaKey && !event.shiftKey));
+						if (
+							(!undo && !redo) ||
+							event.altKey ||
+							event.nativeEvent.isComposing
+						) {
+							return;
+						}
 
-					const source = undo ? undoStackRef.current : redoStackRef.current;
-					const nextValue = source.pop();
-					if (nextValue === undefined) {
-						return;
-					}
-					event.preventDefault();
-					const target = undo ? redoStackRef.current : undoStackRef.current;
-					target.push(draftRef.current);
-					lastHistoryAtRef.current = 0;
-					applyHistoryValue(nextValue);
-					onLocalHistoryAction?.(undo ? "undo" : "redo");
-				}}
-			>
-				{renderJournal(draft, onInternalLink)}
+						const source = undo ? undoStackRef.current : redoStackRef.current;
+						const nextValue = source.pop();
+						if (nextValue === undefined) {
+							return;
+						}
+						event.preventDefault();
+						const target = undo ? redoStackRef.current : undoStackRef.current;
+						target.push(draftRef.current);
+						lastHistoryAtRef.current = 0;
+						applyHistoryValue(nextValue);
+						onLocalHistoryAction?.(undo ? "undo" : "redo");
+					}}
+				>
+					{renderJournal(draft, onInternalLink)}
+				</div>
 			</div>
 		</div>
 	);
