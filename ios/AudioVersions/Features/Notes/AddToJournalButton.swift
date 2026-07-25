@@ -8,10 +8,10 @@ struct AddToJournalButton: View {
     var body: some View {
         Button(action: action) {
             Label("Add to Journal", systemImage: "text.badge.plus")
-                .foregroundStyle(palette.accentText)
+                .foregroundStyle(palette.onAccent)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderedProminent)
         .tint(palette.accent)
         .controlSize(.large)
         .accessibilityLabel("Add to Journal")
