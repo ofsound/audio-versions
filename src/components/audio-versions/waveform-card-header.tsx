@@ -169,6 +169,46 @@ export function WaveformCardHeader({
 								{audioFileTitle}
 							</button>
 						)}
+					</div>
+					<div className="mt-0.5 flex w-fit max-w-full items-center gap-1.5">
+						{editingField === "date" ? (
+							<input
+								ref={dateInputRef}
+								type="date"
+								value={draftDate}
+								onChange={(event) => setDraftDate(event.target.value)}
+								onBlur={() => commitDate()}
+								onKeyDown={(event) => {
+									if (event.key === "Enter") {
+										event.preventDefault();
+										event.currentTarget.blur();
+										return;
+									}
+
+									if (event.key === "Escape") {
+										event.preventDefault();
+										cancelDate();
+									}
+								}}
+								onClick={(event) => event.stopPropagation()}
+								className="field-input field-input--compact waveform-card__date w-auto max-w-[11rem] text-base"
+								aria-label="File date"
+							/>
+						) : (
+							<button
+								type="button"
+								onClick={onSelectFile}
+								onDoubleClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									setEditingField("date");
+								}}
+								className="waveform-card__date w-fit whitespace-nowrap text-left text-base tabular-nums text-[var(--color-text-muted)]"
+								title="Double-click to edit date"
+							>
+								{sessionDateLabel}
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={onDownloadFile}
@@ -190,44 +230,6 @@ export function WaveformCardHeader({
 							<Trash2 size={12} />
 						</button>
 					</div>
-					{editingField === "date" ? (
-						<input
-							ref={dateInputRef}
-							type="date"
-							value={draftDate}
-							onChange={(event) => setDraftDate(event.target.value)}
-							onBlur={() => commitDate()}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") {
-									event.preventDefault();
-									event.currentTarget.blur();
-									return;
-								}
-
-								if (event.key === "Escape") {
-									event.preventDefault();
-									cancelDate();
-								}
-							}}
-							onClick={(event) => event.stopPropagation()}
-							className="field-input field-input--compact waveform-card__date mt-0.5 w-auto max-w-[11rem] text-base"
-							aria-label="File date"
-						/>
-					) : (
-						<button
-							type="button"
-							onClick={onSelectFile}
-							onDoubleClick={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								setEditingField("date");
-							}}
-							className="waveform-card__date mt-0.5 w-fit whitespace-nowrap text-left text-base tabular-nums text-[var(--color-text-muted)]"
-							title="Double-click to edit date"
-						>
-							{sessionDateLabel}
-						</button>
-					)}
 				</div>
 			</div>
 

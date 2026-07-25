@@ -118,8 +118,8 @@ describe("InspectorPane", () => {
 
 		expect(screen.queryByText("Mix v1")).toBeNull();
 		expect(screen.queryByText("Apr 16, 2026")).toBeNull();
-		expect(screen.getAllByText("File Notes").length).toBeGreaterThan(0);
-		expect(screen.getByTestId("inspector-notes-offset")).toBeTruthy();
+		expect(screen.getByText("File Notes")).toBeTruthy();
+		expect(screen.queryByTestId("inspector-notes-offset")).toBeNull();
 	});
 
 	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {
@@ -516,10 +516,10 @@ describe("InspectorPane", () => {
 			selectedFile: baseAudioFile,
 		});
 
-		expect(screen.getAllByText(/^file notes$/i).length).toBeGreaterThan(0);
-		const notesLabel = screen.getAllByText(/^file notes$/i)[0];
+		expect(screen.getByText(/^file notes$/i)).toBeTruthy();
+		const notesLabel = screen.getByText(/^file notes$/i);
 		const markersHeading = screen.getByRole("heading", {
-			name: "Markers And Ranges",
+			name: "Markers and Ranges",
 		});
 		expect(
 			notesLabel.compareDocumentPosition(markersHeading) &
