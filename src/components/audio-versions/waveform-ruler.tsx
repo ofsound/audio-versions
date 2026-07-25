@@ -77,7 +77,7 @@ export function WaveformRuler({ durationMs }: WaveformRulerProps) {
 						<span className="absolute inset-y-0 left-0 w-px bg-[color-mix(in_srgb,var(--color-text-muted)_72%,transparent)]" />
 						{tick.label ? (
 							<span
-								className={`absolute top-0 text-[10px] leading-[var(--waveform-ruler-height)] tabular-nums text-[var(--color-text-muted)] ${
+								className={`absolute top-0 text-[length:var(--waveform-ruler-font-size)] leading-[var(--waveform-ruler-height)] tabular-nums text-[var(--color-text-muted)] ${
 									tick.timeMs === 0 ? "left-0.5" : "left-1"
 								}`}
 							>
