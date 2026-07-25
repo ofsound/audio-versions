@@ -35,6 +35,7 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
+                        audioRouteControls
                         fileNotesCard(version: version)
                         annotationActions(version: version)
                         AnnotationListView(
@@ -55,8 +56,6 @@ struct ReviewPlayerView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     AddToJournalBottomBar {
                         isAddingToJournal = true
-                    } accessory: {
-                        audioRouteFooter
                     }
                 }
                 .sheet(item: $editingAnnotation) { annotation in
@@ -293,7 +292,7 @@ struct ReviewPlayerView: View {
         .appCard()
     }
 
-    private var audioRouteFooter: some View {
+    private var audioRouteControls: some View {
         HStack(spacing: 16) {
             Image(systemName: "speaker.wave.2")
                 .font(.body)

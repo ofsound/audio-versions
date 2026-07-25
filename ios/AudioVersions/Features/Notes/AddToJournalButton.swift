@@ -20,37 +20,26 @@ struct AddToJournalButton: View {
 
 /// Fixed bottom chrome shared by song detail and the player so the control
 /// sits in the same place on both screens.
-struct AddToJournalBottomBar<Accessory: View>: View {
+struct AddToJournalBottomBar: View {
     @Environment(\.palette) private var palette
 
     let action: () -> Void
-    @ViewBuilder let accessory: () -> Accessory
 
     var body: some View {
-        VStack(spacing: 10) {
-            AddToJournalButton(action: action)
-
-            accessory()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity)
-        .background {
-            palette.canvas
-                .opacity(0.96)
-                .ignoresSafeArea(edges: .bottom)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(palette.hairline)
-                        .frame(height: 1)
-                }
-        }
-    }
-}
-
-extension AddToJournalBottomBar where Accessory == EmptyView {
-    init(action: @escaping () -> Void) {
-        self.init(action: action, accessory: { EmptyView() })
+        AddToJournalButton(action: action)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .background {
+                palette.canvas
+                    .opacity(0.96)
+                    .ignoresSafeArea(edges: .bottom)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(palette.hairline)
+                            .frame(height: 1)
+                    }
+            }
     }
 }
