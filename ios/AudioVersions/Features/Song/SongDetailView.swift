@@ -19,6 +19,12 @@ struct SongDetailView: View {
         Group {
             if let song {
                 List {
+                    Section("Versions") {
+                        ScrollableVersionList(songID: song.id, versions: sortedVersions(for: song))
+                    }
+                    .listRowInsets(Self.groupedSectionInsets)
+                    .listRowBackground(palette.surface)
+
                     Section("Journal") {
                         Button {
                             isEditingJournal = true
@@ -42,8 +48,10 @@ struct SongDetailView: View {
                                 .font(.footnote.weight(.medium))
                                 .foregroundStyle(palette.accentText)
                             }
-                            .padding(.vertical, 5)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 13)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
 
@@ -70,12 +78,15 @@ struct SongDetailView: View {
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(palette.textTertiary)
                                 }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 13)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint("Opens the linked version and marker position")
                         }
                     }
+                    .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
 
                     Section {
@@ -85,26 +96,11 @@ struct SongDetailView: View {
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-
-                    Section("Versions") {
-                        ForEach(song.versions.sorted(by: { $0.createdAt > $1.createdAt })) { version in
-                            NavigationLink(
-                                value: LibraryDestination.version(
-                                    songID: song.id,
-                                    versionID: version.id,
-                                    target: nil
-                                )
-                            ) {
-                                VersionRow(version: version)
-                            }
-                        }
-                    }
-                    .listRowBackground(palette.surface)
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
                 .navigationTitle(song.title)
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .sheet(isPresented: $isEditingJournal) {
                     PlainTextNoteEditorView(
                         title: "Song Journal",
@@ -132,6 +128,103 @@ struct SongDetailView: View {
                 )
             }
         }
+    }
+
+    private func sortedVersions(for song: Song) -> [AudioVersion] {
+        song.versions.sorted(by: { $0.createdAt > $1.createdAt })
+    }
+
+    /// Shared by Versions and Journal so section-header spacing matches.
+    private static let groupedSectionInsets = EdgeInsets()
+}
+
+/// Shows up to three version rows at a time; additional versions scroll in place.
+private struct ScrollableVersionList: View {
+    @Environment(\.palette) private var palette
+
+    private static let visibleCount = 3
+    private static let estimatedRowHeight: CGFloat = 78
+
+    let songID: String
+    let versions: [AudioVersion]
+
+    @State private var rowHeights: [String: CGFloat] = [:]
+
+    private var visibleHeight: CGFloat {
+        let visible = Array(versions.prefix(Self.visibleCount))
+        guard !visible.isEmpty else { return 0 }
+
+        let measured = visible.compactMap { rowHeights[$0.id] }
+        let rowsHeight: CGFloat
+        if measured.count == visible.count {
+            rowsHeight = measured.reduce(0, +)
+        } else {
+            rowsHeight = Self.estimatedRowHeight * CGFloat(visible.count)
+        }
+        // Include the hairlines that sit between the visible rows.
+        return rowsHeight + CGFloat(max(0, visible.count - 1))
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
+                    NavigationLink(
+                        value: LibraryDestination.version(
+                            songID: songID,
+                            versionID: version.id,
+                            target: nil
+                        )
+                    ) {
+                        HStack(spacing: 10) {
+                            VersionRow(version: version)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(palette.textTertiary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: VersionRowHeightKey.self,
+                                value: [version.id: proxy.size.height]
+                            )
+                        }
+                    )
+
+                    if index < versions.count - 1 {
+                        Divider()
+                            .padding(.leading, 16)
+                    }
+                }
+            }
+        }
+        .frame(height: visibleHeight)
+        .scrollDisabled(versions.count <= Self.visibleCount)
+        .scrollIndicators(versions.count > Self.visibleCount ? .visible : .hidden)
+        .onPreferenceChange(VersionRowHeightKey.self) { heights in
+            rowHeights.merge(heights, uniquingKeysWith: { _, new in new })
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Versions")
+        .accessibilityHint(
+            versions.count > Self.visibleCount
+                ? "Shows three versions. Scroll for more."
+                : ""
+        )
+    }
+}
+
+private struct VersionRowHeightKey: PreferenceKey {
+    static let defaultValue: [String: CGFloat] = [:]
+
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
