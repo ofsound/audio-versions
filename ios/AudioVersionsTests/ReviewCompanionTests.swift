@@ -5,6 +5,46 @@ import Testing
 
 struct ReviewCompanionTests {
     @Test
+    func integratedLufsLabelMatchesWebReadout() {
+        let loudness = LoudnessMetrics(
+            integratedLufs: -14.6,
+            loudnessRangeLu: 6.2,
+            shortTermMaxLufs: -9.4,
+            samplePeakDb: -0.8,
+            truePeakDb: -0.3
+        )
+        #expect(loudness.integratedLufsLabel == "-14.6 LUFS")
+    }
+
+    @Test
+    func loudnessRowNormalizationRequiresIntegratedAndTruePeak() {
+        #expect(
+            LoudnessMetricsRow(
+                integratedLufs: -14.6,
+                loudnessRangeLu: nil,
+                shortTermMaxLufs: nil,
+                samplePeakDb: nil,
+                truePeakDb: -0.3
+            ).normalized == LoudnessMetrics(
+                integratedLufs: -14.6,
+                loudnessRangeLu: 0,
+                shortTermMaxLufs: -14.6,
+                samplePeakDb: -0.3,
+                truePeakDb: -0.3
+            )
+        )
+        #expect(
+            LoudnessMetricsRow(
+                integratedLufs: -14.6,
+                loudnessRangeLu: 1,
+                shortTermMaxLufs: -10,
+                samplePeakDb: -1,
+                truePeakDb: nil
+            ).normalized == nil
+        )
+    }
+
+    @Test
     func songSessionDateRangeMatchesWebFormatting() {
         let locale = Locale(identifier: "en_US_POSIX")
         var calendar = Calendar(identifier: .gregorian)

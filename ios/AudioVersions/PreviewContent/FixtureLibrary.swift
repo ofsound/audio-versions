@@ -15,6 +15,13 @@ enum FixtureLibrary {
                     createdAt: date(daysAgo: 0),
                     duration: 226,
                     waveformPeaks: peaks(seed: 0.42),
+                    loudness: LoudnessMetrics(
+                        integratedLufs: -14.6,
+                        loudnessRangeLu: 6.2,
+                        shortTermMaxLufs: -9.4,
+                        samplePeakDb: -0.8,
+                        truePeakDb: -0.3
+                    ),
                     annotations: [
                         ReviewAnnotation(
                             id: "annotation-vocal",

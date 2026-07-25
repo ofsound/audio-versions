@@ -266,16 +266,7 @@ private struct VersionRow: View {
                 .font(.headline)
                 .foregroundStyle(palette.textPrimary)
 
-            HStack(spacing: 7) {
-                HStack(spacing: 4) {
-                    Image(systemName: "clock")
-                    Text(version.duration.playbackTimestamp)
-                }
-                Text("•")
-                Text(version.createdAt, style: .date)
-            }
-            .font(.caption)
-            .foregroundStyle(palette.textSecondary)
+            VersionMetadataLine(version: version)
 
             if version.annotationCount > 0 {
                 Label(

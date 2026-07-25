@@ -44,7 +44,7 @@ final class CloudLibraryService: @unchecked Sendable {
 
         let audioFileRows: [AudioFileRow] = try await client
             .from("audio_files")
-            .select("id,song_id,title,notes,duration_ms,waveform,session_date,created_at")
+            .select("id,song_id,title,notes,duration_ms,waveform,session_date,loudness,created_at")
             .is("deleted_at", value: nil)
             .execute()
             .value
@@ -262,6 +262,7 @@ final class CloudLibraryService: @unchecked Sendable {
                         waveformPeaks: audioRow.waveform.peaks.map {
                             min(1, max(0, $0))
                         },
+                        loudness: audioRow.loudness?.normalized,
                         annotations: annotationsByAudioFileID[audioRow.id] ?? []
                     )
                 }

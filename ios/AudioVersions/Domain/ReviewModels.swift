@@ -22,10 +22,26 @@ struct AudioVersion: Identifiable, Hashable {
     var createdAt: Date
     var duration: TimeInterval
     var waveformPeaks: [Double]
+    /// Whole-file loudness from the shared `loudness` JSON column, when measured.
+    var loudness: LoudnessMetrics? = nil
     var annotations: [ReviewAnnotation]
 
     var annotationCount: Int {
         annotations.count
+    }
+}
+
+/// Whole-file loudness measurements (ITU-R BS.1770-4 / EBU Tech 3342).
+struct LoudnessMetrics: Hashable, Sendable {
+    var integratedLufs: Double
+    var loudnessRangeLu: Double
+    var shortTermMaxLufs: Double
+    var samplePeakDb: Double
+    var truePeakDb: Double
+
+    /// Matches the web integrated-loudness readout, e.g. `-14.6 LUFS`.
+    var integratedLufsLabel: String {
+        String(format: "%.1f LUFS", integratedLufs)
     }
 }
 

@@ -140,6 +140,7 @@ struct AudioFileRow: Decodable, Sendable {
     let durationMilliseconds: Double
     let waveform: WaveformRow
     let sessionDate: String
+    let loudness: LoudnessMetricsRow?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -150,6 +151,7 @@ struct AudioFileRow: Decodable, Sendable {
         case durationMilliseconds = "duration_ms"
         case waveform
         case sessionDate = "session_date"
+        case loudness
         case createdAt = "created_at"
     }
 
@@ -162,7 +164,36 @@ struct AudioFileRow: Decodable, Sendable {
         durationMilliseconds = try container.decode(Double.self, forKey: .durationMilliseconds)
         waveform = try container.decode(WaveformRow.self, forKey: .waveform)
         sessionDate = try container.decodeIfPresent(String.self, forKey: .sessionDate) ?? ""
+        loudness = try container.decodeIfPresent(LoudnessMetricsRow.self, forKey: .loudness)
         createdAt = try container.decode(String.self, forKey: .createdAt)
+    }
+}
+
+struct LoudnessMetricsRow: Decodable, Sendable {
+    let integratedLufs: Double?
+    let loudnessRangeLu: Double?
+    let shortTermMaxLufs: Double?
+    let samplePeakDb: Double?
+    let truePeakDb: Double?
+
+    /// Mirrors web `normalizeLoudnessMetrics`: requires finite integrated LUFS and true peak.
+    var normalized: LoudnessMetrics? {
+        guard
+            let integratedLufs,
+            integratedLufs.isFinite,
+            let truePeakDb,
+            truePeakDb.isFinite
+        else {
+            return nil
+        }
+
+        return LoudnessMetrics(
+            integratedLufs: integratedLufs,
+            loudnessRangeLu: max(0, (loudnessRangeLu?.isFinite == true ? loudnessRangeLu : nil) ?? 0),
+            shortTermMaxLufs: (shortTermMaxLufs?.isFinite == true ? shortTermMaxLufs : nil) ?? integratedLufs,
+            samplePeakDb: (samplePeakDb?.isFinite == true ? samplePeakDb : nil) ?? truePeakDb,
+            truePeakDb: truePeakDb
+        )
     }
 }
 
