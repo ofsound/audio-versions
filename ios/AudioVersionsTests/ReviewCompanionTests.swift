@@ -385,6 +385,34 @@ struct ReviewCompanionTests {
         let reference = try #require(references.first)
         #expect(reference.label == "Mix B - Marker 0:54")
         #expect(reference.target == target)
+        #expect(reference.source == "Mix B - Marker 0:54\n\(url.absoluteString)")
+
+        let rendered = SongJournalLink.renderedLines(
+            from: "Before note\nMix B - Marker 0:54\n\(url.absoluteString)\nAfter note"
+        )
+        #expect(rendered.count == 3)
+
+        guard case let .text(before) = rendered[0].segments.first else {
+            Issue.record("Expected leading text line")
+            return
+        }
+        #expect(before == "Before note")
+
+        guard
+            rendered[1].segments.count == 1,
+            case let .link(chip) = rendered[1].segments[0]
+        else {
+            Issue.record("Expected absorbed label+url chip")
+            return
+        }
+        #expect(chip.label == "Mix B - Marker 0:54")
+        #expect(chip.target.time == 54)
+
+        guard case let .text(after) = rendered[2].segments.first else {
+            Issue.record("Expected trailing text line")
+            return
+        }
+        #expect(after == "After note")
     }
 
     @MainActor

@@ -11,10 +11,6 @@ struct SongDetailView: View {
         store.songs.first { $0.id == songID }
     }
 
-    private var journalLinks: [SongJournalLink] {
-        SongJournalLink.extract(from: song?.generalNotes ?? "")
-    }
-
     var body: some View {
         Group {
             if let song {
@@ -28,50 +24,13 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section {
-                        Text(
-                            song.generalNotes.isEmpty
-                                ? "Add notes about this song"
-                                : song.generalNotes
+                        JournalContentView(
+                            text: song.generalNotes,
+                            placeholder: "Add notes about this song",
+                            onOpenLink: store.openSongLink
                         )
-                        .foregroundStyle(
-                            song.generalNotes.isEmpty ? palette.textSecondary : palette.textPrimary
-                        )
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
-
-                        ForEach(journalLinks) { link in
-                            Button {
-                                store.openSongLink(link.target)
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "link")
-                                        .foregroundStyle(palette.accentText)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(link.label)
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(palette.textPrimary)
-                                            .lineLimit(1)
-                                        if let time = link.target.time {
-                                            Text("Jump to \(time.playbackTimestamp)")
-                                                .font(.caption.monospacedDigit())
-                                                .foregroundStyle(palette.textSecondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(palette.textTertiary)
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 13)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Opens the linked version and marker position")
-                        }
                     } header: {
                         DetailSectionHeader("Journal")
                     }
