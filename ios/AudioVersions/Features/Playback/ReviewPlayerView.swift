@@ -35,9 +35,6 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
-                        AddToJournalButton {
-                            isAddingToJournal = true
-                        }
                         fileNotesCard(version: version)
                         annotationActions(version: version)
                         AnnotationListView(
@@ -55,6 +52,11 @@ struct ReviewPlayerView: View {
                 .appCanvas()
                 .navigationTitle(song?.title ?? "Audio Versions")
                 .navigationBarTitleDisplayMode(.inline)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    AddToJournalBottomBar {
+                        isAddingToJournal = true
+                    }
+                }
                 .sheet(item: $editingAnnotation) { annotation in
                     AnnotationEditorView(annotation: annotation, duration: version.duration) {
                         store.save($0, in: version.id)

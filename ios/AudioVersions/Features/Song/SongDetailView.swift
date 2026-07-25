@@ -88,19 +88,16 @@ struct SongDetailView: View {
                     }
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
-
-                    Section {
-                        AddToJournalButton {
-                            isAddingToJournal = true
-                        }
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.inline)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    AddToJournalBottomBar {
+                        isAddingToJournal = true
+                    }
+                }
                 .sheet(isPresented: $isEditingJournal) {
                     PlainTextNoteEditorView(
                         title: "Song Journal",
