@@ -36,7 +36,7 @@ struct ReviewPlayerView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
                         audioRouteControls
-                        fileNotesCard(version: version)
+                        fileNotesSection(version: version)
                         annotationActions(version: version)
                         AnnotationListView(
                             annotations: version.annotations,
@@ -104,32 +104,43 @@ struct ReviewPlayerView: View {
         }
     }
 
-    private func fileNotesCard(version: AudioVersion) -> some View {
-        Button {
-            isEditingFileNotes = true
-        } label: {
+    private func fileNotesSection(version: AudioVersion) -> some View {
+        VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Label("File Notes", systemImage: "note.text")
-                        .font(.headline)
-                        .foregroundStyle(palette.textPrimary)
-                    Spacer()
-                    Text(version.notes.isEmpty ? "Add" : "Edit")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(palette.accentText)
-                }
+                Label("File Notes", systemImage: "note.text")
+                    .font(.headline)
+                    .foregroundStyle(palette.textPrimary)
 
                 Text(version.notes.isEmpty ? "Add context for this audio file." : version.notes)
                     .font(.subheadline)
-                    .foregroundStyle(version.notes.isEmpty ? palette.textSecondary : palette.textPrimary)
+                    .foregroundStyle(
+                        version.notes.isEmpty ? palette.textSecondary : palette.textPrimary
+                    )
                     .multilineTextAlignment(.leading)
                     .lineLimit(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .appCard()
+
+            Button {
+                isEditingFileNotes = true
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "square.and.pencil")
+                    Text(version.notes.isEmpty ? "Add file notes" : "Edit file notes")
+                }
+                .foregroundStyle(palette.accentText)
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(palette.accent)
+            .controlSize(.large)
+            .accessibilityLabel(
+                version.notes.isEmpty ? "Add file notes" : "Edit file notes"
+            )
         }
-        .buttonStyle(.plain)
     }
 
     private func playerCard(version: AudioVersion) -> some View {

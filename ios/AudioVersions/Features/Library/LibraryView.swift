@@ -62,7 +62,11 @@ struct LibraryView: View {
             }
             .appCanvas()
             .navigationTitle("Audio Versions")
-            .modifier(LibrarySearchModifier(text: $searchText, isEnabled: !isBootstrappingLibrary))
+            .bottomScreenChrome {
+                if !isBootstrappingLibrary {
+                    LibrarySearchField(text: $searchText)
+                }
+            }
             .toolbar {
                 if !isBootstrappingLibrary {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -132,16 +136,32 @@ struct LibraryView: View {
     }
 }
 
-private struct LibrarySearchModifier: ViewModifier {
+private struct LibrarySearchField: View {
+    @Environment(\.palette) private var palette
     @Binding var text: String
-    let isEnabled: Bool
 
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content.searchable(text: $text, prompt: "Search songs")
-        } else {
-            content
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(palette.textTertiary)
+            TextField("Search songs", text: $text)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .foregroundStyle(palette.textPrimary)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(palette.textTertiary)
+                }
+                .accessibilityLabel("Clear search")
+            }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(palette.surface, in: Capsule())
+        .accessibilityElement(children: .contain)
     }
 }
 
