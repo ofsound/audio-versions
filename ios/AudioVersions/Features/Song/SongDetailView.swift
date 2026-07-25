@@ -96,8 +96,11 @@ struct SongDetailView: View {
                             song.generalNotes.isEmpty ? "Add journal" : "Edit journal"
                         )
                     }
+                    // Keep a separate section so both the journal card and this
+                    // control retain rounded corners, but sit tightly underneath.
+                    .listSectionSpacing(8)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 2, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
