@@ -36,8 +36,8 @@ struct ReviewPlayerView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
                         audioRouteControls
-                        fileNotesSection(version: version)
                         annotationActions(version: version)
+                        fileNotesSection(version: version)
                         AnnotationListView(
                             annotations: version.annotations,
                             activeTime: store.currentTime,
