@@ -9,8 +9,7 @@ extension View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             chrome()
                 .padding(.horizontal, 16)
-                .padding(.top, 25)
-                .padding(.bottom, 8)
+                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
                 .background {
                     BottomScreenChromeBackground()

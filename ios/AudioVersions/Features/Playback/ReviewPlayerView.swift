@@ -315,7 +315,7 @@ struct ReviewPlayerView: View {
             Button {
                 editingAnnotation = newAnnotation(kind: .point, version: version)
             } label: {
-                Label("Add marker", systemImage: "mappin.and.ellipse")
+                Label("Add marker", systemImage: "bookmark")
                     .foregroundStyle(palette.accentText)
                     .frame(maxWidth: .infinity)
             }

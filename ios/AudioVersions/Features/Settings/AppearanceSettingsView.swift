@@ -90,7 +90,7 @@ struct AppearanceSettingsView: View {
                     .frame(height: 46)
 
                 HStack(spacing: 8) {
-                    Label("Chorus lift", systemImage: "mappin")
+                    Label("Chorus lift", systemImage: "bookmark")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(palette.accentText)
                         .padding(.horizontal, 10)

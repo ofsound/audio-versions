@@ -63,7 +63,7 @@ private struct AnnotationCard: View {
     var body: some View {
         Button(action: onSelect) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: annotation.kind == .range ? "selection.pin.in.out" : "mappin")
+                Image(systemName: annotation.kind == .range ? "selection.pin.in.out" : "bookmark")
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(palette.accentText)
                     .frame(width: 22, height: 22)
