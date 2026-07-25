@@ -1,16 +1,44 @@
+import type {
+	MouseEvent as ReactMouseEvent,
+	PointerEvent as ReactPointerEvent,
+	Ref,
+} from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildWaveformRulerTicks } from "#/lib/audio-versions/waveform-ruler";
 
 interface WaveformRulerProps {
 	durationMs: number;
+	surfaceRef?: Ref<HTMLDivElement | null>;
+	onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
+	onPointerMove?: (event: ReactPointerEvent<HTMLDivElement>) => void;
+	onPointerUp?: (event: ReactPointerEvent<HTMLDivElement>) => void;
+	onPointerCancel?: (event: ReactPointerEvent<HTMLDivElement>) => void;
+	onDoubleClick?: (event: ReactMouseEvent<HTMLDivElement>) => void;
 }
 
-export function WaveformRuler({ durationMs }: WaveformRulerProps) {
-	const surfaceRef = useRef<HTMLDivElement | null>(null);
+export function WaveformRuler({
+	durationMs,
+	surfaceRef,
+	onPointerDown,
+	onPointerMove,
+	onPointerUp,
+	onPointerCancel,
+	onDoubleClick,
+}: WaveformRulerProps) {
+	const localRef = useRef<HTMLDivElement | null>(null);
 	const [widthPx, setWidthPx] = useState(0);
 
+	function setSurfaceNode(node: HTMLDivElement | null) {
+		localRef.current = node;
+		if (typeof surfaceRef === "function") {
+			surfaceRef(node);
+		} else if (surfaceRef) {
+			surfaceRef.current = node;
+		}
+	}
+
 	useEffect(() => {
-		const surface = surfaceRef.current;
+		const surface = localRef.current;
 		if (!surface) {
 			return;
 		}
@@ -45,12 +73,21 @@ export function WaveformRuler({ durationMs }: WaveformRulerProps) {
 		[durationMs, widthPx],
 	);
 
+	const seekable = Boolean(onPointerDown);
+
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: ruler seeks by horizontal position, same as the canvas
 		<div
-			ref={surfaceRef}
-			aria-hidden
-			className="waveform-ruler relative h-[var(--waveform-ruler-height)] w-full overflow-hidden bg-[var(--color-waveform-surface)]"
+			ref={setSurfaceNode}
+			className={`waveform-ruler relative h-[var(--waveform-ruler-height)] w-full overflow-hidden bg-[var(--color-waveform-surface)]${
+				seekable ? " cursor-pointer" : ""
+			}`}
 			data-testid="waveform-ruler"
+			onPointerDown={onPointerDown}
+			onPointerMove={onPointerMove}
+			onPointerUp={onPointerUp}
+			onPointerCancel={onPointerCancel}
+			onDoubleClick={onDoubleClick}
 		>
 			{ticks.map((tick) => {
 				const leftPercent = (tick.timeMs / Math.max(durationMs, 1)) * 100;

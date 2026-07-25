@@ -240,6 +240,39 @@ function mockWaveformBounds(
 		});
 	}
 
+	const ruler = element.ownerDocument?.querySelector(
+		'[data-testid="waveform-ruler"]',
+	);
+	// Prefer a ruler scoped to this card when present as a sibling above the surface.
+	const scopedRuler =
+		element.parentElement?.querySelector('[data-testid="waveform-ruler"]') ??
+		ruler;
+	if (scopedRuler instanceof HTMLElement) {
+		const rulerHeight = 10;
+		Object.defineProperty(scopedRuler, "getBoundingClientRect", {
+			configurable: true,
+			value: () => ({
+				left,
+				top: -rulerHeight,
+				right: left + width,
+				bottom: 0,
+				width,
+				height: rulerHeight,
+				x: left,
+				y: -rulerHeight,
+				toJSON: () => ({}),
+			}),
+		});
+		Object.defineProperty(scopedRuler, "clientWidth", {
+			configurable: true,
+			value: width,
+		});
+		Object.defineProperty(scopedRuler, "clientHeight", {
+			configurable: true,
+			value: rulerHeight,
+		});
+	}
+
 	const annotationOverlay = element.querySelector(
 		'[data-testid="waveform-annotation-overlay"]',
 	);
@@ -519,6 +552,44 @@ describe("WaveformCard", () => {
 
 		await waitFor(() => {
 			expect(onSeek).toHaveBeenNthCalledWith(3, 135000, true);
+		});
+	});
+
+	it("seeks from ruler pointer interactions the same way as the waveform", async () => {
+		const onSeek = vi.fn().mockResolvedValue(undefined);
+		const onSelectFile = vi.fn();
+		const onReportPlayback = vi.fn();
+
+		renderWaveformCard({
+			onSeek,
+			onSelectFile,
+			onReportPlayback,
+		});
+
+		const waveformSurface = screen.getByRole("button", {
+			name: /waveform for mix v1/i,
+		});
+		mockWaveformBounds(waveformSurface, { left: 10, width: 200 });
+		const ruler = screen.getByTestId("waveform-ruler");
+
+		fireEvent.pointerDown(ruler, {
+			button: 0,
+			pointerId: 7,
+			clientX: 60,
+			clientY: -5,
+		});
+		fireEvent.pointerUp(ruler, {
+			pointerId: 7,
+			clientX: 60,
+			clientY: -5,
+		});
+
+		await waitFor(() => {
+			expect(onSeek).toHaveBeenCalledWith(45000, false);
+		});
+		expect(onSelectFile).toHaveBeenCalledWith("file-1");
+		expect(onReportPlayback).toHaveBeenCalledWith({
+			currentTimeMs: 45000,
 		});
 	});
 

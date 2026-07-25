@@ -29,6 +29,7 @@ interface WaveformCardSurfaceProps {
 	bottomGutterDrag: BottomGutterDragState | null;
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 	canvasSurfaceRef: RefObject<HTMLDivElement | null>;
+	rulerSurfaceRef: RefObject<HTMLDivElement | null>;
 	clearGutterHover: () => void;
 	clearHoveredAnnotation: () => void;
 	commitAnnotationChange: (
@@ -100,6 +101,7 @@ export function WaveformCardSurface({
 	bottomGutterDrag,
 	canvasRef,
 	canvasSurfaceRef,
+	rulerSurfaceRef,
 	clearGutterHover,
 	clearHoveredAnnotation,
 	commitAnnotationChange,
@@ -132,7 +134,15 @@ export function WaveformCardSurface({
 }: WaveformCardSurfaceProps) {
 	return (
 		<div className="overflow-hidden border border-[var(--color-border-plain)]">
-			<WaveformRuler durationMs={audioFile.durationMs} />
+			<WaveformRuler
+				durationMs={audioFile.durationMs}
+				surfaceRef={rulerSurfaceRef}
+				onPointerDown={handleSurfacePointerDown}
+				onPointerMove={handleSurfacePointerMove}
+				onPointerUp={handleSurfacePointerUp}
+				onPointerCancel={handleSurfacePointerCancel}
+				onDoubleClick={handleSurfaceDoubleClick}
+			/>
 			{/* biome-ignore lint/a11y/useSemanticElements: the waveform surface contains nested marker buttons, so a semantic button wrapper is not valid */}
 			<div
 				className="waveform-surface relative grid overflow-hidden border-t border-[var(--color-border-plain)]"

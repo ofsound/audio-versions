@@ -104,6 +104,7 @@ export function WaveformCard({
 	const articleRef = useRef<HTMLElement | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
+	const rulerSurfaceRef = useRef<HTMLDivElement | null>(null);
 	const annotationOverlayRef = useRef<HTMLDivElement | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveform = useMemo(
@@ -177,8 +178,8 @@ export function WaveformCard({
 			return false;
 		}
 
-		const rect = canvasSurfaceRef.current.getBoundingClientRect();
-		if (clientX < rect.left || clientX > rect.right) {
+		const canvasRect = canvasSurfaceRef.current.getBoundingClientRect();
+		if (clientX < canvasRect.left || clientX > canvasRect.right) {
 			return false;
 		}
 
@@ -186,7 +187,16 @@ export function WaveformCard({
 			return true;
 		}
 
-		return clientY >= rect.top && clientY <= rect.bottom;
+		if (clientY >= canvasRect.top && clientY <= canvasRect.bottom) {
+			return true;
+		}
+
+		const rulerRect = rulerSurfaceRef.current?.getBoundingClientRect();
+		if (!rulerRect) {
+			return false;
+		}
+
+		return clientY >= rulerRect.top && clientY <= rulerRect.bottom;
 	}
 
 	function getWaveformTimeMs(clientX: number): number | null {
@@ -387,6 +397,7 @@ export function WaveformCard({
 				bottomGutterDrag={bottomGutterDrag}
 				canvasRef={canvasRef}
 				canvasSurfaceRef={canvasSurfaceRef}
+				rulerSurfaceRef={rulerSurfaceRef}
 				clearGutterHover={clearGutterHover}
 				clearHoveredAnnotation={clearHoveredAnnotation}
 				commitAnnotationChange={commitAnnotationChange}
