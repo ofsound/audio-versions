@@ -39,6 +39,8 @@ struct SongDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
+                        .listRowInsets(Self.groupedSectionInsets)
+                        .listRowBackground(palette.surface)
 
                         ForEach(journalLinks) { link in
                             Button {
@@ -69,12 +71,10 @@ struct SongDetailView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint("Opens the linked version and marker position")
+                            .listRowInsets(Self.groupedSectionInsets)
+                            .listRowBackground(palette.surface)
                         }
-                    }
-                    .listRowInsets(Self.groupedSectionInsets)
-                    .listRowBackground(palette.surface)
 
-                    Section {
                         Button {
                             isEditingJournal = true
                         } label: {
@@ -91,9 +91,10 @@ struct SongDetailView: View {
                         .accessibilityLabel(
                             song.generalNotes.isEmpty ? "Add journal" : "Edit journal"
                         )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 2, trailing: 0))
+                        .listRowSeparator(.hidden)
                     }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
