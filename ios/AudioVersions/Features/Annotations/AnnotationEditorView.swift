@@ -29,7 +29,7 @@ struct AnnotationEditorView: View {
             Form {
                 Section {
                     Picker("Annotation type", selection: $annotation.kind) {
-                        Label("Point", systemImage: "mappin").tag(ReviewAnnotation.Kind.point)
+                        Label("Marker", systemImage: "mappin").tag(ReviewAnnotation.Kind.point)
                         Label("Range", systemImage: "selection.pin.in.out").tag(ReviewAnnotation.Kind.range)
                     }
                     .pickerStyle(.segmented)

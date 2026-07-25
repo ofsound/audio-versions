@@ -25,7 +25,7 @@ struct AnnotationListView: View {
                 ContentUnavailableView(
                     "No annotations yet",
                     systemImage: "text.bubble",
-                    description: Text("Move the playhead and add a point or range to start a review.")
+                    description: Text("Move the playhead and add a marker or range to start a review.")
                 )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)

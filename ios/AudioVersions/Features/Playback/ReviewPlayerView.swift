@@ -316,10 +316,10 @@ struct ReviewPlayerView: View {
                 editingAnnotation = newAnnotation(kind: .point, version: version)
             } label: {
                 Label("Add marker", systemImage: "mappin.and.ellipse")
-                    .foregroundStyle(palette.onAccent)
+                    .foregroundStyle(palette.accentText)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
             .tint(palette.accent)
 
             Button {
