@@ -26,34 +26,19 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section("Journal") {
-                        Button {
-                            isEditingJournal = true
-                        } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(
-                                    song.generalNotes.isEmpty
-                                        ? "Add notes about this song"
-                                        : song.generalNotes
-                                )
-                                .foregroundStyle(
-                                    song.generalNotes.isEmpty ? palette.textSecondary : palette.textPrimary
-                                )
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                                Label(
-                                    song.generalNotes.isEmpty ? "Add journal" : "Edit journal",
-                                    systemImage: "square.and.pencil"
-                                )
-                                .font(.footnote.weight(.medium))
-                                .foregroundStyle(palette.accentText)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 13)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
+                        Text(
+                            song.generalNotes.isEmpty
+                                ? "Add notes about this song"
+                                : song.generalNotes
+                        )
+                        .foregroundStyle(
+                            song.generalNotes.isEmpty ? palette.textSecondary : palette.textPrimary
+                        )
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
 
                         ForEach(journalLinks) { link in
                             Button {
@@ -88,6 +73,27 @@ struct SongDetailView: View {
                     }
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
+
+                    Section {
+                        Button {
+                            isEditingJournal = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.pencil")
+                                Text(song.generalNotes.isEmpty ? "Add journal" : "Edit journal")
+                            }
+                            .foregroundStyle(palette.accentText)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(palette.accent)
+                        .controlSize(.large)
+                        .accessibilityLabel(
+                            song.generalNotes.isEmpty ? "Add journal" : "Edit journal"
+                        )
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
@@ -236,7 +242,10 @@ private struct VersionRow: View {
                 .foregroundStyle(palette.textPrimary)
 
             HStack(spacing: 7) {
-                Label(version.duration.playbackTimestamp, systemImage: "clock")
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                    Text(version.duration.playbackTimestamp)
+                }
                 Text("•")
                 Text(version.createdAt, style: .date)
             }
