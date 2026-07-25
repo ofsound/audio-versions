@@ -99,10 +99,8 @@ struct SongDetailView: View {
                 .appCanvas()
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.inline)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    AddToJournalBottomBar {
-                        isAddingToJournal = true
-                    }
+                .addToJournalBottomBar {
+                    isAddingToJournal = true
                 }
                 .sheet(isPresented: $isEditingJournal) {
                     PlainTextNoteEditorView(

@@ -18,8 +18,8 @@ struct AddToJournalButton: View {
     }
 }
 
-/// Fixed bottom chrome shared by song detail and the player so the control
-/// sits in the same place on both screens.
+/// Fixed bottom control aligned like the library `.searchable` field: low on the
+/// screen with only a small gap above the home indicator.
 struct AddToJournalBottomBar: View {
     @Environment(\.palette) private var palette
 
@@ -28,18 +28,29 @@ struct AddToJournalBottomBar: View {
     var body: some View {
         AddToJournalButton(action: action)
             .padding(.horizontal, 16)
-            .padding(.top, 10)
+            .padding(.top, 8)
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background {
                 palette.canvas
                     .opacity(0.96)
                     .ignoresSafeArea(edges: .bottom)
-                    .overlay(alignment: .top) {
-                        Rectangle()
-                            .fill(palette.hairline)
-                            .frame(height: 1)
-                    }
             }
+    }
+}
+
+extension View {
+    /// Pins Add to Journal to the bottom edge of the screen (matching library
+    /// search placement) while keeping scroll content clear of the control.
+    func addToJournalBottomBar(action: @escaping () -> Void) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear
+                .frame(height: 44)
+                .accessibilityHidden(true)
+        }
+        .overlay(alignment: .bottom) {
+            AddToJournalBottomBar(action: action)
+                .ignoresSafeArea(edges: .bottom)
+        }
     }
 }

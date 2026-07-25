@@ -53,10 +53,8 @@ struct ReviewPlayerView: View {
                 .appCanvas()
                 .navigationTitle(song?.title ?? "Audio Versions")
                 .navigationBarTitleDisplayMode(.inline)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    AddToJournalBottomBar {
-                        isAddingToJournal = true
-                    }
+                .addToJournalBottomBar {
+                    isAddingToJournal = true
                 }
                 .sheet(item: $editingAnnotation) { annotation in
                     AnnotationEditorView(annotation: annotation, duration: version.duration) {
