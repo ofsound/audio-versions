@@ -139,6 +139,7 @@ struct AudioFileRow: Decodable, Sendable {
     let notes: RichTextDocument
     let durationMilliseconds: Double
     let waveform: WaveformRow
+    let sessionDate: String
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -148,7 +149,20 @@ struct AudioFileRow: Decodable, Sendable {
         case notes
         case durationMilliseconds = "duration_ms"
         case waveform
+        case sessionDate = "session_date"
         case createdAt = "created_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        songID = try container.decode(UUID.self, forKey: .songID)
+        title = try container.decode(String.self, forKey: .title)
+        notes = try container.decode(RichTextDocument.self, forKey: .notes)
+        durationMilliseconds = try container.decode(Double.self, forKey: .durationMilliseconds)
+        waveform = try container.decode(WaveformRow.self, forKey: .waveform)
+        sessionDate = try container.decodeIfPresent(String.self, forKey: .sessionDate) ?? ""
+        createdAt = try container.decode(String.self, forKey: .createdAt)
     }
 }
 

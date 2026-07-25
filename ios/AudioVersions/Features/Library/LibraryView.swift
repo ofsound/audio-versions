@@ -26,11 +26,25 @@ struct LibraryView: View {
         }
     }
 
+    private var isBootstrappingLibrary: Bool {
+        store.isCloudLoading && store.songs.isEmpty
+    }
+
     var body: some View {
         NavigationStack(path: $store.navigationPath) {
             Group {
-                if filteredSongs.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                if isBootstrappingLibrary {
+                    LibraryBootstrapView()
+                } else if filteredSongs.isEmpty {
+                    if searchText.isEmpty {
+                        ContentUnavailableView(
+                            "No songs yet",
+                            systemImage: "music.note.list",
+                            description: Text("Songs from your library will show up here.")
+                        )
+                    } else {
+                        ContentUnavailableView.search(text: searchText)
+                    }
                 } else {
                     List(filteredSongs) { song in
                         NavigationLink(value: LibraryDestination.song(id: song.id)) {
@@ -48,36 +62,38 @@ struct LibraryView: View {
             }
             .appCanvas()
             .navigationTitle("Audio Versions")
-            .searchable(text: $searchText, prompt: "Search songs")
+            .modifier(LibrarySearchModifier(text: $searchText, isEnabled: !isBootstrappingLibrary))
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Label(
-                            accountEmail ?? "Fixture library",
-                            systemImage: accountEmail == nil ? "shippingbox" : "person.crop.circle"
-                        )
-                            .foregroundStyle(.secondary)
-                        if store.isCloudConfigured {
-                            Button("Refresh library", systemImage: "arrow.clockwise") {
-                                Task {
-                                    await store.refreshCloudLibrary()
+                if !isBootstrappingLibrary {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Label(
+                                accountEmail ?? "Fixture library",
+                                systemImage: accountEmail == nil ? "shippingbox" : "person.crop.circle"
+                            )
+                                .foregroundStyle(.secondary)
+                            if store.isCloudConfigured {
+                                Button("Refresh library", systemImage: "arrow.clockwise") {
+                                    Task {
+                                        await store.refreshCloudLibrary()
+                                    }
                                 }
                             }
-                        }
-                        Divider()
-                        Button("Appearance", systemImage: appearance.preference.symbolName) {
-                            isShowingAppearanceSettings = true
-                        }
-                        if let onSignOut {
                             Divider()
-                            Button("Sign Out", systemImage: "rectangle.portrait.and.arrow.right") {
-                                onSignOut()
+                            Button("Appearance", systemImage: appearance.preference.symbolName) {
+                                isShowingAppearanceSettings = true
                             }
+                            if let onSignOut {
+                                Divider()
+                                Button("Sign Out", systemImage: "rectangle.portrait.and.arrow.right") {
+                                    onSignOut()
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "person.crop.circle")
                         }
-                    } label: {
-                        Image(systemName: "person.crop.circle")
+                        .accessibilityLabel("Account")
                     }
-                    .accessibilityLabel("Account")
                 }
             }
             .navigationDestination(for: LibraryDestination.self) { destination in
@@ -96,13 +112,6 @@ struct LibraryView: View {
         .sheet(isPresented: $isShowingAppearanceSettings) {
             AppearanceSettingsView(appearance: appearance)
         }
-        .overlay {
-            if store.isCloudLoading, store.songs.isEmpty {
-                ProgressView("Loading your library…")
-                    .tint(palette.accent)
-                    .foregroundStyle(palette.textSecondary)
-            }
-        }
         .alert(
             "Audio Versions couldn’t complete that request",
             isPresented: Binding(
@@ -119,6 +128,19 @@ struct LibraryView: View {
             }
         } message: {
             Text(store.cloudErrorMessage ?? "Please try again.")
+        }
+    }
+}
+
+private struct LibrarySearchModifier: ViewModifier {
+    @Binding var text: String
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.searchable(text: $text, prompt: "Search songs")
+        } else {
+            content
         }
     }
 }
@@ -149,8 +171,10 @@ private struct LibrarySongRow: View {
 
                 HStack(spacing: 5) {
                     Text(song.versions.count == 1 ? "1 version" : "\(song.versions.count) versions")
-                    Text("•")
-                    Text(song.updatedAt, style: .relative)
+                    if let sessionDateRange = song.sessionDateRangeLabel {
+                        Text("•")
+                        Text(sessionDateRange)
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(palette.textTertiary)

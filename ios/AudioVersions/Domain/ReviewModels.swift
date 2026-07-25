@@ -17,6 +17,8 @@ struct AudioVersion: Identifiable, Hashable {
     let id: String
     var name: String
     var notes: String = ""
+    /// Local calendar session date as `YYYY-MM-DD`, matching the web `sessionDate`.
+    var sessionDate: String = ""
     var createdAt: Date
     var duration: TimeInterval
     var waveformPeaks: [Double]

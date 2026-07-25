@@ -11,6 +11,7 @@ enum FixtureLibrary {
                 AudioVersion(
                     id: "afterglow-v4",
                     name: "Mix 04 — vocal lift",
+                    sessionDate: isoDate(daysAgo: 0),
                     createdAt: date(daysAgo: 0),
                     duration: 226,
                     waveformPeaks: peaks(seed: 0.42),
@@ -40,6 +41,7 @@ enum FixtureLibrary {
                 AudioVersion(
                     id: "afterglow-v3",
                     name: "Mix 03",
+                    sessionDate: isoDate(daysAgo: 3),
                     createdAt: date(daysAgo: 3),
                     duration: 226,
                     waveformPeaks: peaks(seed: 0.28),
@@ -56,6 +58,7 @@ enum FixtureLibrary {
                 AudioVersion(
                     id: "cedar-v2",
                     name: "Master candidate 02",
+                    sessionDate: isoDate(daysAgo: 2),
                     createdAt: date(daysAgo: 2),
                     duration: 194,
                     waveformPeaks: peaks(seed: 0.65),
@@ -83,6 +86,7 @@ enum FixtureLibrary {
                 AudioVersion(
                     id: "borrowed-v1",
                     name: "Rough mix 01",
+                    sessionDate: isoDate(daysAgo: 8),
                     createdAt: date(daysAgo: 8),
                     duration: 251,
                     waveformPeaks: peaks(seed: 0.81),
@@ -94,6 +98,17 @@ enum FixtureLibrary {
 
     private static func date(daysAgo: Int) -> Date {
         Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now
+    }
+
+    private static func isoDate(daysAgo: Int) -> String {
+        let day = date(daysAgo: daysAgo)
+        let parts = Calendar.current.dateComponents([.year, .month, .day], from: day)
+        return String(
+            format: "%04d-%02d-%02d",
+            parts.year ?? 0,
+            parts.month ?? 0,
+            parts.day ?? 0
+        )
     }
 
     private static func peaks(seed: Double) -> [Double] {

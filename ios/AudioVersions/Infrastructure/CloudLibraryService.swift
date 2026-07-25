@@ -44,7 +44,7 @@ final class CloudLibraryService: @unchecked Sendable {
 
         let audioFileRows: [AudioFileRow] = try await client
             .from("audio_files")
-            .select("id,song_id,title,notes,duration_ms,waveform,created_at")
+            .select("id,song_id,title,notes,duration_ms,waveform,session_date,created_at")
             .is("deleted_at", value: nil)
             .execute()
             .value
@@ -256,6 +256,7 @@ final class CloudLibraryService: @unchecked Sendable {
                         id: audioRow.id.uuidString.lowercased(),
                         name: audioRow.title,
                         notes: audioRow.notes.plainText,
+                        sessionDate: audioRow.sessionDate,
                         createdAt: try CloudTimestamp.parse(audioRow.createdAt),
                         duration: max(0, audioRow.durationMilliseconds / 1_000),
                         waveformPeaks: audioRow.waveform.peaks.map {

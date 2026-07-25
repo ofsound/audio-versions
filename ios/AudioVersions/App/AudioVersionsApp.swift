@@ -66,11 +66,7 @@ private struct AudioVersionsRootView: View {
         authentication: AuthenticationStore
     ) -> some View {
         if authentication.isRestoringSession {
-            ProgressView("Restoring your library…")
-                .tint(palette.accent)
-                .foregroundStyle(palette.textSecondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .appCanvas()
+            LibraryBootstrapView(showsTitle: true)
         } else if authentication.user == nil {
             EmailSignInView(authentication: authentication)
         } else {

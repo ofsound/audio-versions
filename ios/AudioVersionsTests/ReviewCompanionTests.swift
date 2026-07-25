@@ -5,10 +5,81 @@ import Testing
 
 struct ReviewCompanionTests {
     @Test
-    func playbackTimestampFormatsMinutesAndSeconds() {
-        #expect(TimeInterval(0).playbackTimestamp == "0:00")
-        #expect(TimeInterval(65.9).playbackTimestamp == "1:05")
-        #expect(TimeInterval.infinity.playbackTimestamp == "0:00")
+    func songSessionDateRangeMatchesWebFormatting() {
+        let locale = Locale(identifier: "en_US_POSIX")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+
+        #expect(SongSessionDates.formatRange([], locale: locale, calendar: calendar) == nil)
+        #expect(
+            SongSessionDates.formatRange(["not-a-date"], locale: locale, calendar: calendar) == nil
+        )
+
+        let single = SongSessionDates.formatForDisplay(
+            "2026-04-16",
+            locale: locale,
+            calendar: calendar
+        )
+        #expect(
+            SongSessionDates.formatRange(
+                ["2026-04-16", "2026-04-16"],
+                locale: locale,
+                calendar: calendar
+            ) == single
+        )
+
+        let earliest = SongSessionDates.formatForDisplay(
+            "2026-04-16",
+            locale: locale,
+            calendar: calendar
+        )
+        let latest = SongSessionDates.formatForDisplay(
+            "2026-06-02",
+            locale: locale,
+            calendar: calendar
+        )
+        #expect(
+            SongSessionDates.formatRange(
+                ["2026-06-02", "2026-04-16", "2026-05-01"],
+                locale: locale,
+                calendar: calendar
+            ) == "\(earliest) – \(latest)"
+        )
+    }
+
+    @Test
+    func songSessionDateRangeLabelReadsVersionSessionDates() {
+        let song = Song(
+            id: "song-1",
+            title: "Song",
+            artist: "Artist",
+            updatedAt: .now,
+            versions: [
+                AudioVersion(
+                    id: "v1",
+                    name: "A",
+                    sessionDate: "2026-04-16",
+                    createdAt: .now,
+                    duration: 10,
+                    waveformPeaks: [],
+                    annotations: []
+                ),
+                AudioVersion(
+                    id: "v2",
+                    name: "B",
+                    sessionDate: "2026-06-02",
+                    createdAt: .now,
+                    duration: 10,
+                    waveformPeaks: [],
+                    annotations: []
+                ),
+            ]
+        )
+
+        #expect(
+            song.sessionDateRangeLabel
+                == SongSessionDates.formatRange(["2026-04-16", "2026-06-02"])
+        )
     }
 
     @Test
