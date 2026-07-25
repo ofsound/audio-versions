@@ -206,62 +206,60 @@ struct ReviewPlayerView: View {
             }
 
             HStack(spacing: 0) {
-                Color.clear
-                    .frame(width: 44, height: 44)
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 22) {
-                    Button {
-                        store.seek(to: 0, in: version)
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.title3.weight(.semibold))
-                            .frame(width: 44, height: 44)
-                            .foregroundStyle(palette.accentText)
-                            .background(palette.accentSoft, in: Circle())
-                    }
-                    .accessibilityLabel("Reset playhead")
-
-                    Button {
-                        store.skip(by: -10, in: version)
-                    } label: {
-                        Image(systemName: "gobackward.10")
-                            .foregroundStyle(palette.accentText)
-                    }
-                    .accessibilityLabel("Skip back 10 seconds")
-
-                    Button {
-                        store.togglePlayback(for: version)
-                    } label: {
-                        Group {
-                            if store.isPreparingPlayback {
-                                ProgressView()
-                                    .tint(palette.onAccent)
-                            } else {
-                                Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
-                            }
-                        }
-                        .font(.title2)
-                        .frame(width: 58, height: 58)
-                        .foregroundStyle(palette.onAccent)
-                        .background(palette.accent, in: Circle())
-                        .shadow(color: palette.accentGlow, radius: 14, y: 4)
-                    }
-                    .disabled(store.isPreparingPlayback)
-                    .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
-
-                    Button {
-                        store.skip(by: 10, in: version)
-                    } label: {
-                        Image(systemName: "goforward.10")
-                            .foregroundStyle(palette.accentText)
-                    }
-                    .accessibilityLabel("Skip forward 10 seconds")
+                Button {
+                    store.seek(to: 0, in: version)
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .foregroundStyle(palette.accentText)
+                        .background(palette.accentSoft, in: Circle())
                 }
-                .font(.title3)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Reset playhead")
 
-                Spacer(minLength: 0)
+                Button {
+                    store.skip(by: -10, in: version)
+                } label: {
+                    Image(systemName: "gobackward.10")
+                        .foregroundStyle(palette.accentText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Skip back 10 seconds")
+
+                Button {
+                    store.togglePlayback(for: version)
+                } label: {
+                    Group {
+                        if store.isPreparingPlayback {
+                            ProgressView()
+                                .tint(palette.onAccent)
+                        } else {
+                            Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
+                        }
+                    }
+                    .font(.title2)
+                    .frame(width: 58, height: 58)
+                    .foregroundStyle(palette.onAccent)
+                    .background(palette.accent, in: Circle())
+                    .shadow(color: palette.accentGlow, radius: 14, y: 4)
+                }
+                .frame(maxWidth: .infinity)
+                .disabled(store.isPreparingPlayback)
+                .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+
+                Button {
+                    store.skip(by: 10, in: version)
+                } label: {
+                    Image(systemName: "goforward.10")
+                        .foregroundStyle(palette.accentText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Skip forward 10 seconds")
 
                 Menu {
                     ForEach([0.75, 1, 1.25, 1.5], id: \.self) { rate in
@@ -283,8 +281,10 @@ struct ReviewPlayerView: View {
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
+                .frame(maxWidth: .infinity)
                 .accessibilityLabel("Playback speed")
             }
+            .font(.title3)
         }
         .padding(18)
         .appCard()
