@@ -32,7 +32,7 @@ struct SongDetailView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
                     } header: {
-                        DetailSectionHeader("Journal")
+                        DetailSectionHeader("Song Notes")
                     }
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
@@ -43,7 +43,7 @@ struct SongDetailView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "square.and.pencil")
-                                Text(song.generalNotes.isEmpty ? "Add journal" : "Edit journal")
+                                Text(song.generalNotes.isEmpty ? "Add song notes" : "Edit song notes")
                             }
                             .foregroundStyle(palette.accentText)
                             .frame(maxWidth: .infinity)
@@ -52,7 +52,7 @@ struct SongDetailView: View {
                         .tint(palette.accent)
                         .controlSize(.large)
                         .accessibilityLabel(
-                            song.generalNotes.isEmpty ? "Add journal" : "Edit journal"
+                            song.generalNotes.isEmpty ? "Add song notes" : "Edit song notes"
                         )
                     }
                     // Keep a separate section so both the journal card and this
@@ -70,8 +70,8 @@ struct SongDetailView: View {
                 }
                 .sheet(isPresented: $isEditingJournal) {
                     PlainTextNoteEditorView(
-                        title: "Song Journal",
-                        accessibilityLabel: "Song journal",
+                        title: "Song Notes",
+                        accessibilityLabel: "Song notes",
                         text: song.generalNotes
                     ) { journal in
                         store.saveSongJournal(journal, songID: song.id)
@@ -79,8 +79,8 @@ struct SongDetailView: View {
                 }
                 .sheet(isPresented: $isAddingToJournal) {
                     PlainTextNoteEditorView(
-                        title: "Add to Journal",
-                        accessibilityLabel: "Add to song journal",
+                        title: "Add to Song Notes",
+                        accessibilityLabel: "Add to song notes",
                         text: "",
                         requiresNonEmptyDraft: true
                     ) { entry in

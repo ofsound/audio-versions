@@ -217,8 +217,7 @@ export function LibraryView() {
 										<p className="mt-4 text-base leading-8 text-[var(--color-text-muted)]">
 											Each audio file becomes a full waveform lane. You can
 											seek, create point markers or regions, keep file-level
-											notes, and maintain a persistent song journal on the
-											right.
+											notes, and maintain persistent song notes on the right.
 										</p>
 									</div>
 									<div className="border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] px-5 py-5">

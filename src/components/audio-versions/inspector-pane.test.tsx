@@ -118,7 +118,7 @@ describe("InspectorPane", () => {
 
 		expect(screen.queryByText("Mix v1")).toBeNull();
 		expect(screen.queryByText("Apr 16, 2026")).toBeNull();
-		expect(screen.getByText("Notes")).toBeTruthy();
+		expect(screen.getAllByText("File Notes").length).toBeGreaterThan(0);
 		expect(screen.getByTestId("inspector-notes-offset")).toBeTruthy();
 	});
 
@@ -516,8 +516,8 @@ describe("InspectorPane", () => {
 			selectedFile: baseAudioFile,
 		});
 
-		expect(screen.getByText(/^notes$/i)).toBeTruthy();
-		const notesLabel = screen.getByText(/^notes$/i);
+		expect(screen.getAllByText(/^file notes$/i).length).toBeGreaterThan(0);
+		const notesLabel = screen.getAllByText(/^file notes$/i)[0];
 		const markersHeading = screen.getByRole("heading", {
 			name: "Markers And Ranges",
 		});

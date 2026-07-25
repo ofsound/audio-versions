@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shared bottom chrome for library search and Add to Journal.
+/// Shared bottom chrome for library search and Add to Song Notes.
 /// Same `safeAreaInset`, same padding — no per-screen offset guessing.
 extension View {
     func bottomScreenChrome<Chrome: View>(

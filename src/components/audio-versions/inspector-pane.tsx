@@ -78,34 +78,39 @@ export function InspectorPane({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-			<section className="relative flex h-full min-h-0 flex-col p-4 xl:pt-0">
+			<section className="relative flex h-full min-h-0 flex-col px-6 py-4 xl:pt-0">
 				<div
 					ref={scrollerRef}
-					className="-mx-4 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 xl:pt-4 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
+					className="-mx-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-4 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
 				>
 					{selectedFile ? (
 						<>
 							{/*
 							  Mirror the file-player title + date block (and the gap before
-							  the action row) so Notes lines up with Start range on desktop.
+							  the action row). File Notes sits on the date line so the editor
+							  border top lines up with Start range on desktop.
 							*/}
 							<div
 								className="hidden shrink-0 xl:block"
-								aria-hidden="true"
 								data-testid="inspector-notes-offset"
 							>
 								<div className="flex min-w-0 flex-col">
-									<div className="font-title truncate text-3xl font-semibold">
+									<div
+										className="font-title truncate text-3xl font-semibold"
+										aria-hidden="true"
+									>
 										&nbsp;
 									</div>
-									<div className="mt-0.5 text-base tabular-nums">&nbsp;</div>
+									<div className="mt-0.5 flex min-h-[1.5rem] items-end">
+										<span className="field-label">File Notes</span>
+									</div>
 								</div>
 								{/* Matches waveform-card__header gap before the action row. */}
-								<div className="h-3" />
+								<div className="h-3" aria-hidden="true" />
 							</div>
 							<div className="shrink-0">
-								<div className="grid gap-2">
-									<span className="field-label">Notes</span>
+								<div className="grid gap-2 xl:gap-0">
+									<span className="field-label xl:hidden">File Notes</span>
 									<RichTextEditor
 										value={selectedFile.notes}
 										onChange={(nextValue) =>
@@ -174,7 +179,7 @@ export function InspectorPane({
 				{selectedFile ? null : (
 					<p className="text-sm leading-7 text-[var(--color-text-muted)]">
 						Pick an audio lane to edit notes, inspect time-based annotations,
-						and copy deep links back into the song journal.
+						and copy deep links back into the song notes.
 					</p>
 				)}
 			</section>

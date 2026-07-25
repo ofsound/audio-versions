@@ -362,9 +362,10 @@ export function JournalEditor({
 			data-audio-versions-editor="journal"
 		>
 			<div
-				className="flex h-16 shrink-0 items-center justify-end px-3"
+				className="flex h-16 shrink-0 items-center justify-between gap-3 px-3"
 				data-audio-versions-toolbar
 			>
+				<span className="field-label">Song Notes</span>
 				<button
 					type="button"
 					onClick={insertTimestamp}
@@ -383,7 +384,7 @@ export function JournalEditor({
 				suppressContentEditableWarning
 				role="textbox"
 				tabIndex={0}
-				aria-label="Song journal"
+				aria-label="Song notes"
 				aria-multiline="true"
 				data-placeholder="Write a note…"
 				spellCheck

@@ -10,11 +10,11 @@ Supabase provides authentication and realtime metadata sync, private media lives
 
 ## What It Does
 
-- Create song records with artist, project, and journal notes
+- Create song records with artist, project, and song notes
 - Import multiple audio files per song and cache generated waveform data locally
 - Review waveforms, create point/range annotations, and deep-link back to exact moments
-- Keep file-level notes alongside a persistent song journal
-- Search across songs, journals, file notes, and annotations
+- Keep file-level notes alongside persistent song notes
+- Search across songs, song notes, file notes, and annotations
 
 ## Development
 
@@ -100,7 +100,7 @@ For native builds and tests, use the commands in the [iOS runbook](ios/README.md
 - `Right` / `.`: seek forward 5 seconds (hold `Shift` to seek 1 second)
 - `Shift + Up`: jump to previous annotation
 - `Shift + Down`: jump to next annotation
-- `Shift + J`: focus the song journal
+- `Shift + J`: focus the song notes
 - `/` or `Cmd/Ctrl + K`: focus global search
 
 ## Data Model

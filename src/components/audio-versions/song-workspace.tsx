@@ -577,7 +577,7 @@ export function SongWorkspace({
 					</div>
 
 					<PanelResizeHandle
-						label="Resize details and journal panels"
+						label="Resize details and song notes panels"
 						onResize={(deltaX) => resizePanels("right", deltaX)}
 					/>
 

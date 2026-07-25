@@ -54,8 +54,8 @@ export function searchAudioVersions(
 		pushMatch(
 			results,
 			buildScore("journal", song.generalNotes, terms, 1.3),
-			`${song.title} journal`,
-			uiSettings.showProject && song.project ? song.project : "Journal",
+			`${song.title} song notes`,
+			uiSettings.showProject && song.project ? song.project : "Song notes",
 			plainTextPreview(song.generalNotes),
 			{
 				songId: song.id,

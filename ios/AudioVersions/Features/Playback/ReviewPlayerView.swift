@@ -72,8 +72,8 @@ struct ReviewPlayerView: View {
                 }
                 .sheet(isPresented: $isAddingToJournal) {
                     PlainTextNoteEditorView(
-                        title: "Add to Journal",
-                        accessibilityLabel: "Add to song journal",
+                        title: "Add to Song Notes",
+                        accessibilityLabel: "Add to song notes",
                         text: "",
                         requiresNonEmptyDraft: true
                     ) { entry in

@@ -11,7 +11,8 @@ describe("JournalEditor", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="Alpha Beta" onChange={onChange} />);
 
-		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		expect(screen.getByText("Song Notes")).toBeTruthy();
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
 		editor.focus();
 		const text = editor.firstElementChild?.firstChild;
 		const selection = window.getSelection();
@@ -37,7 +38,7 @@ describe("JournalEditor", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="First line" onChange={onChange} />);
 
-		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
 		editor.innerHTML =
 			"<div>First line</div><div><br></div><div>Second line</div>";
 		fireEvent.input(editor);
@@ -50,7 +51,7 @@ describe("JournalEditor", () => {
 		const { rerender } = render(
 			<JournalEditor value="First line" onChange={onChange} />,
 		);
-		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
 		editor.innerHTML =
 			"<div>First line</div><div><br></div><div><b>Timestamp</b></div><div><br></div><div><i>Final thought</i></div>";
 		fireEvent.input(editor);
@@ -66,7 +67,7 @@ describe("JournalEditor", () => {
 			/>,
 		);
 		const reloadedEditor = screen.getByRole("textbox", {
-			name: "Song journal",
+			name: "Song notes",
 		});
 		expect(reloadedEditor.querySelector("strong")?.textContent).toBe(
 			"Timestamp",
@@ -118,7 +119,7 @@ describe("JournalEditor", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="Existing note" onChange={onChange} />);
 
-		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
 		editor.innerHTML = `<div>Existing note</div><div>${href}</div>`;
 		fireEvent.input(editor);
 
@@ -138,7 +139,7 @@ describe("JournalEditor", () => {
 				onLocalHistoryAction={onLocalHistoryAction}
 			/>,
 		);
-		const editor = screen.getByRole("textbox", { name: "Song journal" });
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
 
 		editor.textContent = "Changed";
 		fireEvent.input(editor);

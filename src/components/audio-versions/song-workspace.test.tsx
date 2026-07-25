@@ -1211,7 +1211,7 @@ describe("SongWorkspace", () => {
 		);
 		const journalColumn = journalEditor?.parentElement?.parentElement;
 
-		expect(screen.queryByText(/song journal/i)).toBeNull();
+		expect(screen.getByText("Song Notes")).toBeTruthy();
 		expect(journalEditor).toBeTruthy();
 		expect(journalEditor?.closest(".panel-shell")).toBeNull();
 		expect(journalColumn?.className).toContain("xl:min-h-0");
@@ -1248,7 +1248,7 @@ describe("SongWorkspace", () => {
 
 		fireEvent.keyDown(
 			screen.getByRole("button", {
-				name: "Resize details and journal panels",
+				name: "Resize details and song notes panels",
 			}),
 			{ key: "ArrowLeft" },
 		);

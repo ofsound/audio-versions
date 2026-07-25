@@ -7,13 +7,13 @@ struct AddToJournalButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label("Add to Journal", systemImage: "text.badge.plus")
+            Label("Add to Song Notes", systemImage: "text.badge.plus")
                 .foregroundStyle(palette.onAccent)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
         .tint(palette.accent)
         .controlSize(.large)
-        .accessibilityLabel("Add to Journal")
+        .accessibilityLabel("Add to Song Notes")
     }
 }

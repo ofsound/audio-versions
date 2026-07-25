@@ -3,7 +3,12 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isEditableElement } from "#/lib/audio-versions/dom";
 import { targetToRouteSearch } from "#/lib/audio-versions/links";
+import type { SearchResultType } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
+
+function searchResultTypeLabel(type: SearchResultType): string {
+	return type === "journal" ? "Song notes" : type;
+}
 
 export function GlobalSearch() {
 	const navigate = useNavigate();
@@ -61,7 +66,7 @@ export function GlobalSearch() {
 							setOpen(false);
 						}, 140);
 					}}
-					placeholder="Search songs, journals, file notes, and markers"
+					placeholder="Search songs, song notes, file notes, and markers"
 					className="min-h-0 min-w-0 flex-1 self-stretch border-0 bg-transparent py-0 text-sm leading-none text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
 				/>
 			</label>
@@ -96,7 +101,7 @@ export function GlobalSearch() {
 									}}
 								>
 									<span className="surface-chip mt-1 px-2 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase">
-										{result.type}
+										{searchResultTypeLabel(result.type)}
 									</span>
 									<span className="min-w-0 flex-1">
 										<span className="font-title block text-sm font-semibold text-[var(--color-text)]">
