@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	extensionForAudioBlob,
 	resolveAudioDownloadFilename,
+	resolveAudioFileFormatLabel,
 } from "./download-audio-file";
 import { EMPTY_RICH_TEXT } from "./rich-text";
 import type { AudioFileRecord } from "./types";
@@ -61,5 +62,27 @@ describe("download-audio-file helpers", () => {
 				new Blob([], { type: "audio/wav" }),
 			),
 		).toBe("Mix Print.wav");
+	});
+
+	it("resolves a leading-dot format label from the original name or blob", () => {
+		expect(
+			resolveAudioFileFormatLabel(
+				createAudioFile({
+					remoteMedia: {
+						pathname: "users/1/audio/file-1/mix.mp3",
+						contentType: "audio/mpeg",
+						size: 1024,
+						originalName: "High Plains Drifter v16.mp3",
+					},
+				}),
+			),
+		).toBe(".mp3");
+		expect(
+			resolveAudioFileFormatLabel(
+				createAudioFile(),
+				new Blob([], { type: "audio/wav" }),
+			),
+		).toBe(".wav");
+		expect(resolveAudioFileFormatLabel(createAudioFile())).toBeNull();
 	});
 });

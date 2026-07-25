@@ -93,10 +93,10 @@ export function InspectorPane({
 					{selectedFile ? (
 						<div className="shrink-0 xl:-mt-2">
 							{/*
-							  Top padding matches Song Notes’ vertical centering in the
-							  h-16 toolbar; gap-2 matches Markers and Ranges → helper text.
+							  Top inset matches Song Notes toolbar centering of the h-8
+							  Insert Timestamp control so date/download/trash share that top.
 							*/}
-							<div className="grid gap-2 xl:pt-[calc((4rem-0.8125rem)/2)]">
+							<div className="grid gap-2 pt-[calc((4rem-2rem)/2)]">
 								<InspectorFileMeta
 									selectedFile={selectedFile}
 									blob={selectedFileBlob}

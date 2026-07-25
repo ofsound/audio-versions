@@ -130,7 +130,11 @@ export function WaveformCardHeader({
 						onClick={onTogglePlayback}
 						className="action-primary inline-flex h-9 w-9 items-center justify-center p-0"
 					>
-						{isPlaying ? <Pause size={16} /> : <Play size={16} />}
+						{isPlaying ? (
+							<Pause size={16} fill="currentColor" strokeWidth={0} />
+						) : (
+							<Play size={16} fill="currentColor" strokeWidth={0} />
+						)}
 					</button>
 				</div>
 				<div className="waveform-card__annotations ml-auto flex flex-wrap items-center justify-end gap-2">

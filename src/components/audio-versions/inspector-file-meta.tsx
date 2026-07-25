@@ -4,7 +4,10 @@ import {
 	resolveAudioFileSessionDateInputValue,
 	resolveAudioFileSessionDateLabel,
 } from "#/lib/audio-versions/dates";
-import { downloadAudioFile } from "#/lib/audio-versions/download-audio-file";
+import {
+	downloadAudioFile,
+	resolveAudioFileFormatLabel,
+} from "#/lib/audio-versions/download-audio-file";
 import type { AudioFileRecord } from "#/lib/audio-versions/types";
 
 interface InspectorFileMetaProps {
@@ -24,6 +27,7 @@ export function InspectorFileMeta({
 }: InspectorFileMetaProps) {
 	const sessionDateIso = resolveAudioFileSessionDateInputValue(selectedFile);
 	const sessionDateLabel = resolveAudioFileSessionDateLabel(selectedFile);
+	const formatLabel = resolveAudioFileFormatLabel(selectedFile, blob);
 	const canDownloadFile = Boolean(blob || selectedFile.remoteMedia);
 	const [editingDate, setEditingDate] = useState(false);
 	const [draftDate, setDraftDate] = useState(sessionDateIso);
@@ -123,6 +127,14 @@ export function InspectorFileMeta({
 					{sessionDateLabel}
 				</button>
 			)}
+			{formatLabel ? (
+				<span
+					className="whitespace-nowrap text-base tabular-nums text-[var(--color-text-muted)]"
+					title={selectedFile.remoteMedia?.originalName?.trim() || undefined}
+				>
+					{formatLabel}
+				</span>
+			) : null}
 			<button
 				type="button"
 				onClick={() => {

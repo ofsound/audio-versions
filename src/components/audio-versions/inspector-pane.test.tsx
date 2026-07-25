@@ -18,9 +18,16 @@ import { InspectorPane } from "./inspector-pane";
 
 const downloadAudioFileMock = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("#/lib/audio-versions/download-audio-file", () => ({
-	downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
-}));
+vi.mock("#/lib/audio-versions/download-audio-file", async (importOriginal) => {
+	const actual =
+		await importOriginal<
+			typeof import("#/lib/audio-versions/download-audio-file")
+		>();
+	return {
+		...actual,
+		downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
+	};
+});
 
 vi.mock("./rich-text-editor", () => ({
 	RichTextEditor: () => <div data-testid="rich-text-editor" />,
@@ -129,10 +136,21 @@ describe("InspectorPane", () => {
 			day: "numeric",
 		});
 
-		renderInspector({ selectedFile: baseAudioFile });
+		renderInspector({
+			selectedFile: {
+				...baseAudioFile,
+				remoteMedia: {
+					pathname: "users/1/audio/file-1/mix.wav",
+					contentType: "audio/wav",
+					size: 1024,
+					originalName: "Mix v1.wav",
+				},
+			},
+		});
 
 		expect(screen.queryByText("Mix v1")).toBeNull();
 		expect(screen.getByRole("button", { name: dateLabel })).toBeTruthy();
+		expect(screen.getByText(".wav")).toBeTruthy();
 		expect(
 			screen.getByRole("button", { name: /^download mix v1$/i }),
 		).toBeTruthy();

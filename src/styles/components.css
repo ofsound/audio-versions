@@ -14,7 +14,7 @@
 
 .action-primary {
 	background: var(--background-image-button-accent);
-	color: var(--color-text-inverse);
+	color: var(--color-white);
 }
 
 .song-workspace-add-file {

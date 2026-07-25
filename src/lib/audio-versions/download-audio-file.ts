@@ -21,6 +21,27 @@ export function resolveAudioDownloadFilename(
 	return `${baseTitle}.${extension}`;
 }
 
+/** Leading-dot format label (`.wav`, `.mp3`) for inspector chrome, or null. */
+export function resolveAudioFileFormatLabel(
+	audioFile: AudioFileRecord,
+	blob?: Blob,
+): string | null {
+	const originalName = audioFile.remoteMedia?.originalName?.trim();
+	const fromName = originalName?.match(/\.([a-zA-Z0-9]+)$/)?.[1];
+	const fromBlob = blob ? extensionForAudioBlob(blob) : null;
+	const fromContentType = audioFile.remoteMedia?.contentType
+		? extensionForAudioBlob(
+				new Blob([], { type: audioFile.remoteMedia.contentType }),
+			)
+		: null;
+	const extension = (fromName || fromBlob || fromContentType)?.toLowerCase();
+	if (!extension || extension === "audio") {
+		return null;
+	}
+
+	return `.${extension}`;
+}
+
 function triggerBlobDownload(blob: Blob, filename: string): void {
 	const objectUrl = URL.createObjectURL(blob);
 	const anchor = document.createElement("a");
