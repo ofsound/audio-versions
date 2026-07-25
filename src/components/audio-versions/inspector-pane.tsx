@@ -81,26 +81,46 @@ export function InspectorPane({
 			<section className="relative flex h-full min-h-0 flex-col p-4 xl:pt-0">
 				<div
 					ref={scrollerRef}
-					className="-mx-4 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
+					className="-mx-4 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 xl:pt-4 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
 				>
 					{selectedFile ? (
-						<div className="shrink-0">
-							<div className="grid gap-2">
-								<span className="field-label">Notes</span>
-								<RichTextEditor
-									value={selectedFile.notes}
-									onChange={(nextValue) =>
-										void onUpdateFile({
-											notes: nextValue,
-										})
-									}
-									onInternalLink={onOpenTarget}
-									compact
-									showToolbar={false}
-									commitDelayMs={DEBOUNCE_MS.compactEditor}
-								/>
+						<>
+							{/*
+							  Mirror the file-player title + date block (and the gap before
+							  the action row) so Notes lines up with Start range on desktop.
+							*/}
+							<div
+								className="hidden shrink-0 xl:block"
+								aria-hidden="true"
+								data-testid="inspector-notes-offset"
+							>
+								<div className="flex min-w-0 flex-col">
+									<div className="font-title truncate text-3xl font-semibold">
+										&nbsp;
+									</div>
+									<div className="mt-0.5 text-base tabular-nums">&nbsp;</div>
+								</div>
+								{/* Matches waveform-card__header gap before the action row. */}
+								<div className="h-3" />
 							</div>
-						</div>
+							<div className="shrink-0">
+								<div className="grid gap-2">
+									<span className="field-label">Notes</span>
+									<RichTextEditor
+										value={selectedFile.notes}
+										onChange={(nextValue) =>
+											void onUpdateFile({
+												notes: nextValue,
+											})
+										}
+										onInternalLink={onOpenTarget}
+										compact
+										showToolbar={false}
+										commitDelayMs={DEBOUNCE_MS.compactEditor}
+									/>
+								</div>
+							</div>
+						</>
 					) : null}
 					{annotations.length === 0 ? (
 						<div

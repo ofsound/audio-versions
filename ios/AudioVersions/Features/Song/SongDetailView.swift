@@ -24,7 +24,6 @@ struct SongDetailView: View {
                     } header: {
                         DetailSectionHeader("Versions")
                     }
-                    .headerProminence(.increased)
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
 
@@ -76,7 +75,6 @@ struct SongDetailView: View {
                     } header: {
                         DetailSectionHeader("Journal")
                     }
-                    .headerProminence(.increased)
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
 
@@ -145,8 +143,8 @@ struct SongDetailView: View {
     private static let groupedSectionInsets = EdgeInsets()
 }
 
-/// Title-case section label using Apple’s increased-prominence list header pattern
-/// (HIG typography: Dynamic Type text style + emphasized weight, not Settings caps).
+/// Quiet title-case section label: smaller than increased-prominence headers, with
+/// breathing room before the grouped card (HIG text styles, not Settings caps).
 private struct DetailSectionHeader: View {
     @Environment(\.palette) private var palette
 
@@ -158,10 +156,11 @@ private struct DetailSectionHeader: View {
 
     var body: some View {
         Text(title)
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(palette.textPrimary)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(palette.textSecondary)
             .textCase(.none)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, 6)
             .accessibilityAddTraits(.isHeader)
     }
 }

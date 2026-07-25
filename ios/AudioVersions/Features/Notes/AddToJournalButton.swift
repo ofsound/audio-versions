@@ -18,8 +18,8 @@ struct AddToJournalButton: View {
     }
 }
 
-/// Fixed bottom control aligned like the library `.searchable` field: low on the
-/// screen with only a small gap above the home indicator.
+/// Fixed bottom control matched to the library `.searchable` field: nestled into
+/// the bottom safe area with only a small gap above the home indicator.
 struct AddToJournalBottomBar: View {
     @Environment(\.palette) private var palette
 
@@ -29,7 +29,9 @@ struct AddToJournalBottomBar: View {
         AddToJournalButton(action: action)
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 8)
+            // Keep the control low like `.searchable`; the home-indicator inset
+            // already clears the bottom edge once the bar ignores that safe area.
+            .padding(.bottom, 4)
             .frame(maxWidth: .infinity)
             .background {
                 palette.canvas
@@ -40,17 +42,20 @@ struct AddToJournalBottomBar: View {
 }
 
 extension View {
-    /// Pins Add to Journal to the bottom edge of the screen (matching library
-    /// search placement) while keeping scroll content clear of the control.
+    /// Pins Add to Journal into the bottom safe area (matching library search
+    /// placement) while keeping scroll content clear of the control.
     func addToJournalBottomBar(action: @escaping () -> Void) -> some View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear
-                .frame(height: 44)
+                .frame(height: 52)
                 .accessibilityHidden(true)
         }
-        .overlay(alignment: .bottom) {
-            AddToJournalBottomBar(action: action)
-                .ignoresSafeArea(edges: .bottom)
+        .overlay {
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                AddToJournalBottomBar(action: action)
+            }
+            .ignoresSafeArea(edges: .bottom)
         }
     }
 }

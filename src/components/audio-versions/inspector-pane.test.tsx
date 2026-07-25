@@ -119,6 +119,7 @@ describe("InspectorPane", () => {
 		expect(screen.queryByText("Mix v1")).toBeNull();
 		expect(screen.queryByText("Apr 16, 2026")).toBeNull();
 		expect(screen.getByText("Notes")).toBeTruthy();
+		expect(screen.getByTestId("inspector-notes-offset")).toBeTruthy();
 	});
 
 	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {
