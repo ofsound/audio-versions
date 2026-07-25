@@ -46,13 +46,6 @@ function resolveAudioFileSessionDateIso(audioFile: AudioFileRecord): string {
 	return isoDateInLocalCalendar();
 }
 
-/** Value for `<input type="date" />` (never empty). */
-export function resolveAudioFileSessionDateInputValue(
-	audioFile: AudioFileRecord,
-): string {
-	return resolveAudioFileSessionDateIso(audioFile);
-}
-
 /** User-facing label for the file’s stored session date. */
 export function resolveAudioFileSessionDateLabel(
 	audioFile: AudioFileRecord,

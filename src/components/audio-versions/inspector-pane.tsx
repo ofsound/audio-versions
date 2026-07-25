@@ -88,22 +88,15 @@ export function InspectorPane({
 			<section className="relative flex h-full min-h-0 flex-col px-6 py-4 xl:py-0">
 				<div
 					ref={scrollerRef}
-					className="-mx-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
+					className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
 				>
 					{selectedFile ? (
 						<div className="shrink-0 xl:-mt-2">
 							{/*
-							  Top inset matches Song Notes toolbar centering of the h-8
-							  Insert Timestamp control so date/download/trash share that top.
+							  Top padding matches Song Notes’ vertical centering in the
+							  h-16 toolbar; gap-2 matches Markers and Ranges → helper text.
 							*/}
-							<div className="grid gap-2 pt-[calc((4rem-2rem)/2)]">
-								<InspectorFileMeta
-									selectedFile={selectedFile}
-									blob={selectedFileBlob}
-									deletingFile={deletingFile}
-									onDeleteFile={() => onDeleteFile?.()}
-									onUpdateFile={onUpdateFile}
-								/>
+							<div className="grid gap-2 xl:pt-[calc((4rem-0.8125rem)/2)]">
 								<span className="field-label">File Notes</span>
 								<RichTextEditor
 									value={selectedFile.notes}
@@ -168,8 +161,16 @@ export function InspectorPane({
 						</span>
 					</div>
 				) : null}
-
-				{selectedFile ? null : (
+				{selectedFile ? (
+					<div className="shrink-0 border-t border-[var(--color-border-plain)] pt-3 pb-1 xl:pb-3">
+						<InspectorFileMeta
+							selectedFile={selectedFile}
+							blob={selectedFileBlob}
+							deletingFile={deletingFile}
+							onDeleteFile={() => onDeleteFile?.()}
+						/>
+					</div>
+				) : (
 					<p className="text-sm leading-7 text-[var(--color-text-muted)]">
 						Pick an audio lane to edit notes, inspect time-based annotations,
 						and copy deep links back into the song notes.

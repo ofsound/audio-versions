@@ -1,12 +1,8 @@
 import { Download, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import {
-	resolveAudioFileSessionDateInputValue,
-	resolveAudioFileSessionDateLabel,
-} from "#/lib/audio-versions/dates";
+import { useState } from "react";
 import {
 	downloadAudioFile,
-	resolveAudioFileFormatLabel,
+	resolveAudioDownloadFilename,
 } from "#/lib/audio-versions/download-audio-file";
 import type { AudioFileRecord } from "#/lib/audio-versions/types";
 
@@ -15,7 +11,6 @@ interface InspectorFileMetaProps {
 	blob?: Blob;
 	deletingFile: boolean;
 	onDeleteFile: () => void;
-	onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
 }
 
 export function InspectorFileMeta({
@@ -23,50 +18,10 @@ export function InspectorFileMeta({
 	blob,
 	deletingFile,
 	onDeleteFile,
-	onUpdateFile,
 }: InspectorFileMetaProps) {
-	const sessionDateIso = resolveAudioFileSessionDateInputValue(selectedFile);
-	const sessionDateLabel = resolveAudioFileSessionDateLabel(selectedFile);
-	const formatLabel = resolveAudioFileFormatLabel(selectedFile, blob);
+	const filename = resolveAudioDownloadFilename(selectedFile, blob);
 	const canDownloadFile = Boolean(blob || selectedFile.remoteMedia);
-	const [editingDate, setEditingDate] = useState(false);
-	const [draftDate, setDraftDate] = useState(sessionDateIso);
 	const [downloadingFile, setDownloadingFile] = useState(false);
-	const dateInputRef = useRef<HTMLInputElement | null>(null);
-	const skipCommitRef = useRef(false);
-
-	useEffect(() => {
-		if (!editingDate) {
-			setDraftDate(sessionDateIso);
-		}
-	}, [editingDate, sessionDateIso]);
-
-	useEffect(() => {
-		if (editingDate) {
-			dateInputRef.current?.focus();
-		}
-	}, [editingDate]);
-
-	function commitDate() {
-		if (skipCommitRef.current) {
-			skipCommitRef.current = false;
-			return;
-		}
-
-		const nextDate = draftDate;
-		setEditingDate(false);
-		if (nextDate === sessionDateIso) {
-			return;
-		}
-
-		void onUpdateFile({ sessionDate: nextDate });
-	}
-
-	function cancelDate() {
-		skipCommitRef.current = true;
-		setDraftDate(sessionDateIso);
-		setEditingDate(false);
-	}
 
 	async function handleDownloadFile() {
 		if (!canDownloadFile || downloadingFile) {
@@ -91,50 +46,13 @@ export function InspectorFileMeta({
 	}
 
 	return (
-		<div className="flex w-fit max-w-full items-center gap-1.5">
-			{editingDate ? (
-				<input
-					ref={dateInputRef}
-					type="date"
-					value={draftDate}
-					onChange={(event) => setDraftDate(event.target.value)}
-					onBlur={() => commitDate()}
-					onKeyDown={(event) => {
-						if (event.key === "Enter") {
-							event.preventDefault();
-							event.currentTarget.blur();
-							return;
-						}
-
-						if (event.key === "Escape") {
-							event.preventDefault();
-							cancelDate();
-						}
-					}}
-					className="field-input field-input--compact w-auto max-w-[11rem] text-base"
-					aria-label="File date"
-				/>
-			) : (
-				<button
-					type="button"
-					onDoubleClick={(event) => {
-						event.preventDefault();
-						setEditingDate(true);
-					}}
-					className="w-fit whitespace-nowrap text-left text-base tabular-nums text-[var(--color-text-muted)]"
-					title="Double-click to edit date"
-				>
-					{sessionDateLabel}
-				</button>
-			)}
-			{formatLabel ? (
-				<span
-					className="whitespace-nowrap text-base tabular-nums text-[var(--color-text-muted)]"
-					title={selectedFile.remoteMedia?.originalName?.trim() || undefined}
-				>
-					{formatLabel}
-				</span>
-			) : null}
+		<div className="flex w-full min-w-0 items-center gap-1.5">
+			<span
+				className="min-w-0 flex-1 truncate text-base text-[var(--color-text-muted)]"
+				title={filename}
+			>
+				{filename}
+			</span>
 			<button
 				type="button"
 				onClick={() => {

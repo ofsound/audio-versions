@@ -129,13 +129,7 @@ describe("InspectorPane", () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
-	it("shows the selected file date and actions above File Notes", () => {
-		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
-
+	it("shows the selected file name and actions in a fixed footer below File Notes", () => {
 		renderInspector({
 			selectedFile: {
 				...baseAudioFile,
@@ -148,9 +142,8 @@ describe("InspectorPane", () => {
 			},
 		});
 
-		expect(screen.queryByText("Mix v1")).toBeNull();
-		expect(screen.getByRole("button", { name: dateLabel })).toBeTruthy();
-		expect(screen.getByText(".wav")).toBeTruthy();
+		expect(screen.queryByText(/^apr 16, 2026$/i)).toBeNull();
+		expect(screen.getByText("Mix v1.wav")).toBeTruthy();
 		expect(
 			screen.getByRole("button", { name: /^download mix v1$/i }),
 		).toBeTruthy();
@@ -159,26 +152,6 @@ describe("InspectorPane", () => {
 		).toBeTruthy();
 		expect(screen.getByText("File Notes")).toBeTruthy();
 		expect(screen.queryByTestId("inspector-notes-offset")).toBeNull();
-	});
-
-	it("edits the file date from a double-click on the date label", async () => {
-		const { onUpdateFile } = renderInspector({ selectedFile: baseAudioFile });
-		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
-
-		fireEvent.doubleClick(screen.getByRole("button", { name: dateLabel }));
-		const dateInput = screen.getByLabelText(/file date/i);
-		fireEvent.change(dateInput, { target: { value: "2026-04-18" } });
-		fireEvent.blur(dateInput);
-
-		await waitFor(() => {
-			expect(onUpdateFile).toHaveBeenCalledWith({
-				sessionDate: "2026-04-18",
-			});
-		});
 	});
 
 	it("deletes the selected file from the inspector trash control", () => {
