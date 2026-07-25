@@ -16,6 +16,12 @@ import type {
 } from "#/lib/audio-versions/types";
 import { InspectorPane } from "./inspector-pane";
 
+const downloadAudioFileMock = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("#/lib/audio-versions/download-audio-file", () => ({
+	downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
+}));
+
 vi.mock("./rich-text-editor", () => ({
 	RichTextEditor: () => <div data-testid="rich-text-editor" />,
 }));
@@ -84,6 +90,7 @@ function renderInspector(
 	const onDeleteAnnotation = vi.fn().mockResolvedValue(undefined);
 	const onSelectAnnotation = vi.fn();
 	const onUpdateFile = vi.fn().mockResolvedValue(undefined);
+	const onDeleteFile = vi.fn();
 
 	render(
 		<InspectorPane
@@ -92,6 +99,7 @@ function renderInspector(
 			activeAnnotation={baseAnnotation}
 			onOpenTarget={onOpenTarget}
 			onUpdateFile={onUpdateFile}
+			onDeleteFile={onDeleteFile}
 			onUpdateAnnotation={onUpdateAnnotation}
 			onDeleteAnnotation={onDeleteAnnotation}
 			onSelectAnnotation={onSelectAnnotation}
@@ -105,6 +113,7 @@ function renderInspector(
 		onDeleteAnnotation,
 		onSelectAnnotation,
 		onUpdateFile,
+		onDeleteFile,
 	};
 }
 
@@ -113,13 +122,75 @@ describe("InspectorPane", () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
-	it("starts with notes instead of repeating the selected file title and date", () => {
+	it("shows the selected file date and actions above File Notes", () => {
+		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
+
 		renderInspector({ selectedFile: baseAudioFile });
 
 		expect(screen.queryByText("Mix v1")).toBeNull();
-		expect(screen.queryByText("Apr 16, 2026")).toBeNull();
+		expect(screen.getByRole("button", { name: dateLabel })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: /^download mix v1$/i }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: /^delete mix v1$/i }),
+		).toBeTruthy();
 		expect(screen.getByText("File Notes")).toBeTruthy();
 		expect(screen.queryByTestId("inspector-notes-offset")).toBeNull();
+	});
+
+	it("edits the file date from a double-click on the date label", async () => {
+		const { onUpdateFile } = renderInspector({ selectedFile: baseAudioFile });
+		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
+
+		fireEvent.doubleClick(screen.getByRole("button", { name: dateLabel }));
+		const dateInput = screen.getByLabelText(/file date/i);
+		fireEvent.change(dateInput, { target: { value: "2026-04-18" } });
+		fireEvent.blur(dateInput);
+
+		await waitFor(() => {
+			expect(onUpdateFile).toHaveBeenCalledWith({
+				sessionDate: "2026-04-18",
+			});
+		});
+	});
+
+	it("deletes the selected file from the inspector trash control", () => {
+		const onDeleteFile = vi.fn();
+		renderInspector({
+			selectedFile: baseAudioFile,
+			onDeleteFile,
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /^delete mix v1$/i }));
+		expect(onDeleteFile).toHaveBeenCalledTimes(1);
+	});
+
+	it("downloads the selected file from the inspector download control", async () => {
+		downloadAudioFileMock.mockClear();
+		const blob = new Blob(["tone"], { type: "audio/wav" });
+		renderInspector({
+			selectedFile: baseAudioFile,
+			selectedFileBlob: blob,
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /^download mix v1$/i }));
+
+		await waitFor(() => {
+			expect(downloadAudioFileMock).toHaveBeenCalledTimes(1);
+		});
+		expect(downloadAudioFileMock.mock.calls[0]?.[0]).toMatchObject({
+			audioFile: expect.objectContaining({ id: "file-1", title: "Mix v1" }),
+			blob,
+		});
 	});
 
 	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {

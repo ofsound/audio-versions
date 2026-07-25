@@ -520,8 +520,6 @@ export function SongWorkspace({
 							deleteAnnotation={deleteAnnotation}
 							updateAudioFile={updateAudioFile}
 							workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
-							onDeleteFile={handleDeleteFile}
-							deletingFileId={deletingFileId}
 							onSelectFile={(fileId) =>
 								patchRouteSelection({
 									fileId,
@@ -551,14 +549,26 @@ export function SongWorkspace({
 							<InspectorPane
 								song={song}
 								selectedFile={selectedFile}
+								selectedFileBlob={
+									selectedFileId ? blobsByAudioId[selectedFileId] : undefined
+								}
 								annotations={selectedAnnotations}
 								activeAnnotation={activeAnnotation}
+								deletingFile={
+									selectedFileId ? deletingFileId === selectedFileId : false
+								}
 								annotationTitleFocusId={annotationTitleFocusId}
 								onAnnotationTitleFocusHandled={
 									handleAnnotationTitleFocusHandled
 								}
 								onOpenTarget={(target: SongLinkTarget) => openTarget(target)}
 								onUpdateFile={handleSelectedFilePatch}
+								onDeleteFile={() => {
+									if (!selectedFileId) {
+										return;
+									}
+									void handleDeleteFile(selectedFileId);
+								}}
 								onUpdateAnnotation={updateAnnotation}
 								onDeleteAnnotation={deleteAnnotation}
 								onSelectAnnotation={(annotationId) => {

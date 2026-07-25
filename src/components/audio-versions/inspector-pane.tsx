@@ -7,16 +7,20 @@ import type {
 	Song,
 	SongLinkTarget,
 } from "#/lib/audio-versions/types";
+import { InspectorFileMeta } from "./inspector-file-meta";
 import { InspectorMarkerCard } from "./inspector-marker-card";
 import { RichTextEditor } from "./rich-text-editor";
 
 interface InspectorPaneProps {
 	song: Song;
 	selectedFile?: AudioFileRecord;
+	selectedFileBlob?: Blob;
 	annotations: Annotation[];
 	activeAnnotation?: Annotation;
+	deletingFile?: boolean;
 	onOpenTarget: (target: SongLinkTarget) => void;
 	onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
+	onDeleteFile?: () => void;
 	onUpdateAnnotation: (
 		annotationId: string,
 		patch: Partial<Annotation>,
@@ -30,10 +34,13 @@ interface InspectorPaneProps {
 export function InspectorPane({
 	song,
 	selectedFile,
+	selectedFileBlob,
 	annotations,
 	activeAnnotation,
+	deletingFile = false,
 	onOpenTarget,
 	onUpdateFile,
+	onDeleteFile,
 	onUpdateAnnotation,
 	onDeleteAnnotation,
 	onSelectAnnotation,
@@ -90,6 +97,13 @@ export function InspectorPane({
 							  h-16 toolbar; gap-2 matches Markers and Ranges → helper text.
 							*/}
 							<div className="grid gap-2 xl:pt-[calc((4rem-0.8125rem)/2)]">
+								<InspectorFileMeta
+									selectedFile={selectedFile}
+									blob={selectedFileBlob}
+									deletingFile={deletingFile}
+									onDeleteFile={() => onDeleteFile?.()}
+									onUpdateFile={onUpdateFile}
+								/>
 								<span className="field-label">File Notes</span>
 								<RichTextEditor
 									value={selectedFile.notes}

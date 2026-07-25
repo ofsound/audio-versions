@@ -35,11 +35,26 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("./inspector-pane", () => ({
-	InspectorPane: ({ selectedFile }: { selectedFile?: AudioFileRecord }) => (
+	InspectorPane: ({
+		selectedFile,
+		onDeleteFile,
+	}: {
+		selectedFile?: AudioFileRecord;
+		onDeleteFile?: () => void;
+	}) => (
 		<div data-testid="inspector-pane">
 			<div data-testid="inspector-selected-file">
 				{selectedFile?.id ?? "none"}
 			</div>
+			{selectedFile ? (
+				<button
+					type="button"
+					aria-label={`Delete ${selectedFile.title}`}
+					onClick={() => onDeleteFile?.()}
+				>
+					Delete file
+				</button>
+			) : null}
 		</div>
 	),
 }));
@@ -55,7 +70,6 @@ vi.mock("./waveform-card", () => ({
 		audioFile,
 		isSelected,
 		currentTimeMs,
-		onDeleteFile,
 		onUpdateFile,
 		onStepVolume,
 		onSelectFile,
@@ -63,7 +77,6 @@ vi.mock("./waveform-card", () => ({
 		audioFile: AudioFileRecord;
 		isSelected: boolean;
 		currentTimeMs: number;
-		onDeleteFile: () => Promise<void> | void;
 		onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
 		onStepVolume: (deltaDb: number) => Promise<void>;
 		onSelectFile: (fileId: string) => void;
@@ -80,13 +93,6 @@ vi.mock("./waveform-card", () => ({
 				onClick={() => onSelectFile(audioFile.id)}
 			>
 				Select file
-			</button>
-			<button
-				type="button"
-				aria-label={`Delete ${audioFile.title}`}
-				onClick={() => void onDeleteFile()}
-			>
-				Delete file
 			</button>
 			<button
 				type="button"

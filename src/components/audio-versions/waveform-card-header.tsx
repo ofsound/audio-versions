@@ -1,47 +1,26 @@
-import {
-	Bookmark,
-	Brackets,
-	Download,
-	Pause,
-	Play,
-	RotateCcw,
-	Trash2,
-	X,
-} from "lucide-react";
+import { Bookmark, Brackets, Pause, Play, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatDuration } from "#/lib/audio-versions/waveform";
 
 interface WaveformCardHeaderProps {
 	audioFileTitle: string;
-	canDownloadFile: boolean;
-	deletingFile: boolean;
-	downloadingFile: boolean;
 	isPlaying: boolean;
 	onAddMarkerAtPlayhead: () => void;
 	onCancelPendingRange: () => void;
-	onDeleteFile: () => void;
-	onDownloadFile: () => void;
 	onEndRangeAtPlayhead: () => void;
 	onResetPlayhead: () => void;
 	onSelectFile: () => void;
 	onStartRangeAtPlayhead: () => void;
 	onTogglePlayback: () => void;
-	onUpdateFile: (patch: { title?: string; sessionDate?: string }) => void;
+	onUpdateFile: (patch: { title?: string }) => void;
 	pendingRangeStartMs: number | null;
-	sessionDateIso: string;
-	sessionDateLabel: string;
 }
 
 export function WaveformCardHeader({
 	audioFileTitle,
-	canDownloadFile,
-	deletingFile,
-	downloadingFile,
 	isPlaying,
 	onAddMarkerAtPlayhead,
 	onCancelPendingRange,
-	onDeleteFile,
-	onDownloadFile,
 	onEndRangeAtPlayhead,
 	onResetPlayhead,
 	onSelectFile,
@@ -49,41 +28,24 @@ export function WaveformCardHeader({
 	onTogglePlayback,
 	onUpdateFile,
 	pendingRangeStartMs,
-	sessionDateIso,
-	sessionDateLabel,
 }: WaveformCardHeaderProps) {
-	const [editingField, setEditingField] = useState<"title" | "date" | null>(
-		null,
-	);
+	const [editingTitle, setEditingTitle] = useState(false);
 	const [draftTitle, setDraftTitle] = useState(audioFileTitle);
-	const [draftDate, setDraftDate] = useState(sessionDateIso);
 	const titleInputRef = useRef<HTMLInputElement | null>(null);
-	const dateInputRef = useRef<HTMLInputElement | null>(null);
 	const skipCommitRef = useRef(false);
 
 	useEffect(() => {
-		if (editingField !== "title") {
+		if (!editingTitle) {
 			setDraftTitle(audioFileTitle);
 		}
-	}, [audioFileTitle, editingField]);
+	}, [audioFileTitle, editingTitle]);
 
 	useEffect(() => {
-		if (editingField !== "date") {
-			setDraftDate(sessionDateIso);
-		}
-	}, [editingField, sessionDateIso]);
-
-	useEffect(() => {
-		if (editingField === "title") {
+		if (editingTitle) {
 			titleInputRef.current?.focus();
 			titleInputRef.current?.select();
-			return;
 		}
-
-		if (editingField === "date") {
-			dateInputRef.current?.focus();
-		}
-	}, [editingField]);
+	}, [editingTitle]);
 
 	function commitTitle() {
 		if (skipCommitRef.current) {
@@ -92,7 +54,7 @@ export function WaveformCardHeader({
 		}
 
 		const nextTitle = draftTitle;
-		setEditingField(null);
+		setEditingTitle(false);
 		if (nextTitle === audioFileTitle) {
 			return;
 		}
@@ -103,28 +65,7 @@ export function WaveformCardHeader({
 	function cancelTitle() {
 		skipCommitRef.current = true;
 		setDraftTitle(audioFileTitle);
-		setEditingField(null);
-	}
-
-	function commitDate() {
-		if (skipCommitRef.current) {
-			skipCommitRef.current = false;
-			return;
-		}
-
-		const nextDate = draftDate;
-		setEditingField(null);
-		if (nextDate === sessionDateIso) {
-			return;
-		}
-
-		onUpdateFile({ sessionDate: nextDate });
-	}
-
-	function cancelDate() {
-		skipCommitRef.current = true;
-		setDraftDate(sessionDateIso);
-		setEditingField(null);
+		setEditingTitle(false);
 	}
 
 	return (
@@ -132,7 +73,7 @@ export function WaveformCardHeader({
 			<div className="waveform-card__identity flex w-full min-w-0 items-center gap-3">
 				<div className="flex min-w-0 flex-1 flex-col">
 					<div className="flex min-w-0 items-center gap-2">
-						{editingField === "title" ? (
+						{editingTitle ? (
 							<input
 								ref={titleInputRef}
 								value={draftTitle}
@@ -161,7 +102,7 @@ export function WaveformCardHeader({
 								onDoubleClick={(event) => {
 									event.preventDefault();
 									event.stopPropagation();
-									setEditingField("title");
+									setEditingTitle(true);
 								}}
 								className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-3xl font-semibold text-[var(--color-text)]"
 								title="Double-click to rename"
@@ -169,66 +110,6 @@ export function WaveformCardHeader({
 								{audioFileTitle}
 							</button>
 						)}
-					</div>
-					<div className="mt-0.5 flex w-fit max-w-full items-center gap-1.5">
-						{editingField === "date" ? (
-							<input
-								ref={dateInputRef}
-								type="date"
-								value={draftDate}
-								onChange={(event) => setDraftDate(event.target.value)}
-								onBlur={() => commitDate()}
-								onKeyDown={(event) => {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										event.currentTarget.blur();
-										return;
-									}
-
-									if (event.key === "Escape") {
-										event.preventDefault();
-										cancelDate();
-									}
-								}}
-								onClick={(event) => event.stopPropagation()}
-								className="field-input field-input--compact waveform-card__date w-auto max-w-[11rem] text-base"
-								aria-label="File date"
-							/>
-						) : (
-							<button
-								type="button"
-								onClick={onSelectFile}
-								onDoubleClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									setEditingField("date");
-								}}
-								className="waveform-card__date w-fit whitespace-nowrap text-left text-base tabular-nums text-[var(--color-text-muted)]"
-								title="Double-click to edit date"
-							>
-								{sessionDateLabel}
-							</button>
-						)}
-						<button
-							type="button"
-							onClick={onDownloadFile}
-							disabled={!canDownloadFile || downloadingFile}
-							className="icon-button icon-button--sm shrink-0 disabled:cursor-not-allowed disabled:opacity-55"
-							title="Download file"
-							aria-label={`Download ${audioFileTitle}`}
-						>
-							<Download size={12} />
-						</button>
-						<button
-							type="button"
-							onClick={onDeleteFile}
-							disabled={deletingFile}
-							className="icon-button icon-button--sm shrink-0 text-[var(--color-danger)] disabled:cursor-not-allowed disabled:opacity-55"
-							title="Delete file"
-							aria-label={`Delete ${audioFileTitle}`}
-						>
-							<Trash2 size={12} />
-						</button>
 					</div>
 				</div>
 			</div>

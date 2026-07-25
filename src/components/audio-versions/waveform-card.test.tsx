@@ -27,12 +27,6 @@ vi.mock("#/providers/theme-provider", () => ({
 	}),
 }));
 
-const downloadAudioFileMock = vi.fn().mockResolvedValue(undefined);
-
-vi.mock("#/lib/audio-versions/download-audio-file", () => ({
-	downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
-}));
-
 const createObjectURLMock = vi.fn(() => "blob:waveform-card-test");
 const revokeObjectURLMock = vi.fn();
 
@@ -118,7 +112,6 @@ function renderWaveformCard({
 	onUpdateAnnotation = vi.fn().mockResolvedValue(undefined),
 	onDeleteAnnotation = vi.fn().mockResolvedValue(undefined),
 	onUpdateFile = vi.fn().mockResolvedValue(undefined),
-	onDeleteFile = vi.fn(),
 	onSelectFile = vi.fn(),
 	onSelectAnnotation = vi.fn(),
 	onDragStart = vi.fn(),
@@ -139,7 +132,6 @@ function renderWaveformCard({
 	) => Promise<void>;
 	onDeleteAnnotation?: (annotationId: string) => Promise<void>;
 	onUpdateFile?: (patch: Partial<AudioFileRecord>) => Promise<void>;
-	onDeleteFile?: () => void;
 	onSelectFile?: (fileId: string) => void;
 	onSelectAnnotation?: (annotationId: string) => void;
 	onDragStart?: () => void;
@@ -168,7 +160,6 @@ function renderWaveformCard({
 			onReportPlayback={onReportPlayback}
 			onStepVolume={onStepVolume}
 			onUpdateFile={onUpdateFile}
-			onDeleteFile={onDeleteFile}
 			onDragStart={onDragStart}
 			onDragEnd={vi.fn()}
 			onDrop={vi.fn()}
@@ -387,7 +378,6 @@ describe("WaveformCard", () => {
 				onReportPlayback={vi.fn()}
 				onStepVolume={onStepVolume}
 				onUpdateFile={vi.fn().mockResolvedValue(undefined)}
-				onDeleteFile={vi.fn()}
 				onDragStart={vi.fn()}
 				onDragEnd={vi.fn()}
 				onDrop={vi.fn()}
@@ -459,7 +449,6 @@ describe("WaveformCard", () => {
 				onReportPlayback={vi.fn()}
 				onStepVolume={vi.fn().mockResolvedValue(undefined)}
 				onUpdateFile={vi.fn().mockResolvedValue(undefined)}
-				onDeleteFile={vi.fn()}
 				onDragStart={vi.fn()}
 				onDragEnd={vi.fn()}
 				onDrop={vi.fn()}
@@ -805,65 +794,6 @@ describe("WaveformCard", () => {
 			expect(onUpdateFile).toHaveBeenCalledWith({
 				title: "Mix v1 - Print",
 			});
-		});
-	});
-
-	it("edits the file date from a double-click on the date label", async () => {
-		const onUpdateFile = vi.fn().mockResolvedValue(undefined);
-		const dateLabel = new Date(2026, 3, 16).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
-
-		renderWaveformCard({
-			onUpdateFile,
-		});
-
-		fireEvent.doubleClick(screen.getByRole("button", { name: dateLabel }));
-		const dateInput = screen.getByLabelText(/file date/i);
-		fireEvent.change(dateInput, { target: { value: "2026-04-18" } });
-		fireEvent.blur(dateInput);
-
-		await waitFor(() => {
-			expect(onUpdateFile).toHaveBeenCalledWith({
-				sessionDate: "2026-04-18",
-			});
-		});
-	});
-
-	it("deletes the file from the trash icon beside the title", () => {
-		const onDeleteFile = vi.fn();
-
-		renderWaveformCard({
-			onDeleteFile,
-		});
-
-		const deleteButton = screen.getByRole("button", {
-			name: /^delete mix v1$/i,
-		});
-		expect(deleteButton.className).toContain("icon-button");
-		fireEvent.click(deleteButton);
-
-		expect(onDeleteFile).toHaveBeenCalledTimes(1);
-	});
-
-	it("downloads the file from the download icon beside the title", async () => {
-		downloadAudioFileMock.mockClear();
-
-		renderWaveformCard();
-
-		const downloadButton = screen.getByRole("button", {
-			name: /^download mix v1$/i,
-		});
-		expect(downloadButton.className).toContain("icon-button");
-		fireEvent.click(downloadButton);
-
-		await waitFor(() => {
-			expect(downloadAudioFileMock).toHaveBeenCalledTimes(1);
-		});
-		expect(downloadAudioFileMock.mock.calls[0]?.[0]).toMatchObject({
-			audioFile: expect.objectContaining({ id: "file-1", title: "Mix v1" }),
 		});
 	});
 
