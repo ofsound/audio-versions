@@ -181,6 +181,29 @@ final class ReviewCompanionStore: ObservableObject {
         )
     }
 
+    /// Fetches the signed media lease and buffers the track when the player
+    /// screen appears, without starting playback.
+    func preparePlayback(for version: AudioVersion) {
+        activate(version: version)
+
+        guard signedMedia != nil else { return }
+
+        if audioEngine.isLoaded(trackID: version.id) {
+            return
+        }
+
+        if isPreparingPlayback, activeVersionID == version.id {
+            return
+        }
+
+        beginCloudPlaybackPreparation(
+            for: version,
+            startTime: currentTime,
+            invalidateLease: false,
+            autoplay: false
+        )
+    }
+
     func openSongLink(_ target: SongLinkTarget) {
         var nextPath: [LibraryDestination] = [.song(id: target.songID)]
         let versionID = target.fileID ?? songs

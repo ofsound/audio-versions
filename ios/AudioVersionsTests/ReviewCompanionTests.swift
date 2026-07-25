@@ -378,4 +378,17 @@ struct ReviewCompanionTests {
         #expect(store.currentTime == min(12, version.duration))
         #expect(!store.isPlaying)
     }
+
+    @MainActor
+    @Test
+    func preparePlaybackActivatesVersionWithoutPlaying() throws {
+        let store = ReviewCompanionStore()
+        let version = try #require(store.songs.first?.versions.first)
+
+        store.preparePlayback(for: version)
+
+        #expect(store.activeVersionID == version.id)
+        #expect(!store.isPlaying)
+        #expect(!store.isPreparingPlayback)
+    }
 }

@@ -80,17 +80,19 @@ struct ReviewPlayerView: View {
                         store.appendSongJournalEntry(entry, songID: songID)
                     }
                 }
-                .task(id: linkTarget) {
-                    store.activate(version: version)
-                    guard let linkTarget else { return }
-                    let annotationTime = linkTarget.annotationID.flatMap { annotationID in
-                        version.annotations.first { $0.id == annotationID }?.startTime
+                .task(id: versionID) {
+                    if let linkTarget {
+                        let annotationTime = linkTarget.annotationID.flatMap { annotationID in
+                            version.annotations.first { $0.id == annotationID }?.startTime
+                        }
+                        store.open(
+                            version: version,
+                            at: annotationTime ?? linkTarget.time ?? 0,
+                            autoplay: linkTarget.autoplay
+                        )
+                    } else {
+                        store.preparePlayback(for: version)
                     }
-                    store.open(
-                        version: version,
-                        at: annotationTime ?? linkTarget.time ?? 0,
-                        autoplay: linkTarget.autoplay
-                    )
                 }
             } else {
                 ContentUnavailableView(
