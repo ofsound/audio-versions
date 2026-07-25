@@ -181,19 +181,21 @@ struct ReviewPlayerView: View {
             }
             .font(.caption.monospacedDigit())
             .foregroundStyle(palette.textSecondary)
-
-            if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
-                HStack(spacing: 8) {
-                    if store.isPreparingPlayback || status == "Buffering…" {
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(palette.accent)
+            .overlay {
+                if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
+                    HStack(spacing: 4) {
+                        if store.isPreparingPlayback || status == "Buffering…" {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(palette.accent)
+                        }
+                        Text(status)
                     }
-                    Text(status)
+                    .font(.caption2)
+                    .foregroundStyle(palette.textTertiary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(status)
                 }
-                .font(.footnote)
-                .foregroundStyle(palette.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
             }
 
             if let error = store.playbackErrorMessage {
