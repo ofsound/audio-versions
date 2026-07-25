@@ -160,7 +160,7 @@ private struct LibrarySearchField: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .background(palette.surface, in: Capsule())
+        .background(palette.surfaceInset, in: Capsule())
         .accessibilityElement(children: .contain)
     }
 }

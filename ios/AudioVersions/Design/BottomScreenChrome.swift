@@ -9,7 +9,7 @@ extension View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             chrome()
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 10)
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .background {
@@ -25,12 +25,18 @@ extension View {
     }
 }
 
+/// Neutral elevated footer that sits apart from the canvas content above it.
 private struct BottomScreenChromeBackground: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        palette.canvas
-            .opacity(0.96)
+        palette.surface
             .ignoresSafeArea(edges: .bottom)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(palette.hairline)
+                    .frame(height: 1)
+                    .frame(maxWidth: .infinity)
+            }
     }
 }
