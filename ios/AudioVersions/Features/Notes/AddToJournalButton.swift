@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AddToJournalButton: View {
     @Environment(\.palette) private var palette
@@ -32,31 +33,39 @@ struct AddToJournalBottomBar: View {
             .background {
                 palette.canvas
                     .opacity(0.96)
+                    .ignoresSafeArea(edges: .bottom)
             }
     }
 }
 
 extension View {
-    /// Pins Add to Journal to the same low placement as library search: from the
-    /// physical bottom edge (into the home-indicator inset), not the safe-area floor.
+    /// Pins Add to Journal to the same vertical placement as library `.searchable`:
+    /// just above the home indicator, not parked on the safe-area floor.
     func addToJournalBottomBar(action: @escaping () -> Void) -> some View {
-        safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear
-                .frame(height: 56)
-                .accessibilityHidden(true)
+        let shift = AddToJournalBottomPlacement.shiftIntoHomeIndicatorInset
+        return safeAreaInset(edge: .bottom, spacing: 0) {
+            AddToJournalBottomBar(action: action)
+                // `safeAreaInset` lays out on the safe-area floor; move down so the
+                // control’s bottom matches search (~10pt above the screen bottom).
+                .offset(y: shift)
+                // Keep scroll clearance honest after the visual shift.
+                .padding(.bottom, -shift)
         }
-        .overlay {
-            GeometryReader { proxy in
-                let bottomPadding: CGFloat = proxy.safeAreaInsets.bottom > 0 ? 10 : 8
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .allowsHitTesting(false)
-                    AddToJournalBottomBar(action: action)
-                        .padding(.bottom, bottomPadding)
-                }
-            }
-            .ignoresSafeArea(edges: .bottom)
-        }
+    }
+}
+
+private enum AddToJournalBottomPlacement {
+    /// Gap under the control, matching `.searchable` above the home indicator.
+    static let bottomGap: CGFloat = 10
+
+    static var shiftIntoHomeIndicatorInset: CGFloat {
+        max(0, windowBottomSafeInset - bottomGap)
+    }
+
+    private static var windowBottomSafeInset: CGFloat {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        let window = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
+        return window?.safeAreaInsets.bottom ?? 0
     }
 }
