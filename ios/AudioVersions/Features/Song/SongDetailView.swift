@@ -19,13 +19,16 @@ struct SongDetailView: View {
         Group {
             if let song {
                 List {
-                    Section("Versions") {
+                    Section {
                         ScrollableVersionList(songID: song.id, versions: sortedVersions(for: song))
+                    } header: {
+                        DetailSectionHeader("Versions")
                     }
+                    .headerProminence(.increased)
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
 
-                    Section("Journal") {
+                    Section {
                         Text(
                             song.generalNotes.isEmpty
                                 ? "Add notes about this song"
@@ -39,8 +42,6 @@ struct SongDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
-                        .listRowInsets(Self.groupedSectionInsets)
-                        .listRowBackground(palette.surface)
 
                         ForEach(journalLinks) { link in
                             Button {
@@ -71,10 +72,15 @@ struct SongDetailView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint("Opens the linked version and marker position")
-                            .listRowInsets(Self.groupedSectionInsets)
-                            .listRowBackground(palette.surface)
                         }
+                    } header: {
+                        DetailSectionHeader("Journal")
+                    }
+                    .headerProminence(.increased)
+                    .listRowInsets(Self.groupedSectionInsets)
+                    .listRowBackground(palette.surface)
 
+                    Section {
                         Button {
                             isEditingJournal = true
                         } label: {
@@ -91,10 +97,9 @@ struct SongDetailView: View {
                         .accessibilityLabel(
                             song.generalNotes.isEmpty ? "Add journal" : "Edit journal"
                         )
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 2, trailing: 0))
-                        .listRowSeparator(.hidden)
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 2, trailing: 0))
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
@@ -138,6 +143,27 @@ struct SongDetailView: View {
 
     /// Shared by Versions and Journal so section-header spacing matches.
     private static let groupedSectionInsets = EdgeInsets()
+}
+
+/// Title-case section label using Apple’s increased-prominence list header pattern
+/// (HIG typography: Dynamic Type text style + emphasized weight, not Settings caps).
+private struct DetailSectionHeader: View {
+    @Environment(\.palette) private var palette
+
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(palette.textPrimary)
+            .textCase(.none)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
 }
 
 /// Shows up to three version rows at a time; additional versions scroll in place.
