@@ -37,7 +37,6 @@ struct ReviewPlayerView: View {
                         playerCard(version: version)
                         audioRouteControls
                         annotationActions(version: version)
-                        fileNotesSection(version: version)
                         AnnotationListView(
                             annotations: version.annotations,
                             activeTime: store.currentTime,
@@ -47,6 +46,7 @@ struct ReviewPlayerView: View {
                             onEdit: { editingAnnotation = $0 },
                             onDelete: { store.delete($0, from: version.id) }
                         )
+                        fileNotesSection(version: version)
                     }
                     .padding()
                 }
