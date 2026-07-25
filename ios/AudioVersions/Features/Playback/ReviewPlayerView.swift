@@ -55,6 +55,8 @@ struct ReviewPlayerView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     AddToJournalBottomBar {
                         isAddingToJournal = true
+                    } accessory: {
+                        audioRouteFooter
                     }
                 }
                 .sheet(item: $editingAnnotation) { annotation in
@@ -133,9 +135,35 @@ struct ReviewPlayerView: View {
 
     private func playerCard(version: AudioVersion) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(version.name)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(palette.textPrimary)
+            VStack(alignment: .leading, spacing: 7) {
+                Text(version.name)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(palette.textPrimary)
+
+                HStack(spacing: 7) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                        Text(version.duration.playbackTimestamp)
+                    }
+                    Text("•")
+                    Text(version.createdAt, style: .date)
+                }
+                .font(.caption)
+                .foregroundStyle(palette.textSecondary)
+
+                if version.annotationCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "text.bubble")
+                        Text(
+                            version.annotationCount == 1
+                                ? "1 annotation"
+                                : "\(version.annotationCount) annotations"
+                        )
+                    }
+                    .font(.caption)
+                    .foregroundStyle(palette.accentText)
+                }
+            }
 
             WaveformView(
                 peaks: version.waveformPeaks,
@@ -180,68 +208,64 @@ struct ReviewPlayerView: View {
                 }
             }
 
-            HStack(spacing: 22) {
-                Button {
-                    store.seek(to: 0, in: version)
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .foregroundStyle(palette.accentText)
-                        .background(palette.accentSoft, in: Circle())
-                }
-                .accessibilityLabel("Reset playhead")
+            HStack(spacing: 0) {
+                Color.clear
+                    .frame(width: 44, height: 44)
 
-                Button {
-                    store.skip(by: -10, in: version)
-                } label: {
-                    Image(systemName: "gobackward.10")
-                        .foregroundStyle(palette.accentText)
-                }
-                .accessibilityLabel("Skip back 10 seconds")
+                Spacer(minLength: 0)
 
-                Button {
-                    store.togglePlayback(for: version)
-                } label: {
-                    Group {
-                        if store.isPreparingPlayback {
-                            ProgressView()
-                                .tint(palette.onAccent)
-                        } else {
-                            Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
-                        }
+                HStack(spacing: 22) {
+                    Button {
+                        store.seek(to: 0, in: version)
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 44, height: 44)
+                            .foregroundStyle(palette.accentText)
+                            .background(palette.accentSoft, in: Circle())
                     }
-                    .font(.title2)
-                    .frame(width: 58, height: 58)
-                    .foregroundStyle(palette.onAccent)
-                    .background(palette.accent, in: Circle())
-                    .shadow(color: palette.accentGlow, radius: 14, y: 4)
-                }
-                .disabled(store.isPreparingPlayback)
-                .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+                    .accessibilityLabel("Reset playhead")
 
-                Button {
-                    store.skip(by: 10, in: version)
-                } label: {
-                    Image(systemName: "goforward.10")
-                        .foregroundStyle(palette.accentText)
-                }
-                .accessibilityLabel("Skip forward 10 seconds")
-            }
-            .font(.title3)
-            .frame(maxWidth: .infinity)
+                    Button {
+                        store.skip(by: -10, in: version)
+                    } label: {
+                        Image(systemName: "gobackward.10")
+                            .foregroundStyle(palette.accentText)
+                    }
+                    .accessibilityLabel("Skip back 10 seconds")
 
-            HStack {
-                Image(systemName: "speaker.wave.2")
-                    .foregroundStyle(palette.textSecondary)
-                Text(store.outputRouteName)
-                    .font(.footnote)
-                    .foregroundStyle(palette.textSecondary)
-                    .lineLimit(1)
-                AudioRoutePicker()
-                    .frame(width: 28, height: 28)
-                    .accessibilityLabel("Choose audio output")
-                Spacer()
+                    Button {
+                        store.togglePlayback(for: version)
+                    } label: {
+                        Group {
+                            if store.isPreparingPlayback {
+                                ProgressView()
+                                    .tint(palette.onAccent)
+                            } else {
+                                Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
+                            }
+                        }
+                        .font(.title2)
+                        .frame(width: 58, height: 58)
+                        .foregroundStyle(palette.onAccent)
+                        .background(palette.accent, in: Circle())
+                        .shadow(color: palette.accentGlow, radius: 14, y: 4)
+                    }
+                    .disabled(store.isPreparingPlayback)
+                    .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+
+                    Button {
+                        store.skip(by: 10, in: version)
+                    } label: {
+                        Image(systemName: "goforward.10")
+                            .foregroundStyle(palette.accentText)
+                    }
+                    .accessibilityLabel("Skip forward 10 seconds")
+                }
+                .font(.title3)
+
+                Spacer(minLength: 0)
+
                 Menu {
                     ForEach([0.75, 1, 1.25, 1.5], id: \.self) { rate in
                         Button {
@@ -259,12 +283,28 @@ struct ReviewPlayerView: View {
                         .font(.subheadline.weight(.medium))
                         .monospacedDigit()
                         .foregroundStyle(palette.accentText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Playback speed")
             }
         }
         .padding(18)
         .appCard()
+    }
+
+    private var audioRouteFooter: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "speaker.wave.2")
+                .font(.body)
+                .foregroundStyle(palette.textSecondary)
+                .accessibilityLabel(store.outputRouteName)
+
+            AudioRoutePicker()
+                .frame(width: 28, height: 28)
+                .accessibilityLabel("Choose audio output")
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func annotationActions(version: AudioVersion) -> some View {
