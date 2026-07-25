@@ -18,8 +18,7 @@ struct AddToJournalButton: View {
     }
 }
 
-/// Fixed bottom control matched to the library `.searchable` field: nestled into
-/// the bottom safe area with only a small gap above the home indicator.
+/// Fixed bottom control matched to the library `.searchable` field.
 struct AddToJournalBottomBar: View {
     @Environment(\.palette) private var palette
 
@@ -29,31 +28,33 @@ struct AddToJournalBottomBar: View {
         AddToJournalButton(action: action)
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            // Keep the control low like `.searchable`; the home-indicator inset
-            // already clears the bottom edge once the bar ignores that safe area.
-            .padding(.bottom, 4)
             .frame(maxWidth: .infinity)
             .background {
                 palette.canvas
                     .opacity(0.96)
-                    .ignoresSafeArea(edges: .bottom)
             }
     }
 }
 
 extension View {
-    /// Pins Add to Journal into the bottom safe area (matching library search
-    /// placement) while keeping scroll content clear of the control.
+    /// Pins Add to Journal to the same low placement as library search: from the
+    /// physical bottom edge (into the home-indicator inset), not the safe-area floor.
     func addToJournalBottomBar(action: @escaping () -> Void) -> some View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear
-                .frame(height: 52)
+                .frame(height: 56)
                 .accessibilityHidden(true)
         }
         .overlay {
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                AddToJournalBottomBar(action: action)
+            GeometryReader { proxy in
+                let bottomPadding: CGFloat = proxy.safeAreaInsets.bottom > 0 ? 10 : 8
+                VStack(spacing: 0) {
+                    Color.clear
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .allowsHitTesting(false)
+                    AddToJournalBottomBar(action: action)
+                        .padding(.bottom, bottomPadding)
+                }
             }
             .ignoresSafeArea(edges: .bottom)
         }
