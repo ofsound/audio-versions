@@ -93,24 +93,24 @@ export function InspectorPane({
 					{selectedFile ? (
 						<div className="shrink-0 xl:-mt-2">
 							{/*
-							  Top padding matches Song Notes’ vertical centering in the
-							  h-16 toolbar; gap-2 matches Markers and Ranges → helper text.
+							  h-16 matches the Song Notes toolbar so the File Notes
+							  input top lines up with the Song Notes input top.
 							*/}
-							<div className="grid gap-2 xl:pt-[calc((4rem-0.8125rem)/2)]">
+							<div className="flex h-16 items-center">
 								<span className="field-label">File Notes</span>
-								<RichTextEditor
-									value={selectedFile.notes}
-									onChange={(nextValue) =>
-										void onUpdateFile({
-											notes: nextValue,
-										})
-									}
-									onInternalLink={onOpenTarget}
-									compact
-									showToolbar={false}
-									commitDelayMs={DEBOUNCE_MS.compactEditor}
-								/>
 							</div>
+							<RichTextEditor
+								value={selectedFile.notes}
+								onChange={(nextValue) =>
+									void onUpdateFile({
+										notes: nextValue,
+									})
+								}
+								onInternalLink={onOpenTarget}
+								compact
+								showToolbar={false}
+								commitDelayMs={DEBOUNCE_MS.compactEditor}
+							/>
 						</div>
 					) : null}
 					{annotations.length === 0 ? (

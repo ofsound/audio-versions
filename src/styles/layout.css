@@ -257,12 +257,12 @@
 	.waveform-thumbnail__title {
 		max-width: 100%;
 		padding: 0.0625rem 0.25rem;
-		font-size: 0.5625rem;
+		font-size: 0.625rem;
 	}
 
 	.waveform-thumbnail__date {
 		padding: 0.0625rem 0.25rem;
-		font-size: 0.5rem;
+		font-size: 0.5625rem;
 	}
 
 	.song-workspace-file-player {
@@ -366,7 +366,7 @@
 		min-width: 0;
 		flex: 0 1 auto;
 		padding: 0.0625rem 0.25rem;
-		font-size: 0.625rem;
+		font-size: 0.75rem;
 	}
 
 	.waveform-thumbnail-grid[data-density="compact"] .waveform-thumbnail__date,
@@ -375,7 +375,7 @@
 		.waveform-thumbnail__date {
 		flex: none;
 		padding: 0.0625rem 0.25rem;
-		font-size: 0.5625rem;
+		font-size: 0.6875rem;
 	}
 
 	.waveform-thumbnail-grid[data-density="dense"] .waveform-thumbnail__overlay,
