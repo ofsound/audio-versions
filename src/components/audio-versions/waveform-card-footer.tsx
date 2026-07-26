@@ -31,9 +31,11 @@ export function WaveformCardFooter({
 			<span className="text-sm tabular-nums text-[var(--color-text)]">
 				{formatDuration(currentTimeMs)} / {formatDuration(durationMs)}
 			</span>
-			{loudness ? <LoudnessReadout loudness={loudness} /> : null}
-			{!loudness && measuringLoudness ? <span>Measuring loudness…</span> : null}
 			<div className="inline-flex items-center gap-1.5">
+				{loudness ? <LoudnessReadout loudness={loudness} /> : null}
+				{!loudness && measuringLoudness ? (
+					<span>Measuring loudness…</span>
+				) : null}
 				<button
 					type="button"
 					onClick={() => void onStepVolume(-1)}
@@ -65,32 +67,13 @@ export function WaveformCardFooter({
 
 function LoudnessReadout({ loudness }: { loudness: LoudnessMetrics }) {
 	return (
-		<div
-			className="inline-flex items-center gap-1.5 tabular-nums"
+		<span
+			className="mr-1.5 tabular-nums"
 			data-testid="waveform-loudness"
+			title={`Integrated loudness\n${describeStreamingNormalization(loudness.integratedLufs)}`}
 		>
-			<span
-				title={`Integrated loudness\n${describeStreamingNormalization(loudness.integratedLufs)}`}
-			>
-				{loudness.integratedLufs.toFixed(1)} LUFS
-			</span>
-			<span aria-hidden="true" className="opacity-40">
-				·
-			</span>
-			<span
-				title={`Loudness range\nShort-term max ${loudness.shortTermMaxLufs.toFixed(1)} LUFS`}
-			>
-				{loudness.loudnessRangeLu.toFixed(1)} LU
-			</span>
-			<span aria-hidden="true" className="opacity-40">
-				·
-			</span>
-			<span
-				title={`True peak\nSample peak ${loudness.samplePeakDb.toFixed(1)} dBFS`}
-			>
-				{loudness.truePeakDb.toFixed(1)} dBTP
-			</span>
-		</div>
+			{loudness.integratedLufs.toFixed(0)} LUFS
+		</span>
 	);
 }
 

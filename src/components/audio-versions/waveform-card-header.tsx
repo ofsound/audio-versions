@@ -1,5 +1,4 @@
 import { Bookmark, Brackets, Pause, Play, RotateCcw, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { formatDuration } from "#/lib/audio-versions/waveform";
 
 interface WaveformCardHeaderProps {
@@ -9,10 +8,8 @@ interface WaveformCardHeaderProps {
 	onCancelPendingRange: () => void;
 	onEndRangeAtPlayhead: () => void;
 	onResetPlayhead: () => void;
-	onSelectFile: () => void;
 	onStartRangeAtPlayhead: () => void;
 	onTogglePlayback: () => void;
-	onUpdateFile: (patch: { title?: string }) => void;
 	pendingRangeStartMs: number | null;
 }
 
@@ -23,97 +20,12 @@ export function WaveformCardHeader({
 	onCancelPendingRange,
 	onEndRangeAtPlayhead,
 	onResetPlayhead,
-	onSelectFile,
 	onStartRangeAtPlayhead,
 	onTogglePlayback,
-	onUpdateFile,
 	pendingRangeStartMs,
 }: WaveformCardHeaderProps) {
-	const [editingTitle, setEditingTitle] = useState(false);
-	const [draftTitle, setDraftTitle] = useState(audioFileTitle);
-	const titleInputRef = useRef<HTMLInputElement | null>(null);
-	const skipCommitRef = useRef(false);
-
-	useEffect(() => {
-		if (!editingTitle) {
-			setDraftTitle(audioFileTitle);
-		}
-	}, [audioFileTitle, editingTitle]);
-
-	useEffect(() => {
-		if (editingTitle) {
-			titleInputRef.current?.focus();
-			titleInputRef.current?.select();
-		}
-	}, [editingTitle]);
-
-	function commitTitle() {
-		if (skipCommitRef.current) {
-			skipCommitRef.current = false;
-			return;
-		}
-
-		const nextTitle = draftTitle;
-		setEditingTitle(false);
-		if (nextTitle === audioFileTitle) {
-			return;
-		}
-
-		onUpdateFile({ title: nextTitle });
-	}
-
-	function cancelTitle() {
-		skipCommitRef.current = true;
-		setDraftTitle(audioFileTitle);
-		setEditingTitle(false);
-	}
-
 	return (
-		<div className="waveform-card__header mb-4 flex flex-wrap items-center justify-between gap-3">
-			<div className="waveform-card__identity flex w-full min-w-0 items-center gap-3">
-				<div className="flex min-w-0 flex-1 flex-col">
-					<div className="flex min-w-0 items-center gap-2">
-						{editingTitle ? (
-							<input
-								ref={titleInputRef}
-								value={draftTitle}
-								onChange={(event) => setDraftTitle(event.target.value)}
-								onBlur={() => commitTitle()}
-								onKeyDown={(event) => {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										event.currentTarget.blur();
-										return;
-									}
-
-									if (event.key === "Escape") {
-										event.preventDefault();
-										cancelTitle();
-									}
-								}}
-								onClick={(event) => event.stopPropagation()}
-								className="field-input font-title waveform-card__title min-w-0 flex-1 py-1 text-3xl font-semibold"
-								aria-label="File title"
-							/>
-						) : (
-							<button
-								type="button"
-								onClick={onSelectFile}
-								onDoubleClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									setEditingTitle(true);
-								}}
-								className="font-title waveform-card__title min-w-0 flex-1 truncate text-left text-3xl font-semibold text-[var(--color-text)]"
-								title="Double-click to rename"
-							>
-								{audioFileTitle}
-							</button>
-						)}
-					</div>
-				</div>
-			</div>
-
+		<div className="waveform-card__header mb-4 flex items-center">
 			<div className="waveform-card__actions flex w-full flex-wrap items-center justify-between gap-2">
 				<div className="waveform-card__playback flex items-center gap-2">
 					<button

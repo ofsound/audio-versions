@@ -375,7 +375,7 @@ export function JournalEditor({
 					Insert Timestamp
 				</button>
 			</div>
-			<div className="journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-3 pb-3">
+			<div className="journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-6 pb-3">
 				{/* biome-ignore lint/a11y/useSemanticElements: textarea cannot contain inline link controls */}
 				<div
 					key={draft}

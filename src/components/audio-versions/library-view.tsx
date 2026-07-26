@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	Bookmark,
 	Calendar,
@@ -240,25 +240,19 @@ export function LibraryView() {
 									const sessionDateRange = sessionDateRangeBySongId.get(
 										song.id,
 									);
-									const openSong = () =>
-										navigate({
-											to: "/songs/$songId",
-											params: {
-												songId: song.id,
-											},
-										});
-
 									return (
 										<div
 											key={song.id}
-											className="panel-shell panel-shell--plain panel-shell-action h-full w-full p-6 text-left"
+											className="panel-shell panel-shell--plain panel-shell-action relative h-full w-full p-6 text-left"
 										>
+											<Link
+												to="/songs/$songId"
+												params={{ songId: song.id }}
+												aria-label={`Open ${song.title}`}
+												className="absolute inset-0 cursor-pointer"
+											/>
 											<div className="flex items-start gap-2">
-												<button
-													type="button"
-													onClick={openSong}
-													className="block min-w-0 flex-1 text-left"
-												>
+												<div className="block min-w-0 flex-1 text-left">
 													<div>
 														<h2 className="font-title text-2xl font-semibold text-[var(--color-text)]">
 															{song.title}
@@ -269,11 +263,11 @@ export function LibraryView() {
 															</p>
 														) : null}
 													</div>
-												</button>
+												</div>
 												<button
 													type="button"
 													onClick={() => setEditingSongId(song.id)}
-													className="icon-button icon-button--sm -mt-0.5 shrink-0"
+													className="icon-button icon-button--sm relative z-10 -mt-0.5 shrink-0"
 													title="Edit song settings"
 													aria-label={`Edit settings for ${song.title}`}
 												>
@@ -287,20 +281,17 @@ export function LibraryView() {
 													label={`${
 														audioFileCountBySongId.get(song.id) ?? 0
 													} files`}
-													onClick={openSong}
 												/>
 												<StatChip
 													icon={<Bookmark size={14} />}
 													label={`${
 														annotationCountBySongId.get(song.id) ?? 0
 													} markers`}
-													onClick={openSong}
 												/>
 												{sessionDateRange ? (
 													<StatChip
 														icon={<Calendar size={14} />}
 														label={sessionDateRange}
-														onClick={openSong}
 													/>
 												) : null}
 											</div>
@@ -383,23 +374,11 @@ export function LibraryView() {
 	);
 }
 
-function StatChip({
-	icon,
-	label,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	onClick: () => void;
-}) {
+function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
 	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]"
-		>
+		<span className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
 			{icon}
 			{label}
-		</button>
+		</span>
 	);
 }

@@ -48,6 +48,8 @@ interface SongWorkspaceWaveformListProps {
 		patch: Partial<Annotation>,
 	) => Promise<void>;
 	deleteAnnotation: (annotationId: string) => Promise<void>;
+	deletingFileId: string | null;
+	onDeleteFile: (fileId: string) => void;
 	updateAudioFile: (
 		audioFileId: string,
 		patch: Partial<AudioFileRecord>,
@@ -73,6 +75,8 @@ export function SongWorkspaceWaveformList({
 	togglePlayback,
 	updateAnnotation,
 	deleteAnnotation,
+	deletingFileId,
+	onDeleteFile,
 	updateAudioFile,
 	workspacePlayheadMsByFileId,
 	onSelectAnnotation,
@@ -273,12 +277,15 @@ export function SongWorkspaceWaveformList({
 							<div className="min-h-0" key={audioFile.id}>
 								<WaveformThumbnail
 									audioFile={audioFile}
+									blob={blobsByAudioId[audioFile.id]}
 									currentTimeMs={
 										playback.currentTimeByFileId[audioFile.id] ??
 										workspacePlayheadMsByFileId[audioFile.id] ??
 										0
 									}
 									isSelected={selectedFileId === audioFile.id}
+									deletingFile={deletingFileId === audioFile.id}
+									onDeleteFile={onDeleteFile}
 									onSelectFile={onSelectFile}
 								/>
 							</div>

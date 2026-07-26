@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { copySongTargetLink } from "#/lib/audio-versions/clipboard";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
@@ -7,20 +7,16 @@ import type {
 	Song,
 	SongLinkTarget,
 } from "#/lib/audio-versions/types";
-import { InspectorFileMeta } from "./inspector-file-meta";
 import { InspectorMarkerCard } from "./inspector-marker-card";
 import { RichTextEditor } from "./rich-text-editor";
 
 interface InspectorPaneProps {
 	song: Song;
 	selectedFile?: AudioFileRecord;
-	selectedFileBlob?: Blob;
 	annotations: Annotation[];
 	activeAnnotation?: Annotation;
-	deletingFile?: boolean;
 	onOpenTarget: (target: SongLinkTarget) => void;
 	onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
-	onDeleteFile?: () => void;
 	onUpdateAnnotation: (
 		annotationId: string,
 		patch: Partial<Annotation>,
@@ -34,13 +30,10 @@ interface InspectorPaneProps {
 export function InspectorPane({
 	song,
 	selectedFile,
-	selectedFileBlob,
 	annotations,
 	activeAnnotation,
-	deletingFile = false,
 	onOpenTarget,
 	onUpdateFile,
-	onDeleteFile,
 	onUpdateAnnotation,
 	onDeleteAnnotation,
 	onSelectAnnotation,
@@ -48,30 +41,6 @@ export function InspectorPane({
 	onAnnotationTitleFocusHandled = () => {},
 }: InspectorPaneProps) {
 	const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-	const scrollerRef = useRef<HTMLDivElement>(null);
-	const [hasContentBelow, setHasContentBelow] = useState(false);
-
-	useEffect(() => {
-		const el = scrollerRef.current;
-		if (!el) return;
-
-		const update = () => {
-			const distanceFromBottom =
-				el.scrollHeight - el.scrollTop - el.clientHeight;
-			setHasContentBelow(distanceFromBottom > 1);
-		};
-
-		update();
-		el.addEventListener("scroll", update, { passive: true });
-		const ro =
-			typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
-		ro?.observe(el);
-
-		return () => {
-			el.removeEventListener("scroll", update);
-			ro?.disconnect();
-		};
-	}, []);
 
 	async function copyLink(target: SongLinkTarget, label: string) {
 		try {
@@ -86,12 +55,9 @@ export function InspectorPane({
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
 			<section className="relative flex h-full min-h-0 flex-col px-6 py-4 xl:py-0">
-				<div
-					ref={scrollerRef}
-					className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
-				>
+				<div className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]">
 					{selectedFile ? (
-						<div className="shrink-0 xl:-mt-2">
+						<div className="inspector-file-notes shrink-0 xl:-mt-2">
 							{/*
 							  h-16 matches the Song Notes toolbar so the File Notes
 							  input top lines up with the Song Notes input top.
@@ -148,12 +114,6 @@ export function InspectorPane({
 						</>
 					)}
 				</div>
-				<div
-					aria-hidden
-					className={`-mx-4 h-px shrink-0 bg-[var(--color-border-plain)] transition-opacity duration-200 ${
-						hasContentBelow ? "opacity-100" : "opacity-0"
-					}`}
-				/>
 				{copiedMessage ? (
 					<div className="mt-2 flex shrink-0 justify-end">
 						<span className="surface-chip px-3 py-1 text-xs">
@@ -161,21 +121,12 @@ export function InspectorPane({
 						</span>
 					</div>
 				) : null}
-				{selectedFile ? (
-					<div className="shrink-0 border-t border-[var(--color-border-plain)] pt-3 pb-1 xl:pb-3">
-						<InspectorFileMeta
-							selectedFile={selectedFile}
-							blob={selectedFileBlob}
-							deletingFile={deletingFile}
-							onDeleteFile={() => onDeleteFile?.()}
-						/>
-					</div>
-				) : (
+				{!selectedFile ? (
 					<p className="text-sm leading-7 text-[var(--color-text-muted)]">
 						Pick an audio lane to edit notes, inspect time-based annotations,
 						and copy deep links back into the song notes.
 					</p>
-				)}
+				) : null}
 			</section>
 		</div>
 	);

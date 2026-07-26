@@ -394,19 +394,20 @@ describe("WaveformCard", () => {
 		).toBe(true);
 	});
 
-	it("shows the loudness metrics between the time readout and the volume stepper", () => {
+	it("shows rounded integrated loudness beside the volume stepper", () => {
 		renderWaveformCard();
 
 		const loudnessReadout = screen.getByTestId("waveform-loudness");
-		expect(loudnessReadout.textContent).toBe("-9.4 LUFS·6.2 LU·-0.3 dBTP");
-		expect(
-			within(loudnessReadout).getByTitle(/Spotify, YouTube, Tidal, Amazon/),
-		).toBeTruthy();
+		expect(loudnessReadout.textContent).toBe("-9 LUFS");
+		expect(loudnessReadout.title).toMatch(/Spotify, YouTube, Tidal, Amazon/);
 
-		const footer = loudnessReadout.parentElement as HTMLElement;
-		const children = Array.from(footer.children);
-		expect(children.indexOf(loudnessReadout)).toBe(1);
-		expect(children).toHaveLength(3);
+		const volumeControls = loudnessReadout.parentElement as HTMLElement;
+		const children = Array.from(volumeControls.children);
+		const decreaseButton = screen.getByRole("button", {
+			name: /decrease volume for mix v1/i,
+		});
+		expect(children.indexOf(loudnessReadout)).toBe(0);
+		expect(children.indexOf(decreaseButton)).toBe(1);
 	});
 
 	it("updates the gain node when the stored decibel value changes", async () => {
@@ -776,25 +777,6 @@ describe("WaveformCard", () => {
 				name: /end range at playhead/i,
 			}),
 		).toBeNull();
-	});
-
-	it("renames the file from a double-click on the title", async () => {
-		const onUpdateFile = vi.fn().mockResolvedValue(undefined);
-
-		renderWaveformCard({
-			onUpdateFile,
-		});
-
-		fireEvent.doubleClick(screen.getByRole("button", { name: "Mix v1" }));
-		const titleInput = screen.getByLabelText(/file title/i);
-		fireEvent.change(titleInput, { target: { value: "Mix v1 - Print" } });
-		fireEvent.blur(titleInput);
-
-		await waitFor(() => {
-			expect(onUpdateFile).toHaveBeenCalledWith({
-				title: "Mix v1 - Print",
-			});
-		});
 	});
 
 	it("selects the file when clicking non-interactive row space", () => {

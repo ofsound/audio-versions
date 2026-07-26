@@ -16,19 +16,6 @@ import type {
 } from "#/lib/audio-versions/types";
 import { InspectorPane } from "./inspector-pane";
 
-const downloadAudioFileMock = vi.fn().mockResolvedValue(undefined);
-
-vi.mock("#/lib/audio-versions/download-audio-file", async (importOriginal) => {
-	const actual =
-		await importOriginal<
-			typeof import("#/lib/audio-versions/download-audio-file")
-		>();
-	return {
-		...actual,
-		downloadAudioFile: (...args: unknown[]) => downloadAudioFileMock(...args),
-	};
-});
-
 vi.mock("./rich-text-editor", () => ({
 	RichTextEditor: () => <div data-testid="rich-text-editor" />,
 }));
@@ -97,7 +84,6 @@ function renderInspector(
 	const onDeleteAnnotation = vi.fn().mockResolvedValue(undefined);
 	const onSelectAnnotation = vi.fn();
 	const onUpdateFile = vi.fn().mockResolvedValue(undefined);
-	const onDeleteFile = vi.fn();
 
 	render(
 		<InspectorPane
@@ -106,7 +92,6 @@ function renderInspector(
 			activeAnnotation={baseAnnotation}
 			onOpenTarget={onOpenTarget}
 			onUpdateFile={onUpdateFile}
-			onDeleteFile={onDeleteFile}
 			onUpdateAnnotation={onUpdateAnnotation}
 			onDeleteAnnotation={onDeleteAnnotation}
 			onSelectAnnotation={onSelectAnnotation}
@@ -120,7 +105,6 @@ function renderInspector(
 		onDeleteAnnotation,
 		onSelectAnnotation,
 		onUpdateFile,
-		onDeleteFile,
 	};
 }
 
@@ -129,59 +113,13 @@ describe("InspectorPane", () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
-	it("shows the selected file name and actions in a fixed footer below File Notes", () => {
-		renderInspector({
-			selectedFile: {
-				...baseAudioFile,
-				remoteMedia: {
-					pathname: "users/1/audio/file-1/mix.wav",
-					contentType: "audio/wav",
-					size: 1024,
-					originalName: "Mix v1.wav",
-				},
-			},
-		});
+	it("shows file notes without the file metadata footer", () => {
+		renderInspector({ selectedFile: baseAudioFile });
 
-		expect(screen.queryByText(/^apr 16, 2026$/i)).toBeNull();
-		expect(screen.getByText("Mix v1.wav")).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: /^download mix v1$/i }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: /^delete mix v1$/i }),
-		).toBeTruthy();
 		expect(screen.getByText("File Notes")).toBeTruthy();
-		expect(screen.queryByTestId("inspector-notes-offset")).toBeNull();
-	});
-
-	it("deletes the selected file from the inspector trash control", () => {
-		const onDeleteFile = vi.fn();
-		renderInspector({
-			selectedFile: baseAudioFile,
-			onDeleteFile,
-		});
-
-		fireEvent.click(screen.getByRole("button", { name: /^delete mix v1$/i }));
-		expect(onDeleteFile).toHaveBeenCalledTimes(1);
-	});
-
-	it("downloads the selected file from the inspector download control", async () => {
-		downloadAudioFileMock.mockClear();
-		const blob = new Blob(["tone"], { type: "audio/wav" });
-		renderInspector({
-			selectedFile: baseAudioFile,
-			selectedFileBlob: blob,
-		});
-
-		fireEvent.click(screen.getByRole("button", { name: /^download mix v1$/i }));
-
-		await waitFor(() => {
-			expect(downloadAudioFileMock).toHaveBeenCalledTimes(1);
-		});
-		expect(downloadAudioFileMock.mock.calls[0]?.[0]).toMatchObject({
-			audioFile: expect.objectContaining({ id: "file-1", title: "Mix v1" }),
-			blob,
-		});
+		expect(screen.queryByText(/mix v1\\.wav/i)).toBeNull();
+		expect(screen.queryByTitle("Download file")).toBeNull();
+		expect(screen.queryByTitle("Delete file")).toBeNull();
 	});
 
 	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {

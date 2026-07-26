@@ -7,6 +7,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import type { MouseEvent, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
 import type {
@@ -28,6 +29,31 @@ let annotations: Annotation[] = [];
 let uiSettings = createDefaultUiSettings();
 
 vi.mock("@tanstack/react-router", () => ({
+	Link: ({
+		children,
+		className,
+		"aria-label": ariaLabel,
+		params,
+		to,
+	}: {
+		children?: ReactNode;
+		className?: string;
+		"aria-label"?: string;
+		params: { songId: string };
+		to: string;
+	}) => (
+		<a
+			href={to.replace("$songId", params.songId)}
+			className={className}
+			aria-label={ariaLabel}
+			onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+				event.preventDefault();
+				navigateMock({ to, params });
+			}}
+		>
+			{children}
+		</a>
+	),
 	useNavigate: () => navigateMock,
 }));
 
@@ -273,6 +299,28 @@ describe("LibraryView", () => {
 		expect(settingsButton.className).toContain("icon-button");
 	});
 
+	it("opens the song from the card surface but not from settings", () => {
+		const headerSlot = document.createElement("div");
+		document.body.appendChild(headerSlot);
+		songs = [makeSong("song-1")];
+
+		renderWithLibraryHeaderSlot(headerSlot);
+
+		const songCard = screen.getByRole("link", { name: /open new song/i });
+		const settingsButton = screen.getByRole("button", {
+			name: /edit settings for new song/i,
+		});
+
+		fireEvent.click(settingsButton);
+		expect(navigateMock).not.toHaveBeenCalled();
+
+		fireEvent.click(songCard);
+		expect(navigateMock).toHaveBeenCalledWith({
+			to: "/songs/$songId",
+			params: { songId: "song-1" },
+		});
+	});
+
 	it("shows the session date range next to files and markers on song cards", () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
@@ -329,37 +377,26 @@ describe("LibraryView", () => {
 
 		renderWithLibraryHeaderSlot(headerSlot);
 
+		const sessionDateRange = `${new Date(2026, 3, 16).toLocaleDateString(
+			undefined,
+			{
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+			},
+		)} – ${new Date(2026, 5, 2).toLocaleDateString(undefined, {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		})}`;
 		expect(screen.getByText("2 files")).toBeTruthy();
 		expect(screen.getByText("1 markers")).toBeTruthy();
-		expect(
-			screen.getByText(
-				`${new Date(2026, 3, 16).toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "short",
-					day: "numeric",
-				})} – ${new Date(2026, 5, 2).toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "short",
-					day: "numeric",
-				})}`,
-			),
-		).toBeTruthy();
+		expect(screen.getByText(sessionDateRange)).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "2 files" }));
-		fireEvent.click(screen.getByRole("button", { name: "1 markers" }));
-		fireEvent.click(
-			screen.getByRole("button", {
-				name: `${new Date(2026, 3, 16).toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "short",
-					day: "numeric",
-				})} – ${new Date(2026, 5, 2).toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "short",
-					day: "numeric",
-				})}`,
-			}),
-		);
+		const songCardLink = screen.getByRole("link", { name: /open new song/i });
+		fireEvent.click(songCardLink);
+		fireEvent.click(songCardLink);
+		fireEvent.click(songCardLink);
 		expect(navigateMock).toHaveBeenCalledTimes(3);
 		expect(navigateMock).toHaveBeenLastCalledWith({
 			to: "/songs/$songId",

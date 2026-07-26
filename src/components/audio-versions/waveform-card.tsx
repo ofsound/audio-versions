@@ -331,14 +331,10 @@ export function WaveformCard({
 					onSelectFile(audioFile.id);
 					void onSeek(0, false);
 				}}
-				onSelectFile={() => onSelectFile(audioFile.id)}
 				onStartRangeAtPlayhead={handleStartRangeAtPlayhead}
 				onTogglePlayback={() => {
 					onSelectFile(audioFile.id);
 					void onTogglePlayback();
-				}}
-				onUpdateFile={(patch) => {
-					void onUpdateFile(patch);
 				}}
 				pendingRangeStartMs={pendingRangeStartMs}
 			/>
