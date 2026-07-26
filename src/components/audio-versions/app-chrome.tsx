@@ -72,7 +72,7 @@ export function AudioVersionsChrome({
 		>
 			<div className={shellClassName}>
 				<header className={`${headerClassName} app-safe-area-header`}>
-					<div className="audio-versions-header-content flex w-full flex-col gap-4 px-3 py-4">
+					<div className="audio-versions-header-content flex w-full flex-col gap-4 px-6 py-4">
 						<div className="audio-versions-header-layout flex flex-col gap-4 xl:flex-row xl:items-end">
 							<div
 								className={

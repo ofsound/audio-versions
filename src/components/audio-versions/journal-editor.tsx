@@ -424,7 +424,7 @@ export function JournalEditor({
 			data-audio-versions-editor="journal"
 		>
 			<div
-				className="flex h-16 shrink-0 items-center justify-between gap-3 px-3"
+				className="flex h-16 shrink-0 items-center justify-between gap-3 px-6"
 				data-audio-versions-toolbar
 			>
 				<span className="field-label workspace-section-heading">

@@ -97,7 +97,7 @@ export function WaveformThumbnail({
 							</span>
 						) : null}
 						<span className="waveform-thumbnail__date ml-auto bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
-							{formatDuration(currentTimeMs)}
+							{formatDuration(audioFile.durationMs)}
 						</span>
 					</div>
 				</div>

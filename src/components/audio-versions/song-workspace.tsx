@@ -474,7 +474,7 @@ export function SongWorkspace({
 		<>
 			{renderedSongHeaderControls}
 			<main
-				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-3 pt-2.5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-4 xl:py-0 xl:pr-0 ${
+				className={`song-workspace-main relative flex min-h-0 w-full flex-1 flex-col gap-6 overflow-hidden px-6 pt-2.5 [transition:filter_200ms_ease,opacity_200ms_ease] md:py-4 xl:py-0 xl:pr-0 ${
 					isModalOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
 				}`}
 				aria-hidden={isModalOpen}

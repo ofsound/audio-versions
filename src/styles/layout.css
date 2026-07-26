@@ -32,6 +32,7 @@
 
 .song-workspace-file-player .waveform-card {
 	border-color: transparent;
+	padding-left: 0;
 	padding-right: 0;
 }
 
