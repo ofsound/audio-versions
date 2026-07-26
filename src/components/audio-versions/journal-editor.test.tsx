@@ -7,7 +7,7 @@ import { JournalEditor } from "./journal-editor";
 afterEach(cleanup);
 
 describe("JournalEditor", () => {
-	it("uses a plain-text editor with timestamp insertion as its only action", () => {
+	it("inserts timestamps as atomic, non-editable chips", () => {
 		const onChange = vi.fn();
 		render(<JournalEditor value="Alpha Beta" onChange={onChange} />);
 
@@ -29,9 +29,26 @@ describe("JournalEditor", () => {
 			timeStyle: "short",
 		}).format(new Date());
 		expect(editor.textContent).toBe(`Alpha ${timestamp} Beta`);
-		expect(onChange).toHaveBeenLastCalledWith(`Alpha ${timestamp} Beta`);
+		const timestampChip = screen.getByLabelText(`Timestamp ${timestamp}`);
+		expect(timestampChip.getAttribute("contenteditable")).toBe("false");
+		expect(onChange).toHaveBeenLastCalledWith(
+			`Alpha {{timestamp:${timestamp}}} Beta`,
+		);
 		expect(screen.queryByRole("button", { name: "Bold" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Italic" })).toBeNull();
+	});
+
+	it("restores persisted timestamp tokens as chips", () => {
+		render(
+			<JournalEditor
+				value="Before {{timestamp:Jul 26, 2026, 5:30 PM}} after"
+				onChange={() => {}}
+			/>,
+		);
+
+		const chip = screen.getByLabelText("Timestamp Jul 26, 2026, 5:30 PM");
+		expect(chip.textContent).toBe("Jul 26, 2026, 5:30 PM");
+		expect(chip.getAttribute("contenteditable")).toBe("false");
 	});
 
 	it("passes multiline text through without a rich-text conversion", () => {

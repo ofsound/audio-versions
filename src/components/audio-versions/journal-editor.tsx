@@ -31,6 +31,29 @@ interface JournalLink {
 const JOURNAL_URL_PATTERN = /(?:https?:\/\/[^\s]+|\/songs\/[^\s]+)/g;
 const JOURNAL_URL_PREFIX_PATTERN = /(?:https?:\/\/|\/songs\/)/;
 const JOURNAL_INLINE_FORMAT_PATTERN = /(\*\*[^*\n]+\*\*|_[^_\n]+_)/g;
+const JOURNAL_ATOM_PATTERN =
+	/(?:https?:\/\/[^\s]+|\/songs\/[^\s]+|\{\{timestamp:[^}\n]+\}\})/g;
+
+function getJournalTimestamp(source: string): string | null {
+	const match = /^\{\{timestamp:([^}\n]+)\}\}$/.exec(source);
+	return match?.[1] ?? null;
+}
+
+function renderJournalTimestamp(source: string, label: string, key: string) {
+	return (
+		<span
+			key={key}
+			role="img"
+			className="journal-link-chip journal-timestamp-chip surface-chip"
+			contentEditable={false}
+			data-journal-source={source}
+			aria-label={`Timestamp ${label}`}
+		>
+			<Clock3 size={14} />
+			<span className="journal-link-label">{label}</span>
+		</span>
+	);
+}
 
 function renderJournalText(value: string): ReactNode[] {
 	const rendered: ReactNode[] = [];
@@ -100,10 +123,10 @@ function renderJournal(
 
 	for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
 		const line = lines[lineIndex];
-		const matches = [...line.matchAll(JOURNAL_URL_PATTERN)];
+		const linkMatches = [...line.matchAll(JOURNAL_URL_PATTERN)];
 		const standaloneLink =
-			matches.length === 1
-				? getJournalLink(lines, lineIndex, matches[0])
+			linkMatches.length === 1
+				? getJournalLink(lines, lineIndex, linkMatches[0])
 				: null;
 
 		if (standaloneLink?.source.includes("\n") && rendered.length > 0) {
@@ -112,9 +135,30 @@ function renderJournal(
 
 		const content: ReactNode[] = [];
 		let offset = 0;
-		for (const [matchIndex, match] of matches.entries()) {
+		for (const [matchIndex, match] of [
+			...line.matchAll(JOURNAL_ATOM_PATTERN),
+		].entries()) {
+			if (match.index === undefined) {
+				continue;
+			}
+			const timestamp = getJournalTimestamp(match[0]);
+			if (timestamp) {
+				if (match.index > offset) {
+					content.push(...renderJournalText(line.slice(offset, match.index)));
+				}
+				content.push(
+					renderJournalTimestamp(
+						match[0],
+						timestamp,
+						`timestamp-${match.index}-${timestamp}`,
+					),
+				);
+				offset = match.index + match[0].length;
+				continue;
+			}
+
 			const link = getJournalLink(lines, lineIndex, match);
-			if (!link || match.index === undefined) {
+			if (!link) {
 				continue;
 			}
 
@@ -330,6 +374,7 @@ export function JournalEditor({
 		const range =
 			selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 		const timestamp = timestampFormatter.format(new Date());
+		const source = `{{timestamp:${timestamp}}}`;
 		const adjacentText =
 			range?.startContainer.nodeType === Node.TEXT_NODE
 				? (range.startContainer.textContent ?? "")
@@ -337,19 +382,36 @@ export function JournalEditor({
 		const before =
 			adjacentText[range?.startOffset ? range.startOffset - 1 : -1];
 		const after = adjacentText[range?.endOffset ?? 0];
-		const insertion = `${before && !/\s/.test(before) ? " " : ""}${timestamp}${
-			after && !/\s/.test(after) ? " " : ""
-		}`;
-		const text = document.createTextNode(insertion);
+		const leadingText = document.createTextNode(
+			before && !/\s/.test(before) ? " " : "",
+		);
+		const chip = document.createElement("span");
+		chip.className = "journal-link-chip journal-timestamp-chip surface-chip";
+		chip.setAttribute("contenteditable", "false");
+		chip.dataset.journalSource = source;
+		chip.setAttribute("role", "img");
+		chip.setAttribute("aria-label", `Timestamp ${timestamp}`);
+		const icon = document.createElement("span");
+		icon.className = "journal-timestamp-icon";
+		icon.setAttribute("aria-hidden", "true");
+		const label = document.createElement("span");
+		label.className = "journal-link-label";
+		label.textContent = timestamp;
+		chip.append(icon, label);
+		const trailingText = document.createTextNode(
+			after && !/\s/.test(after) ? " " : "",
+		);
+		const insertion = document.createDocumentFragment();
+		insertion.append(leadingText, chip, trailingText);
 
 		if (range && editor.contains(range.commonAncestorContainer)) {
 			range.deleteContents();
-			range.insertNode(text);
+			range.insertNode(insertion);
 		} else {
-			editor.append(text);
+			editor.append(insertion);
 		}
 		const nextRange = document.createRange();
-		nextRange.setStartAfter(text);
+		nextRange.setStartAfter(trailingText);
 		nextRange.collapse(true);
 		selection?.removeAllRanges();
 		selection?.addRange(nextRange);
@@ -365,7 +427,9 @@ export function JournalEditor({
 				className="flex h-16 shrink-0 items-center justify-between gap-3 px-3"
 				data-audio-versions-toolbar
 			>
-				<span className="field-label">Song Notes</span>
+				<span className="field-label workspace-section-heading">
+					Song Notes
+				</span>
 				<button
 					type="button"
 					onClick={insertTimestamp}

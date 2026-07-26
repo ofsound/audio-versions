@@ -256,6 +256,12 @@
 	color: var(--color-text);
 }
 
+.workspace-section-heading {
+	font-size: 1rem;
+	color: var(--color-text);
+	font-weight: 700;
+}
+
 .song-editor-shell:has(.song-editor:focus-visible) {
 	box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
@@ -382,6 +388,24 @@
 
 .journal-link-chip > svg {
 	color: var(--color-accent-strong);
+}
+
+.journal-timestamp-chip {
+	cursor: grab;
+}
+
+.journal-timestamp-chip:active {
+	cursor: grabbing;
+}
+
+.journal-timestamp-icon {
+	width: 0.875rem;
+	height: 0.875rem;
+	flex: none;
+	background-color: var(--color-accent-strong);
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")
+		center / contain no-repeat;
 }
 
 .journal-link-label {

@@ -3,7 +3,10 @@ import { useMemo, useRef, useState } from "react";
 import { resolveAudioFileSessionDateLabel } from "#/lib/audio-versions/dates";
 import { downloadAudioFile } from "#/lib/audio-versions/download-audio-file";
 import type { AudioFileRecord } from "#/lib/audio-versions/types";
-import { normalizeWaveformData } from "#/lib/audio-versions/waveform";
+import {
+	formatDuration,
+	normalizeWaveformData,
+} from "#/lib/audio-versions/waveform";
 import { useWaveformCanvas } from "./use-waveform-canvas";
 
 interface WaveformThumbnailProps {
@@ -87,11 +90,16 @@ export function WaveformThumbnail({
 					<span className="font-title waveform-thumbnail__title max-w-[calc(100%-4.5rem)] self-start truncate bg-black px-1.5 py-0.5 text-xs font-semibold text-white sm:text-sm">
 						{audioFile.title}
 					</span>
-					{sessionDateLabel ? (
-						<span className="waveform-thumbnail__date self-end bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
-							{sessionDateLabel}
+					<div className="flex w-full items-end justify-between gap-2">
+						{sessionDateLabel ? (
+							<span className="waveform-thumbnail__date bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
+								{sessionDateLabel}
+							</span>
+						) : null}
+						<span className="waveform-thumbnail__date ml-auto bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
+							{formatDuration(currentTimeMs)}
 						</span>
-					) : null}
+					</div>
 				</div>
 			</div>
 			<div className="absolute top-2 right-2 z-20 flex items-center gap-1">

@@ -63,7 +63,9 @@ export function InspectorPane({
 							  input top lines up with the Song Notes input top.
 							*/}
 							<div className="flex h-16 items-center">
-								<span className="field-label">File Notes</span>
+								<span className="field-label workspace-section-heading">
+									File Notes
+								</span>
 							</div>
 							<RichTextEditor
 								value={selectedFile.notes}
@@ -83,7 +85,9 @@ export function InspectorPane({
 						<div
 							className={`grid shrink-0 gap-2 ${selectedFile ? "mt-4" : ""}`}
 						>
-							<h4 className="field-label">Markers and Ranges</h4>
+							<h4 className="field-label workspace-section-heading">
+								Markers and Ranges
+							</h4>
 							<p className="text-sm text-[var(--color-text-muted)]">
 								Create markers or ranges from the waveform to build the list.
 							</p>
@@ -91,7 +95,7 @@ export function InspectorPane({
 					) : (
 						<>
 							<h4
-								className={`field-label shrink-0 ${selectedFile ? "mt-4" : ""}`}
+								className={`field-label workspace-section-heading shrink-0 ${selectedFile ? "mt-4" : ""}`}
 							>
 								Markers and Ranges
 							</h4>
