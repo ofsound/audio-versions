@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Read-only journal body that rewrites song/marker URLs into inline chips,
+/// Read-only journal body that rewrites song/marker URLs and timestamps into inline chips,
 /// matching the desktop journal editor’s link-to-icon strategy.
 struct JournalContentView: View {
     @Environment(\.palette) private var palette
@@ -39,10 +39,14 @@ private struct JournalContentLineView: View {
     let line: JournalRenderedLine
     let onOpenLink: (SongLinkTarget) -> Void
 
-    private var hasLink: Bool {
+    private var hasInlineChip: Bool {
         line.segments.contains {
-            if case .link = $0 { return true }
-            return false
+            switch $0 {
+            case .link, .timestamp:
+                true
+            case .text:
+                false
+            }
         }
     }
 
@@ -52,7 +56,10 @@ private struct JournalContentLineView: View {
                 .font(.body)
                 .foregroundStyle(palette.textPrimary)
                 .accessibilityHidden(true)
-        } else if !hasLink, case let .text(value)? = line.segments.first, line.segments.count == 1 {
+        } else if !hasInlineChip,
+                  case let .text(value)? = line.segments.first,
+                  line.segments.count == 1
+        {
             Text(value.isEmpty ? " " : value)
                 .font(.body)
                 .foregroundStyle(palette.textPrimary)
@@ -69,6 +76,8 @@ private struct JournalContentLineView: View {
                         }
                     case let .link(link):
                         JournalLinkChip(link: link, action: { onOpenLink(link.target) })
+                    case let .timestamp(timestamp):
+                        JournalTimestampChip(timestamp: timestamp)
                     }
                 }
             }
@@ -118,6 +127,33 @@ private struct JournalLinkChip: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Jump to \(link.label)")
         .accessibilityHint("Opens the linked version and marker position")
+    }
+}
+
+private struct JournalTimestampChip: View {
+    @Environment(\.palette) private var palette
+
+    let timestamp: SongJournalTimestamp
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(palette.accentText)
+
+            Text(timestamp.label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(palette.textPrimary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(palette.accentSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(palette.accent.opacity(0.42), lineWidth: 1)
+        }
+        .accessibilityLabel("Timestamp \(timestamp.label)")
     }
 }
 

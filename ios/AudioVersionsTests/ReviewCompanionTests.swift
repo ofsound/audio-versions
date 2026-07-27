@@ -267,10 +267,13 @@ struct ReviewCompanionTests {
         let date = Date(timeIntervalSince1970: 1_753_401_540)
         let locale = Locale(identifier: "en_US_POSIX")
         let stamp = SongJournalEntry.timestamp(at: date, locale: locale)
+        let token = SongJournalEntry.timestampToken(at: date, locale: locale)
+
+        #expect(token == "{{timestamp:\(stamp)}}")
 
         #expect(
             SongJournalEntry.appending("Check the snare.", to: "", at: date, locale: locale)
-                == "\(stamp)\nCheck the snare."
+                == "\(token)\nCheck the snare."
         )
         #expect(
             SongJournalEntry.appending(
@@ -278,7 +281,7 @@ struct ReviewCompanionTests {
                 to: "First note",
                 at: date,
                 locale: locale
-            ) == "First note\n\n\(stamp)\nBring guitars up."
+            ) == "First note\n\n\(token)\nBring guitars up."
         )
         #expect(
             SongJournalEntry.appending(
@@ -286,7 +289,7 @@ struct ReviewCompanionTests {
                 to: "Existing\n",
                 at: date,
                 locale: locale
-            ) == "Existing\n\n\(stamp)\nAnother take."
+            ) == "Existing\n\n\(token)\nAnother take."
         )
     }
 
@@ -296,20 +299,20 @@ struct ReviewCompanionTests {
         let store = ReviewCompanionStore()
         let song = try #require(store.songs.first)
         let date = Date(timeIntervalSince1970: 1_753_401_540)
-        let stamp = SongJournalEntry.timestamp(at: date)
+        let token = SongJournalEntry.timestampToken(at: date)
 
         store.saveSongJournal("Existing notes", songID: song.id)
         store.appendSongJournalEntry("  New thought  ", songID: song.id, at: date)
 
         #expect(
             store.songs.first(where: { $0.id == song.id })?.generalNotes
-                == "Existing notes\n\n\(stamp)\nNew thought"
+                == "Existing notes\n\n\(token)\nNew thought"
         )
 
         store.appendSongJournalEntry("   ", songID: song.id, at: date)
         #expect(
             store.songs.first(where: { $0.id == song.id })?.generalNotes
-                == "Existing notes\n\n\(stamp)\nNew thought"
+                == "Existing notes\n\n\(token)\nNew thought"
         )
     }
 
@@ -413,6 +416,28 @@ struct ReviewCompanionTests {
             return
         }
         #expect(after == "After note")
+    }
+
+    @Test
+    func journalTimestampsParseAsSharedReadOnlyAtoms() throws {
+        let source = "{{timestamp:Jul 25, 2025 at 6:39 PM}}"
+        let rendered = SongJournalLink.renderedLines(from: "Before \(source) after")
+        let segments = try #require(rendered.first?.segments)
+
+        #expect(segments.count == 3)
+        guard
+            case let .text(before) = segments[0],
+            case let .timestamp(timestamp) = segments[1],
+            case let .text(after) = segments[2]
+        else {
+            Issue.record("Expected text, timestamp chip, and trailing text")
+            return
+        }
+
+        #expect(before == "Before ")
+        #expect(timestamp.label == "Jul 25, 2025 at 6:39 PM")
+        #expect(timestamp.source == source)
+        #expect(after == " after")
     }
 
     @MainActor

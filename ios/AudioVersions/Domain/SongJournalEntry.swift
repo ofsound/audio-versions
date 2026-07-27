@@ -13,6 +13,14 @@ enum SongJournalEntry {
         return formatter.string(from: date)
     }
 
+    /// Shared journal atom rendered as a read-only timestamp chip on iOS and web/Electron.
+    static func timestampToken(
+        at date: Date = .now,
+        locale: Locale = .autoupdatingCurrent
+    ) -> String {
+        "{{timestamp:\(timestamp(at: date, locale: locale))}}"
+    }
+
     /// Appends a stamped entry to the end of an existing plain-text journal.
     static func appending(
         _ entry: String,
@@ -20,7 +28,7 @@ enum SongJournalEntry {
         at date: Date = .now,
         locale: Locale = .autoupdatingCurrent
     ) -> String {
-        let block = "\(timestamp(at: date, locale: locale))\n\(entry)"
+        let block = "\(timestampToken(at: date, locale: locale))\n\(entry)"
         if journal.isEmpty {
             return block
         }

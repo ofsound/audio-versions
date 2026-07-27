@@ -41,13 +41,13 @@ describe("JournalEditor", () => {
 	it("restores persisted timestamp tokens as chips", () => {
 		render(
 			<JournalEditor
-				value="Before {{timestamp:Jul 26, 2026, 5:30 PM}} after"
+				value="Before {{timestamp:Jul 26, 2026 at 5:30 PM}} after"
 				onChange={() => {}}
 			/>,
 		);
 
-		const chip = screen.getByLabelText("Timestamp Jul 26, 2026, 5:30 PM");
-		expect(chip.textContent).toBe("Jul 26, 2026, 5:30 PM");
+		const chip = screen.getByLabelText("Timestamp Jul 26, 2026 at 5:30 PM");
+		expect(chip.textContent).toBe("Jul 26, 2026 at 5:30 PM");
 		expect(chip.getAttribute("contenteditable")).toBe("false");
 	});
 

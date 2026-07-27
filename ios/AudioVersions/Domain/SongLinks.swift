@@ -84,10 +84,15 @@ struct SongJournalLink: Identifiable, Hashable {
         var rendered: [JournalRenderedLine] = []
 
         for (lineIndex, line) in lines.enumerated() {
-            let matches = JournalURLMatch.findAll(in: line)
-            let standaloneLink = matches.count == 1
-                ? journalLink(lines: lines, lineIndex: lineIndex, match: matches[0])
+            let urlMatches = JournalURLMatch.findAll(in: line)
+            let standaloneLink = urlMatches.count == 1
+                ? journalLink(lines: lines, lineIndex: lineIndex, match: urlMatches[0])
                 : nil
+            let atomMatches = (
+                urlMatches.map(JournalAtomMatch.url)
+                    + JournalTimestampMatch.findAll(in: line).map(JournalAtomMatch.timestamp)
+            )
+            .sorted { $0.range.lowerBound < $1.range.lowerBound }
 
             if let standaloneLink, standaloneLink.source.contains("\n"), !rendered.isEmpty {
                 rendered.removeLast()
@@ -96,15 +101,30 @@ struct SongJournalLink: Identifiable, Hashable {
             var segments: [JournalInlineSegment] = []
             var offset = line.startIndex
 
-            for match in matches {
-                guard let link = journalLink(lines: lines, lineIndex: lineIndex, match: match) else {
-                    continue
-                }
-
+            for match in atomMatches {
                 if match.range.lowerBound > offset {
                     segments.append(.text(String(line[offset..<match.range.lowerBound])))
                 }
-                segments.append(.link(link))
+
+                switch match {
+                case let .url(urlMatch):
+                    guard let link = journalLink(
+                        lines: lines,
+                        lineIndex: lineIndex,
+                        match: urlMatch
+                    ) else { continue }
+                    segments.append(.link(link))
+                case let .timestamp(timestampMatch):
+                    segments.append(
+                        .timestamp(
+                            SongJournalTimestamp(
+                                label: timestampMatch.label,
+                                source: timestampMatch.source
+                            )
+                        )
+                    )
+                }
+
                 offset = match.range.upperBound
             }
 
@@ -123,9 +143,16 @@ struct JournalRenderedLine: Hashable {
     let segments: [JournalInlineSegment]
 }
 
+struct SongJournalTimestamp: Hashable {
+    let label: String
+    /// Shared plain-text atom restored when editing the journal.
+    let source: String
+}
+
 enum JournalInlineSegment: Hashable {
     case text(String)
     case link(SongJournalLink)
+    case timestamp(SongJournalTimestamp)
 }
 
 enum LibraryDestination: Hashable {
@@ -163,6 +190,55 @@ private struct JournalURLMatch {
         }
 
         return matches
+    }
+}
+
+private struct JournalTimestampMatch {
+    let label: String
+    let source: String
+    let range: Range<String.Index>
+
+    static func findAll(in line: String) -> [JournalTimestampMatch] {
+        let prefix = "{{timestamp:"
+        var matches: [JournalTimestampMatch] = []
+        var searchStart = line.startIndex
+
+        while searchStart < line.endIndex,
+              let prefixRange = line.range(of: prefix, range: searchStart..<line.endIndex),
+              let suffixRange = line.range(
+                  of: "}}",
+                  range: prefixRange.upperBound..<line.endIndex
+              )
+        {
+            let label = String(line[prefixRange.upperBound..<suffixRange.lowerBound])
+            let range = prefixRange.lowerBound..<suffixRange.upperBound
+            if !label.isEmpty {
+                matches.append(
+                    JournalTimestampMatch(
+                        label: label,
+                        source: String(line[range]),
+                        range: range
+                    )
+                )
+            }
+            searchStart = suffixRange.upperBound
+        }
+
+        return matches
+    }
+}
+
+private enum JournalAtomMatch {
+    case url(JournalURLMatch)
+    case timestamp(JournalTimestampMatch)
+
+    var range: Range<String.Index> {
+        switch self {
+        case let .url(match):
+            match.range
+        case let .timestamp(match):
+            match.range
+        }
     }
 }
 
