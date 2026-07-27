@@ -194,6 +194,17 @@
 
 .marker-editor > div {
 	background: var(--color-field);
+	border: 1px solid
+		color-mix(in srgb, var(--color-border-plain) 78%, transparent);
+	transition: border-color 160ms ease;
+}
+
+.marker-editor > div:has(.song-editor:focus-visible) {
+	border-color: color-mix(
+		in srgb,
+		var(--color-accent-strong) 46%,
+		var(--color-border-plain)
+	);
 }
 
 .marker-card .icon-button:hover {
