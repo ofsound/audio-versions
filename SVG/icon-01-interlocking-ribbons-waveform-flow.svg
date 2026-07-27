@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <title>Interlocking ribbons with flowing waveform</title>
+  <defs>
+    <linearGradient id="bg-grad-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#030508"/>
+    </linearGradient>
+    <linearGradient id="top-gloss-flow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="emerald-grad-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="sky-grad-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="wave-grad-flow" gradientUnits="userSpaceOnUse" x1="160" y1="0" x2="352" y2="0">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="48%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="shadow-flow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="shadow-blur"/>
+      <feOffset in="shadow-blur" dx="0" dy="12" result="shadow-offset"/>
+      <feFlood flood-color="#000000" flood-opacity="0.58" result="shadow-color"/>
+      <feComposite in="shadow-color" in2="shadow-offset" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-flow)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#top-gloss-flow)"/>
+
+  <g filter="url(#shadow-flow)">
+    <path d="M 136 376 L 232 136 C 238 121 274 121 280 136 L 316 226 L 272 242 L 256 200 L 180 376 Z" fill="url(#emerald-grad-flow)"/>
+    <path d="M 376 136 L 280 376 C 274 391 238 391 232 376 L 196 286 L 240 270 L 256 312 L 332 136 Z" fill="url(#sky-grad-flow)"/>
+
+    <!-- Organic waveform rhythm adapted from the Swift theme preview. -->
+    <g fill="url(#wave-grad-flow)">
+      <rect x="160" y="265" width="8" height="22" rx="4" opacity="0.78"/>
+      <rect x="172" y="255" width="8" height="42" rx="4" opacity="0.84"/>
+      <rect x="184" y="244" width="8" height="64" rx="4" opacity="0.9"/>
+      <rect x="196" y="251" width="8" height="50" rx="4" opacity="0.95"/>
+      <rect x="208" y="234" width="8" height="84" rx="4"/>
+      <rect x="220" y="246" width="8" height="60" rx="4"/>
+      <rect x="232" y="253" width="8" height="46" rx="4"/>
+      <rect x="244" y="239" width="8" height="74" rx="4"/>
+      <rect x="256" y="249" width="8" height="54" rx="4"/>
+      <rect x="268" y="258" width="8" height="36" rx="4"/>
+      <rect x="280" y="243" width="8" height="66" rx="4"/>
+      <rect x="292" y="251" width="8" height="50" rx="4"/>
+      <rect x="304" y="236" width="8" height="80" rx="4"/>
+      <rect x="316" y="248" width="8" height="56" rx="4" opacity="0.95"/>
+      <rect x="328" y="256" width="8" height="40" rx="4" opacity="0.9"/>
+      <rect x="340" y="246" width="8" height="60" rx="4" opacity="0.84"/>
+      <rect x="352" y="262" width="8" height="28" rx="4" opacity="0.78"/>
+    </g>
+  </g>
+</svg>

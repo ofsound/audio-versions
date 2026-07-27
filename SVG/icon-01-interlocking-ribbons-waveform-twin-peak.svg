@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <title>Interlocking ribbons with twin-peak waveform</title>
+  <defs>
+    <linearGradient id="bg-grad-twin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#030508"/>
+    </linearGradient>
+    <linearGradient id="top-gloss-twin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="emerald-grad-twin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="sky-grad-twin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="wave-grad-twin" gradientUnits="userSpaceOnUse" x1="166" y1="0" x2="346" y2="0">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="shadow-twin" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="shadow-blur"/>
+      <feOffset in="shadow-blur" dx="0" dy="12" result="shadow-offset"/>
+      <feFlood flood-color="#000000" flood-opacity="0.58" result="shadow-color"/>
+      <feComposite in="shadow-color" in2="shadow-offset" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-twin)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#top-gloss-twin)"/>
+
+  <g filter="url(#shadow-twin)">
+    <path d="M 136 376 L 232 136 C 238 121 274 121 280 136 L 316 226 L 272 242 L 256 200 L 180 376 Z" fill="url(#emerald-grad-twin)"/>
+    <path d="M 376 136 L 280 376 C 274 391 238 391 232 376 L 196 286 L 240 270 L 256 312 L 332 136 Z" fill="url(#sky-grad-twin)"/>
+
+    <!-- Two broad pulses echo the two interlocking ribbon strokes. -->
+    <g fill="url(#wave-grad-twin)">
+      <rect x="166" y="264" width="8" height="24" rx="4" opacity="0.76"/>
+      <rect x="179" y="255" width="8" height="42" rx="4" opacity="0.82"/>
+      <rect x="192" y="245" width="8" height="62" rx="4" opacity="0.9"/>
+      <rect x="205" y="233" width="8" height="86" rx="4"/>
+      <rect x="218" y="243" width="8" height="66" rx="4"/>
+      <rect x="231" y="252" width="8" height="48" rx="4"/>
+      <rect x="244" y="261" width="8" height="30" rx="4"/>
+      <rect x="257" y="266" width="8" height="20" rx="4"/>
+      <rect x="270" y="259" width="8" height="34" rx="4"/>
+      <rect x="283" y="250" width="8" height="52" rx="4"/>
+      <rect x="296" y="240" width="8" height="72" rx="4"/>
+      <rect x="309" y="230" width="8" height="92" rx="4"/>
+      <rect x="322" y="246" width="8" height="60" rx="4" opacity="0.9"/>
+      <rect x="335" y="257" width="8" height="38" rx="4" opacity="0.82"/>
+      <rect x="348" y="265" width="8" height="22" rx="4" opacity="0.76"/>
+    </g>
+  </g>
+</svg>

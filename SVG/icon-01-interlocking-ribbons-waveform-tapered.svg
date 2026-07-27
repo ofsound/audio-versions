@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <title>Interlocking ribbons with tapered waveform</title>
+  <defs>
+    <linearGradient id="bg-grad-tapered" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#030508"/>
+    </linearGradient>
+    <linearGradient id="top-gloss-tapered" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="emerald-grad-tapered" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="sky-grad-tapered" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="wave-grad-tapered" gradientUnits="userSpaceOnUse" x1="164" y1="0" x2="348" y2="0">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="shadow-tapered" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="shadow-blur"/>
+      <feOffset in="shadow-blur" dx="0" dy="12" result="shadow-offset"/>
+      <feFlood flood-color="#000000" flood-opacity="0.58" result="shadow-color"/>
+      <feComposite in="shadow-color" in2="shadow-offset" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg-grad-tapered)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#top-gloss-tapered)"/>
+
+  <g filter="url(#shadow-tapered)">
+    <path d="M 136 376 L 232 136 C 238 121 274 121 280 136 L 316 226 L 272 242 L 256 200 L 180 376 Z" fill="url(#emerald-grad-tapered)"/>
+    <path d="M 376 136 L 280 376 C 274 391 238 391 232 376 L 196 286 L 240 270 L 256 312 L 332 136 Z" fill="url(#sky-grad-tapered)"/>
+
+    <!-- Soft taper toward the edges, with the strongest pulse at the crossing. -->
+    <g fill="url(#wave-grad-tapered)">
+      <rect x="164" y="266" width="8" height="20" rx="4" opacity="0.72"/>
+      <rect x="178" y="262" width="8" height="28" rx="4" opacity="0.78"/>
+      <rect x="192" y="257" width="8" height="38" rx="4" opacity="0.84"/>
+      <rect x="206" y="251" width="8" height="50" rx="4" opacity="0.9"/>
+      <rect x="220" y="244" width="8" height="64" rx="4" opacity="0.95"/>
+      <rect x="234" y="237" width="8" height="78" rx="4"/>
+      <rect x="248" y="228" width="8" height="96" rx="4"/>
+      <rect x="262" y="237" width="8" height="78" rx="4"/>
+      <rect x="276" y="244" width="8" height="64" rx="4" opacity="0.95"/>
+      <rect x="290" y="251" width="8" height="50" rx="4" opacity="0.9"/>
+      <rect x="304" y="257" width="8" height="38" rx="4" opacity="0.84"/>
+      <rect x="318" y="262" width="8" height="28" rx="4" opacity="0.78"/>
+      <rect x="332" y="266" width="8" height="20" rx="4" opacity="0.72"/>
+      <rect x="346" y="269" width="8" height="14" rx="4" opacity="0.66"/>
+    </g>
+  </g>
+</svg>
