@@ -45,17 +45,7 @@
 .song-workspace-version-tray {
 	border: 1px solid
 		color-mix(in srgb, var(--color-border-strong) 54%, transparent);
-	background:
-		radial-gradient(
-			ellipse at 12% 0%,
-			color-mix(in srgb, var(--color-accent-surface) 72%, transparent),
-			transparent 46%
-		),
-		linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--color-surface-elevated) 68%, var(--color-app)),
-			color-mix(in srgb, var(--color-app) 92%, var(--color-surface))
-		);
+	background: light-dark(var(--color-zinc-100), var(--color-zinc-900));
 	box-shadow:
 		inset 0 1px 0
 		color-mix(in srgb, var(--color-border-strong) 42%, transparent),
