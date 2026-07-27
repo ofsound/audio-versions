@@ -93,7 +93,7 @@
 	);
 	--color-waveform-progress: light-dark(
 		color-mix(in srgb, var(--accent-light-primary-base) 14%, transparent),
-		color-mix(in srgb, var(--accent-dark-primary-base) 10%, transparent)
+		color-mix(in srgb, var(--accent-dark-primary-base) 28%, transparent)
 	);
 	--color-waveform-progress-line: light-dark(
 		var(--accent-light-primary-base),

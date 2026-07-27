@@ -27,12 +27,12 @@ export function WaveformCardHeader({
 	return (
 		<div className="waveform-card__header mb-4 flex items-center">
 			<div className="waveform-card__actions flex w-full flex-wrap items-center justify-between gap-2">
-				<div className="waveform-card__playback flex items-center gap-2">
+				<div className="waveform-card__playback flex min-w-0 flex-1 items-center gap-2">
 					<button
 						type="button"
 						aria-label={`Reset playhead for ${audioFileTitle}`}
 						onClick={onResetPlayhead}
-						className="action-secondary inline-flex h-9 w-9 items-center justify-center p-0"
+						className="action-secondary inline-flex h-9 w-9 shrink-0 items-center justify-center p-0"
 					>
 						<RotateCcw size={16} />
 					</button>
@@ -40,7 +40,7 @@ export function WaveformCardHeader({
 						type="button"
 						aria-label={isPlaying ? "Pause" : "Play"}
 						onClick={onTogglePlayback}
-						className="action-primary inline-flex h-9 w-9 items-center justify-center p-0"
+						className="action-primary inline-flex h-9 w-9 shrink-0 items-center justify-center p-0"
 					>
 						{isPlaying ? (
 							<Pause size={16} fill="currentColor" strokeWidth={0} />
@@ -48,8 +48,15 @@ export function WaveformCardHeader({
 							<Play size={16} fill="currentColor" strokeWidth={0} />
 						)}
 					</button>
+					<span
+						data-testid="waveform-card-current-file-title"
+						title={audioFileTitle}
+						className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--color-text-muted)]"
+					>
+						{audioFileTitle}
+					</span>
 				</div>
-				<div className="waveform-card__annotations ml-auto flex flex-wrap items-center justify-end gap-2">
+				<div className="waveform-card__annotations ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
 					<button
 						type="button"
 						aria-label={`Add marker at playhead for ${audioFileTitle}`}

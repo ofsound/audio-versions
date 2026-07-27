@@ -85,6 +85,15 @@
 	background: var(--background-image-waveform), var(--color-waveform-surface);
 }
 
+.waveform-visual-treatment {
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-surface) 78%, transparent),
+		color-mix(in srgb, var(--color-surface) 12%, transparent) 46%,
+		color-mix(in srgb, var(--color-surface) 78%, transparent)
+	);
+}
+
 .waveform-surface__gutter {
 	background:
 		var(--background-image-waveform-gutter),

@@ -326,6 +326,20 @@ describe("WaveformCard", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("shows the current file title beside the playback controls", () => {
+		renderWaveformCard({ audioFile: createAudioFile({ title: "Mix v12" }) });
+
+		expect(
+			screen.getByTestId("waveform-card-current-file-title").textContent,
+		).toBe("Mix v12");
+	});
+
+	it("uses the shared nuanced waveform treatment in the player", () => {
+		renderWaveformCard();
+
+		expect(screen.getByTestId("waveform-card-visual-treatment")).toBeTruthy();
+	});
+
 	it("shows the volume stepper and disables buttons at the configured bounds", async () => {
 		const onStepVolume = vi.fn().mockResolvedValue(undefined);
 		const { rerender } = renderWaveformCard({

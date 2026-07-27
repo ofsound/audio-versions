@@ -87,7 +87,7 @@ export function WaveformThumbnail({
 				className="waveform-thumbnail__surface waveform-surface relative aspect-[5/1] max-h-[var(--song-workspace-waveform-height)] min-h-16 w-full sm:min-h-20"
 			>
 				<canvas ref={canvasRef} className="block h-full w-full min-w-0" />
-				<div className="waveform-thumbnail__overlay pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
+				<div className="waveform-thumbnail__overlay waveform-visual-treatment pointer-events-none absolute inset-0 flex flex-col justify-between p-2">
 					<span className="font-title waveform-thumbnail__floating-label waveform-thumbnail__title max-w-[calc(100%-4.5rem)] self-start truncate px-1.5 py-0.5 text-xs font-semibold sm:text-sm">
 						{audioFile.title}
 					</span>

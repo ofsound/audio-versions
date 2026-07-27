@@ -193,6 +193,11 @@ export function WaveformCardSurface({
 					data-testid="waveform-canvas-surface"
 				>
 					<canvas ref={canvasRef} className="block h-full w-full min-w-0" />
+					<div
+						aria-hidden
+						data-testid="waveform-card-visual-treatment"
+						className="waveform-visual-treatment pointer-events-none absolute inset-0"
+					/>
 				</div>
 				<div
 					className="waveform-surface__gutter relative min-h-0"
