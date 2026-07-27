@@ -46,10 +46,7 @@
 	border: 1px solid
 		color-mix(in srgb, var(--color-border-strong) 54%, transparent);
 	background: light-dark(var(--color-zinc-100), var(--color-zinc-900));
-	box-shadow:
-		inset 0 1px 0
-		color-mix(in srgb, var(--color-border-strong) 42%, transparent),
-		inset 0 18px 34px -30px var(--color-text);
+	box-shadow: none;
 }
 
 .waveform-thumbnail {
