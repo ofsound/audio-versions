@@ -1,3 +1,4 @@
+import { AlertTriangle, RotateCw } from "lucide-react";
 import {
 	createContext,
 	type ReactNode,
@@ -246,8 +247,43 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 
 	return (
 		<AudioVersionsContext.Provider value={value}>
-			{children}
+			{error ? <AudioVersionsFatalError error={error} /> : children}
 		</AudioVersionsContext.Provider>
+	);
+}
+
+export function AudioVersionsFatalError({ error }: { error: string }) {
+	const isSessionClockError = /jwt issued at future/i.test(error);
+	const title = isSessionClockError
+		? "Session out of sync"
+		: "Audio Versions can’t continue";
+	const message = isSessionClockError
+		? "The session timestamp could not be verified. Check that your Mac’s date and time are set automatically, then reload."
+		: error;
+
+	return (
+		<main className="flex min-h-dvh items-center justify-center bg-[var(--color-app)] px-6 py-10 text-[var(--color-text)]">
+			<section
+				role="alert"
+				className="panel-shell flex w-full max-w-md flex-col items-center gap-4 px-6 py-8 text-center"
+			>
+				<AlertTriangle size={24} className="text-[var(--color-danger)]" />
+				<div className="grid gap-2">
+					<h1 className="font-title text-2xl font-bold">{title}</h1>
+					<p className="text-sm leading-6 text-[var(--color-text-muted)]">
+						{message}
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={() => window.location.reload()}
+					className="action-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-semibold"
+				>
+					<RotateCw size={15} />
+					Reload
+				</button>
+			</section>
+		</main>
 	);
 }
 

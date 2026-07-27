@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
 import { createEmptySettings } from "#/lib/audio-versions/types";
 import {
+	AudioVersionsFatalError,
 	AudioVersionsProvider,
 	useAudioVersions,
 } from "./audio-versions-provider";
@@ -158,6 +159,19 @@ function createDeferred() {
 }
 
 describe("AudioVersionsProvider", () => {
+	it("presents JWT clock failures as a concise blocking session error", () => {
+		render(<AudioVersionsFatalError error="JWT issued at future" />);
+
+		expect(
+			screen.getByRole("heading", { name: "Session out of sync" }),
+		).toBeTruthy();
+		expect(
+			screen.getByText(/date and time are set automatically/i),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
+		expect(screen.queryByText("JWT issued at future")).toBeNull();
+	});
+
 	beforeEach(() => {
 		loadSnapshotMock.mockReset();
 		deleteAnnotationMock.mockReset();

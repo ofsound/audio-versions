@@ -14,6 +14,17 @@ interface WaveformThumbnailGridLayout {
 	rows: number;
 }
 
+export function getWaveformThumbnailGridContentHeight({
+	gapPx,
+	rowHeightPx,
+	rows,
+}: Pick<
+	WaveformThumbnailGridLayout,
+	"gapPx" | "rowHeightPx" | "rows"
+>): number {
+	return rowHeightPx * rows + gapPx * Math.max(0, rows - 1);
+}
+
 interface CalculateWaveformThumbnailGridLayoutOptions {
 	height: number;
 	itemCount: number;

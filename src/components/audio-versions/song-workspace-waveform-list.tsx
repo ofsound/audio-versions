@@ -11,7 +11,12 @@ import type { PlaybackState } from "#/providers/use-audio-versions-playback";
 import { reorderAudioFileIds } from "./reorder-audio-file-ids";
 import { WaveformCard } from "./waveform-card";
 import { WaveformThumbnail } from "./waveform-thumbnail";
-import { calculateWaveformThumbnailGridLayout } from "./waveform-thumbnail-grid-layout";
+import {
+	calculateWaveformThumbnailGridLayout,
+	getWaveformThumbnailGridContentHeight,
+} from "./waveform-thumbnail-grid-layout";
+
+const VERSION_TRAY_CHROME_HEIGHT_PX = 26;
 
 interface SongWorkspaceWaveformListProps {
 	activeAnnotationId?: string;
@@ -128,8 +133,16 @@ export function SongWorkspaceWaveformList({
 
 		const updateViewportSize = () => {
 			const nextSize = {
-				height: viewport.clientHeight,
-				width: viewport.clientWidth,
+				height: Math.max(
+					0,
+					viewport.clientHeight -
+						(isFitGridViewport ? VERSION_TRAY_CHROME_HEIGHT_PX : 0),
+				),
+				width: Math.max(
+					0,
+					viewport.clientWidth -
+						(isFitGridViewport ? VERSION_TRAY_CHROME_HEIGHT_PX : 0),
+				),
 			};
 			setThumbnailsViewportSize((currentSize) =>
 				currentSize.height === nextSize.height &&
@@ -151,7 +164,7 @@ export function SongWorkspaceWaveformList({
 			observer?.disconnect();
 			window.removeEventListener("resize", updateViewportSize);
 		};
-	}, [hasAudioFiles]);
+	}, [hasAudioFiles, isFitGridViewport]);
 
 	useEffect(() => {
 		if (audioFiles.length === 0 || !thumbnailsViewportRef.current) {
@@ -169,6 +182,10 @@ export function SongWorkspaceWaveformList({
 				width: thumbnailsViewportSize.width,
 			})
 		: null;
+	const versionTrayHeight = thumbnailGridLayout
+		? getWaveformThumbnailGridContentHeight(thumbnailGridLayout) +
+			VERSION_TRAY_CHROME_HEIGHT_PX
+		: undefined;
 
 	if (!hasAudioFiles) {
 		return (
@@ -255,41 +272,46 @@ export function SongWorkspaceWaveformList({
 					</div>
 				)}
 			</div>
-			<div className="song-workspace-version-tray flex min-h-[9rem] flex-1 p-3 xl:min-h-0">
+			<div
+				ref={thumbnailsViewportRef}
+				className="flex min-h-[9rem] flex-1 items-end xl:min-h-0"
+			>
 				<div
-					ref={thumbnailsViewportRef}
-					className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden"
+					className="song-workspace-version-tray flex h-full w-full p-3"
+					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
 				>
-					<div
-						className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
-						data-density={thumbnailGridLayout?.density}
-						style={
-							thumbnailGridLayout
-								? {
-										gap: `${thumbnailGridLayout.gapPx}px`,
-										gridAutoRows: `${thumbnailGridLayout.rowHeightPx}px`,
-										gridTemplateColumns: `repeat(${thumbnailGridLayout.columns}, minmax(0, 1fr))`,
-									}
-								: undefined
-						}
-					>
-						{[...audioFiles].reverse().map((audioFile) => (
-							<div className="min-h-0" key={audioFile.id}>
-								<WaveformThumbnail
-									audioFile={audioFile}
-									blob={blobsByAudioId[audioFile.id]}
-									currentTimeMs={
-										playback.currentTimeByFileId[audioFile.id] ??
-										workspacePlayheadMsByFileId[audioFile.id] ??
-										0
-									}
-									isSelected={selectedFileId === audioFile.id}
-									deletingFile={deletingFileId === audioFile.id}
-									onDeleteFile={onDeleteFile}
-									onSelectFile={onSelectFile}
-								/>
-							</div>
-						))}
+					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
+						<div
+							className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
+							data-density={thumbnailGridLayout?.density}
+							style={
+								thumbnailGridLayout
+									? {
+											gap: `${thumbnailGridLayout.gapPx}px`,
+											gridAutoRows: `${thumbnailGridLayout.rowHeightPx}px`,
+											gridTemplateColumns: `repeat(${thumbnailGridLayout.columns}, minmax(0, 1fr))`,
+										}
+									: undefined
+							}
+						>
+							{[...audioFiles].reverse().map((audioFile) => (
+								<div className="min-h-0" key={audioFile.id}>
+									<WaveformThumbnail
+										audioFile={audioFile}
+										blob={blobsByAudioId[audioFile.id]}
+										currentTimeMs={
+											playback.currentTimeByFileId[audioFile.id] ??
+											workspacePlayheadMsByFileId[audioFile.id] ??
+											0
+										}
+										isSelected={selectedFileId === audioFile.id}
+										deletingFile={deletingFileId === audioFile.id}
+										onDeleteFile={onDeleteFile}
+										onSelectFile={onSelectFile}
+									/>
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>

@@ -22,7 +22,6 @@ export function LibraryView() {
 	const libraryHeaderActionSlot = useLibraryHeaderActionSlot();
 	const {
 		ready,
-		error,
 		songs,
 		audioFiles,
 		annotations,
@@ -194,10 +193,6 @@ export function LibraryView() {
 				}`}
 				aria-hidden={isModalOpen}
 			>
-				{error && (
-					<div className="callout-danger px-5 py-4 text-sm">{error}</div>
-				)}
-
 				{!ready ? (
 					<div className="flex min-h-[calc(100dvh-9rem)] flex-1 items-center justify-center">
 						<section className="panel-shell w-fit max-w-[min(28rem,100%)] px-6 py-5 text-sm text-[var(--color-text-muted)]">

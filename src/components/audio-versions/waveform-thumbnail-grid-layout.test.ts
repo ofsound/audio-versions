@@ -1,19 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { calculateWaveformThumbnailGridLayout } from "./waveform-thumbnail-grid-layout";
+import {
+	calculateWaveformThumbnailGridLayout,
+	getWaveformThumbnailGridContentHeight,
+} from "./waveform-thumbnail-grid-layout";
 
 describe("calculateWaveformThumbnailGridLayout", () => {
 	it("uses broad rows when a small collection has room", () => {
-		expect(
-			calculateWaveformThumbnailGridLayout({
-				height: 400,
-				itemCount: 3,
-				width: 800,
-			}),
-		).toMatchObject({
+		const layout = calculateWaveformThumbnailGridLayout({
+			height: 600,
+			itemCount: 3,
+			width: 800,
+		});
+
+		expect(layout).toMatchObject({
 			columns: 1,
 			density: "comfortable",
 			rows: 3,
 		});
+		expect(
+			layout ? getWaveformThumbnailGridContentHeight(layout) : 0,
+		).toBeLessThan(600);
 	});
 
 	it("adds columns to keep a medium collection large", () => {
