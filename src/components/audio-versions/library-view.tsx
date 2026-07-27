@@ -270,7 +270,7 @@ export function LibraryView() {
 												</button>
 											</div>
 
-											<div className="mt-6 flex flex-wrap items-center gap-2">
+											<div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2">
 												<StatChip
 													icon={<File size={14} />}
 													label={`${
@@ -371,7 +371,7 @@ export function LibraryView() {
 
 function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
 	return (
-		<span className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
+		<span className="inline-flex items-center gap-2 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
 			{icon}
 			{label}
 		</span>
