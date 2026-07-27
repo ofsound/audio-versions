@@ -74,6 +74,25 @@ afterEach(() => {
 installClientRectMocks();
 
 describe("RichTextEditor", () => {
+	it("focuses the editor and reports when requested", async () => {
+		const onFocusHandled = vi.fn();
+		const { container } = render(
+			<RichTextEditor
+				value={plainTextToRichText("")}
+				onChange={() => {}}
+				requestFocus
+				onFocusHandled={onFocusHandled}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(document.activeElement).toBe(
+				container.querySelector(".ProseMirror[contenteditable='true']"),
+			);
+			expect(onFocusHandled).toHaveBeenCalledOnce();
+		});
+	});
+
 	it("opens internal Audio Versions links in-app instead of a new tab", async () => {
 		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 		const onInternalLink = vi.fn();

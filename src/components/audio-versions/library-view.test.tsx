@@ -9,7 +9,10 @@ import {
 } from "@testing-library/react";
 import type { MouseEvent, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
+import {
+	EMPTY_RICH_TEXT,
+	plainTextToRichText,
+} from "#/lib/audio-versions/rich-text";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -368,8 +371,7 @@ describe("LibraryView", () => {
 				audioFileId: "audio-1",
 				type: "point",
 				startMs: 1000,
-				title: "Downbeat",
-				body: EMPTY_RICH_TEXT,
+				detail: plainTextToRichText("Downbeat"),
 				createdAt: "2026-04-16T00:00:00.000Z",
 				updatedAt: "2026-04-16T00:00:00.000Z",
 			},
@@ -434,8 +436,7 @@ describe("LibraryView", () => {
 				audioFileId: "audio-1",
 				type: "point",
 				startMs: 1000,
-				title: "Downbeat",
-				body: EMPTY_RICH_TEXT,
+				detail: plainTextToRichText("Downbeat"),
 				createdAt: "2026-04-16T00:00:00.000Z",
 				updatedAt: "2026-04-16T00:00:00.000Z",
 			},

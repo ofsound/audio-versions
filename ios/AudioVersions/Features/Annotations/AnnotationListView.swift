@@ -12,7 +12,7 @@ struct AnnotationListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Annotations")
+                Text("Markers and Ranges")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(palette.textPrimary)
                 Spacer()
@@ -23,9 +23,9 @@ struct AnnotationListView: View {
 
             if annotations.isEmpty {
                 ContentUnavailableView(
-                    "No annotations yet",
+                    "No markers or ranges yet",
                     systemImage: "text.bubble",
-                    description: Text("Move the playhead and add a marker or range to start a review.")
+                    description: Text("Create markers or ranges from the waveform to build the list.")
                 )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
@@ -71,22 +71,19 @@ private struct AnnotationCard: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(annotation.title)
+                        Text(
+                            annotation.detail.isEmpty
+                                ? (annotation.kind == .range ? "Untitled range" : "Untitled marker")
+                                : annotation.detail
+                        )
                             .font(.headline)
                             .foregroundStyle(palette.textPrimary)
                             .multilineTextAlignment(.leading)
+                            .lineLimit(3)
                         Spacer(minLength: 8)
                         Text(annotation.timeLabel)
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(isActive ? palette.accentText : palette.textSecondary)
-                    }
-
-                    if !annotation.body.isEmpty {
-                        Text(annotation.body)
-                            .font(.subheadline)
-                            .foregroundStyle(palette.textSecondary)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
                     }
                 }
             }
@@ -98,7 +95,11 @@ private struct AnnotationCard: View {
             Button("Edit", systemImage: "pencil", action: onEdit)
             Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
         }
-        .accessibilityHint("Moves the playhead to this annotation")
+        .accessibilityHint(
+            annotation.kind == .range
+                ? "Moves the playhead to this range"
+                : "Moves the playhead to this marker"
+        )
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive, action: onDelete) {
                 Label("Delete", systemImage: "trash")

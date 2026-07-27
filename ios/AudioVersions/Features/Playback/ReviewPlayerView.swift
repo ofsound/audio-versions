@@ -157,8 +157,8 @@ struct ReviewPlayerView: View {
                         Image(systemName: "text.bubble")
                         Text(
                             version.annotationCount == 1
-                                ? "1 annotation"
-                                : "\(version.annotationCount) annotations"
+                                ? "1 marker"
+                                : "\(version.annotationCount) markers"
                         )
                     }
                     .font(.caption)
@@ -342,8 +342,7 @@ struct ReviewPlayerView: View {
             kind: kind,
             startTime: kind == .range ? rangeStart : store.currentTime,
             endTime: kind == .range ? min(version.duration, rangeStart + 8) : nil,
-            title: "",
-            body: "",
+            detail: "",
             authorName: "Ben",
             updatedAt: .now
         )

@@ -78,8 +78,7 @@ export interface Annotation {
 	type: AnnotationType;
 	startMs: number;
 	endMs?: number;
-	title: string;
-	body: RichTextDoc;
+	detail: RichTextDoc;
 	color?: string;
 	createdAt: string;
 	updatedAt: string;
@@ -170,8 +169,7 @@ export interface CreateAnnotationInput {
 	type: AnnotationType;
 	startMs: number;
 	endMs?: number;
-	title: string;
-	body: RichTextDoc;
+	detail: RichTextDoc;
 	color?: string;
 }
 

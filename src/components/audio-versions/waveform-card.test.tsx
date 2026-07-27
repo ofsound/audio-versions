@@ -379,8 +379,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 0,
-					title: "Marker 0:00",
-					body: EMPTY_RICH_TEXT,
+					detail: EMPTY_RICH_TEXT,
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
 				})}
@@ -451,8 +450,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 0,
-					title: "Marker 0:00",
-					body: EMPTY_RICH_TEXT,
+					detail: EMPTY_RICH_TEXT,
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
 				})}
@@ -647,8 +645,7 @@ describe("WaveformCard", () => {
 			audioFileId: "file-1",
 			type: "point",
 			startMs: 45000,
-			title: "Marker 0:45",
-			body: EMPTY_RICH_TEXT,
+			detail: EMPTY_RICH_TEXT,
 			color: "var(--color-marker-point)",
 			createdAt: "2026-04-16T00:00:00.000Z",
 			updatedAt: "2026-04-16T00:00:00.000Z",
@@ -678,8 +675,7 @@ describe("WaveformCard", () => {
 			expect(onCreateAnnotation).toHaveBeenCalledWith({
 				type: "point",
 				startMs: 45000,
-				title: "Marker 0:45",
-				body: EMPTY_RICH_TEXT,
+				detail: EMPTY_RICH_TEXT,
 				color: "var(--color-marker-point)",
 			});
 		});
@@ -696,8 +692,7 @@ describe("WaveformCard", () => {
 			type: "range",
 			startMs: 45000,
 			endMs: 55000,
-			title: "Range 0:45",
-			body: EMPTY_RICH_TEXT,
+			detail: EMPTY_RICH_TEXT,
 			color: "var(--color-marker-range)",
 			createdAt: "2026-04-16T00:00:00.000Z",
 			updatedAt: "2026-04-16T00:00:00.000Z",
@@ -736,8 +731,7 @@ describe("WaveformCard", () => {
 				type: "range",
 				startMs: 45000,
 				endMs: 55000,
-				title: "Range 0:45",
-				body: EMPTY_RICH_TEXT,
+				detail: EMPTY_RICH_TEXT,
 				color: "var(--color-marker-range)",
 			});
 		});
@@ -854,8 +848,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -886,8 +879,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: plainTextToRichText("Lead vocal starts"),
+					detail: plainTextToRichText("Lead vocal starts"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -901,7 +893,7 @@ describe("WaveformCard", () => {
 		mockWaveformBounds(waveformSurface, { left: 10, width: 180 });
 
 		const markerButton = screen.getByRole("button", {
-			name: /verse at 0:30/i,
+			name: /lead vocal starts at 0:30/i,
 		});
 		const markerHandle = markerButton.querySelector("[data-marker-handle]");
 		expect(markerHandle).toBeTruthy();
@@ -911,16 +903,11 @@ describe("WaveformCard", () => {
 			clientY: 30,
 		});
 
-		const markerDescription = screen.getByText("Lead vocal starts");
-		const markerTooltip = markerDescription.closest(
-			".waveform-annotation-tooltip",
-		);
+		const markerDetail = screen.getByText("Lead vocal starts");
+		const markerTooltip = markerDetail.closest(".waveform-annotation-tooltip");
 		expect(markerTooltip).toBeTruthy();
 		expect(within(markerTooltip as HTMLElement).getByText("0:30")).toBeTruthy();
-		expect(
-			within(markerTooltip as HTMLElement).getByText("Verse"),
-		).toBeTruthy();
-		expect(markerDescription).toBeTruthy();
+		expect(markerDetail).toBeTruthy();
 
 		fireEvent.pointerLeave(markerHandle as Element);
 		expect(screen.queryByText("Lead vocal starts")).toBeNull();
@@ -936,8 +923,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: plainTextToRichText("Main hook"),
+					detail: plainTextToRichText("Main hook"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -951,7 +937,7 @@ describe("WaveformCard", () => {
 		mockWaveformBounds(waveformSurface, { left: 10, width: 220 });
 
 		const rangeGutterButton = screen.getByRole("button", {
-			name: /^Chorus at 0:30 - 0:45 — gutter$/i,
+			name: /^Main hook at 0:30 - 0:45 — gutter$/i,
 		});
 
 		fireEvent.pointerEnter(rangeGutterButton, {
@@ -959,18 +945,13 @@ describe("WaveformCard", () => {
 			clientY: 50,
 		});
 
-		const rangeDescription = screen.getByText("Main hook");
-		const rangeTooltip = rangeDescription.closest(
-			".waveform-annotation-tooltip",
-		);
+		const rangeDetail = screen.getByText("Main hook");
+		const rangeTooltip = rangeDetail.closest(".waveform-annotation-tooltip");
 		expect(rangeTooltip).toBeTruthy();
 		expect(
 			within(rangeTooltip as HTMLElement).getByText("0:30 - 0:45"),
 		).toBeTruthy();
-		expect(
-			within(rangeTooltip as HTMLElement).getByText("Chorus"),
-		).toBeTruthy();
-		expect(rangeDescription).toBeTruthy();
+		expect(rangeDetail).toBeTruthy();
 
 		fireEvent.pointerLeave(rangeGutterButton);
 		expect(screen.queryByText("Main hook")).toBeNull();
@@ -986,8 +967,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: plainTextToRichText("Main hook"),
+					detail: plainTextToRichText("Main hook"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1030,8 +1010,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1088,8 +1067,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1150,8 +1128,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1210,8 +1187,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1266,8 +1242,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: plainTextToRichText("Lead vocal starts"),
+					detail: plainTextToRichText("Lead vocal starts"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1281,7 +1256,7 @@ describe("WaveformCard", () => {
 		mockWaveformBounds(waveformSurface, { left: 10, width: 180 });
 
 		const markerButton = screen.getByRole("button", {
-			name: /verse at 0:30/i,
+			name: /lead vocal starts at 0:30/i,
 		});
 		const markerHandle = markerButton.querySelector("[data-marker-handle]");
 		expect(markerHandle).toBeTruthy();
@@ -1332,8 +1307,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1394,8 +1368,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1454,8 +1427,7 @@ describe("WaveformCard", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 30000,
-					title: "Verse",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Verse"),
 					color: "var(--color-marker-point)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1520,8 +1492,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1583,8 +1554,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1644,8 +1614,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
@@ -1709,8 +1678,7 @@ describe("WaveformCard", () => {
 					type: "range",
 					startMs: 30000,
 					endMs: 45000,
-					title: "Chorus",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Chorus"),
 					color: "var(--color-marker-range)",
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",

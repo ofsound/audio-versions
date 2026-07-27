@@ -10,8 +10,7 @@ struct AnnotationEditorView: View {
     let onSave: (ReviewAnnotation) -> Void
 
     private enum Field {
-        case title
-        case body
+        case detail
     }
 
     init(
@@ -28,7 +27,7 @@ struct AnnotationEditorView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Annotation type", selection: $annotation.kind) {
+                    Picker("Marker or range", selection: $annotation.kind) {
                         Label("Marker", systemImage: "bookmark").tag(ReviewAnnotation.Kind.point)
                         Label("Range", systemImage: "selection.pin.in.out").tag(ReviewAnnotation.Kind.range)
                     }
@@ -43,14 +42,14 @@ struct AnnotationEditorView: View {
                     }
 
                     TimeStepper(
-                        title: "Starts",
+                        title: "Start time",
                         value: $annotation.startTime,
                         range: 0...duration
                     )
 
                     if annotation.kind == .range {
                         TimeStepper(
-                            title: "Ends",
+                            title: "End time",
                             value: Binding(
                                 get: { annotation.endTime ?? annotation.startTime },
                                 set: { annotation.endTime = max(annotation.startTime + 0.5, $0) }
@@ -61,19 +60,16 @@ struct AnnotationEditorView: View {
                 }
                 .listRowBackground(palette.surface)
 
-                Section("Feedback") {
-                    TextField("Title", text: $annotation.title)
-                        .focused($focusedField, equals: .title)
-
-                    TextField("Add detail", text: $annotation.body, axis: .vertical)
+                Section("Detail") {
+                    TextField("Add detail", text: $annotation.detail, axis: .vertical)
                         .lineLimit(4...9)
-                        .focused($focusedField, equals: .body)
+                        .focused($focusedField, equals: .detail)
                 }
                 .listRowBackground(palette.surface)
             }
             .scrollContentBackground(.hidden)
             .appCanvas()
-            .navigationTitle(annotation.title.isEmpty ? "New annotation" : "Edit annotation")
+            .navigationTitle(annotation.kind == .range ? "Range" : "Marker")
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackground(palette.canvas)
             .toolbar {
@@ -88,13 +84,10 @@ struct AnnotationEditorView: View {
                         onSave(annotation)
                         dismiss()
                     }
-                    .disabled(annotation.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onAppear {
-                if annotation.title.isEmpty {
-                    focusedField = .title
-                }
+                focusedField = .detail
             }
         }
     }

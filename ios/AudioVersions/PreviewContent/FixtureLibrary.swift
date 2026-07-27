@@ -28,8 +28,7 @@ enum FixtureLibrary {
                             kind: .range,
                             startTime: 47,
                             endTime: 56,
-                            title: "Vocal comes forward nicely",
-                            body: "This balance feels right. Keep the double tucked where it is.",
+                            detail: "Vocal comes forward nicely. This balance feels right—keep the double tucked where it is.",
                             authorName: "Ben",
                             updatedAt: date(daysAgo: 0)
                         ),
@@ -38,8 +37,7 @@ enum FixtureLibrary {
                             kind: .point,
                             startTime: 103,
                             endTime: nil,
-                            title: "Check the snare hit",
-                            body: "There may be a small transient click here on headphones.",
+                            detail: "Check the snare hit—there may be a small transient click here on headphones.",
                             authorName: "Ben",
                             updatedAt: date(daysAgo: 0)
                         ),
@@ -75,8 +73,7 @@ enum FixtureLibrary {
                             kind: .range,
                             startTime: 72,
                             endTime: 80,
-                            title: "Bass translation",
-                            body: "Recheck this passage on the small speakers.",
+                            detail: "Recheck the bass translation in this passage on the small speakers.",
                             authorName: "Ben",
                             updatedAt: date(daysAgo: 1)
                         ),

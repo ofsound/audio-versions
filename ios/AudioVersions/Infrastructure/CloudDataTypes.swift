@@ -11,7 +11,7 @@ enum CloudDataError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .conflict:
-            "This annotation changed on another device. Refresh before saving again."
+            "This marker or range changed on another device. Refresh before saving again."
         case let .invalidIdentifier(identifier):
             "The cloud record has an invalid identifier: \(identifier)."
         case let .invalidTimestamp(timestamp):
@@ -207,8 +207,7 @@ struct AnnotationRow: Decodable, Sendable {
     let type: ReviewAnnotation.Kind
     let startMilliseconds: Double
     let endMilliseconds: Double?
-    let title: String
-    let body: RichTextDocument
+    let detail: RichTextDocument
     let color: String?
     let updatedAt: String
 
@@ -218,8 +217,7 @@ struct AnnotationRow: Decodable, Sendable {
         case type
         case startMilliseconds = "start_ms"
         case endMilliseconds = "end_ms"
-        case title
-        case body
+        case detail
         case color
         case updatedAt = "updated_at"
     }
@@ -263,8 +261,7 @@ struct AnnotationInsert: Encodable, Sendable {
     let type: ReviewAnnotation.Kind
     let startMilliseconds: Double
     let endMilliseconds: Double?
-    let title: String
-    let body: RichTextDocument
+    let detail: RichTextDocument
     let color: String
     let createdAt: String
     let updatedAt: String
@@ -277,8 +274,7 @@ struct AnnotationInsert: Encodable, Sendable {
         case type
         case startMilliseconds = "start_ms"
         case endMilliseconds = "end_ms"
-        case title
-        case body
+        case detail
         case color
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -297,8 +293,7 @@ struct AnnotationInsert: Encodable, Sendable {
         } else {
             try container.encodeNil(forKey: .endMilliseconds)
         }
-        try container.encode(title, forKey: .title)
-        try container.encode(body, forKey: .body)
+        try container.encode(detail, forKey: .detail)
         try container.encode(color, forKey: .color)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
@@ -309,8 +304,7 @@ struct AnnotationUpdate: Encodable, Sendable {
     let type: ReviewAnnotation.Kind
     let startMilliseconds: Double
     let endMilliseconds: Double?
-    let title: String
-    let body: RichTextDocument
+    let detail: RichTextDocument
     let color: String
     let updatedAt: String
     let deletedAt: String?
@@ -319,8 +313,7 @@ struct AnnotationUpdate: Encodable, Sendable {
         case type
         case startMilliseconds = "start_ms"
         case endMilliseconds = "end_ms"
-        case title
-        case body
+        case detail
         case color
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
@@ -335,8 +328,7 @@ struct AnnotationUpdate: Encodable, Sendable {
         } else {
             try container.encodeNil(forKey: .endMilliseconds)
         }
-        try container.encode(title, forKey: .title)
-        try container.encode(body, forKey: .body)
+        try container.encode(detail, forKey: .detail)
         try container.encode(color, forKey: .color)
         try container.encode(updatedAt, forKey: .updatedAt)
         if let deletedAt {

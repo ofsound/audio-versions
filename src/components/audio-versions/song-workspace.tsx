@@ -122,7 +122,7 @@ export function SongWorkspace({
 		right: number;
 	} | null>(null);
 	const workspaceGridRef = useRef<HTMLElement | null>(null);
-	const [annotationTitleFocusId, setAnnotationTitleFocusId] = useState<
+	const [annotationDetailFocusId, setAnnotationDetailFocusId] = useState<
 		string | null
 	>(null);
 	const [journalHistoryValue, setJournalHistoryValue] = useState<{
@@ -130,8 +130,8 @@ export function SongWorkspace({
 		value: string;
 	}>();
 	const journalHistoryRevisionRef = useRef(0);
-	const handleAnnotationTitleFocusHandled = useCallback(() => {
-		setAnnotationTitleFocusId(null);
+	const handleAnnotationDetailFocusHandled = useCallback(() => {
+		setAnnotationDetailFocusId(null);
 	}, []);
 	const previousSelectedFileIdRef = useRef<string | undefined>(selectedFileId);
 	const previousIsPlayingRef = useRef(playback.isPlaying);
@@ -400,7 +400,7 @@ export function SongWorkspace({
 			annotationId: annotation.id,
 			clearPlaybackParams: true,
 		});
-		setAnnotationTitleFocusId(annotation.id);
+		setAnnotationDetailFocusId(annotation.id);
 		return annotation;
 	}
 
@@ -555,9 +555,9 @@ export function SongWorkspace({
 								selectedFile={selectedFile}
 								annotations={selectedAnnotations}
 								activeAnnotation={activeAnnotation}
-								annotationTitleFocusId={annotationTitleFocusId}
-								onAnnotationTitleFocusHandled={
-									handleAnnotationTitleFocusHandled
+								annotationDetailFocusId={annotationDetailFocusId}
+								onAnnotationDetailFocusHandled={
+									handleAnnotationDetailFocusHandled
 								}
 								onOpenTarget={(target: SongLinkTarget) => openTarget(target)}
 								onUpdateFile={handleSelectedFilePatch}

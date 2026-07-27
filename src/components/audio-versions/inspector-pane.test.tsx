@@ -6,9 +6,14 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
+import { useEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
+import {
+	EMPTY_RICH_TEXT,
+	plainTextToRichText,
+} from "#/lib/audio-versions/rich-text";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -17,7 +22,31 @@ import type {
 import { InspectorPane } from "./inspector-pane";
 
 vi.mock("./rich-text-editor", () => ({
-	RichTextEditor: () => <div data-testid="rich-text-editor" />,
+	RichTextEditor: ({
+		requestFocus,
+		onFocusHandled,
+	}: {
+		requestFocus?: boolean;
+		onFocusHandled?: () => void;
+	}) => {
+		const editorRef = useRef<HTMLTextAreaElement>(null);
+		useEffect(() => {
+			if (!requestFocus) {
+				return;
+			}
+
+			editorRef.current?.focus();
+			onFocusHandled?.();
+		}, [onFocusHandled, requestFocus]);
+
+		return (
+			<textarea
+				ref={editorRef}
+				data-testid="rich-text-editor"
+				aria-label="Detail"
+			/>
+		);
+	},
 }));
 
 const baseSong: Song = {
@@ -37,8 +66,7 @@ const baseAnnotation: Annotation = {
 	audioFileId: "file-1",
 	type: "point",
 	startMs: 54000,
-	title: "Marker 0:54",
-	body: EMPTY_RICH_TEXT,
+	detail: plainTextToRichText("Marker 0:54"),
 	createdAt: "2026-04-16T00:00:00.000Z",
 	updatedAt: "2026-04-16T00:00:00.000Z",
 };
@@ -49,7 +77,7 @@ const baseRangeAnnotation: Annotation = {
 	type: "range",
 	startMs: 60000,
 	endMs: 179000,
-	title: "Range 1:00",
+	detail: plainTextToRichText("Range 1:00"),
 };
 
 const baseAudioFile: AudioFileRecord = {
@@ -122,23 +150,11 @@ describe("InspectorPane", () => {
 		expect(screen.queryByTitle("Delete file")).toBeNull();
 	});
 
-	it("renders each annotation as an inline editor and updates the title directly from the card", async () => {
-		const { onUpdateAnnotation } = renderInspector();
+	it("renders one detail editor for each annotation without a title input", () => {
+		renderInspector();
 
-		expect(screen.queryByText(/annotation details/i)).toBeNull();
 		expect(screen.getAllByTestId("rich-text-editor")).toHaveLength(1);
-
-		const titleInput = screen.getByLabelText("Title");
-		fireEvent.change(titleInput, {
-			target: { value: "Intro marker" },
-		});
-		fireEvent.blur(titleInput);
-
-		await waitFor(() => {
-			expect(onUpdateAnnotation).toHaveBeenCalledWith("annotation-1", {
-				title: "Intro marker",
-			});
-		});
+		expect(screen.queryByLabelText("Title")).toBeNull();
 	});
 
 	it("scrolls the active marker card into view when the active annotation changes", () => {
@@ -149,7 +165,7 @@ describe("InspectorPane", () => {
 			...baseAnnotation,
 			id: "annotation-2",
 			startMs: 90000,
-			title: "Marker 1:30",
+			detail: plainTextToRichText("Marker 1:30"),
 		};
 
 		const props = {
@@ -176,8 +192,8 @@ describe("InspectorPane", () => {
 		expect(calledOnSecondCard).toBe(true);
 	});
 
-	it("focuses and selects the title when annotationTitleFocusId matches the card", async () => {
-		const onAnnotationTitleFocusHandled = vi.fn();
+	it("focuses the detail when annotationDetailFocusId matches the card", async () => {
+		const onAnnotationDetailFocusHandled = vi.fn();
 		const onOpenTarget = vi.fn();
 		const onUpdateFile = vi.fn().mockResolvedValue(undefined);
 		const onUpdateAnnotation = vi.fn().mockResolvedValue(undefined);
@@ -189,8 +205,8 @@ describe("InspectorPane", () => {
 			selectedFile: baseAudioFile,
 			annotations: [baseAnnotation],
 			activeAnnotation: baseAnnotation,
-			annotationTitleFocusId: null as string | null,
-			onAnnotationTitleFocusHandled,
+			annotationDetailFocusId: "annotation-1",
+			onAnnotationDetailFocusHandled,
 			onOpenTarget,
 			onUpdateFile,
 			onUpdateAnnotation,
@@ -198,20 +214,16 @@ describe("InspectorPane", () => {
 			onSelectAnnotation,
 		};
 
-		const { rerender } = render(<InspectorPane {...props} />);
-
-		rerender(
-			<InspectorPane {...props} annotationTitleFocusId="annotation-1" />,
-		);
+		render(<InspectorPane {...props} />);
 
 		await waitFor(() => {
-			const input = screen.getByLabelText("Title") as HTMLInputElement;
-			expect(document.activeElement).toBe(input);
-			expect(input.selectionStart).toBe(0);
-			expect(input.selectionEnd).toBe(input.value.length);
+			const markerCard = screen.getByTestId("marker-card-annotation-1");
+			expect(document.activeElement).toBe(
+				within(markerCard).getByLabelText("Detail"),
+			);
 		});
 		await waitFor(() => {
-			expect(onAnnotationTitleFocusHandled).toHaveBeenCalled();
+			expect(onAnnotationDetailFocusHandled).toHaveBeenCalled();
 		});
 	});
 
@@ -297,8 +309,10 @@ describe("InspectorPane", () => {
 	it("keeps form controls from seeking while the marker card background activates the marker", () => {
 		const { onOpenTarget, onSelectAnnotation, onUpdateAnnotation } =
 			renderInspector();
+		const markerCard = screen.getByTestId("marker-card-annotation-1");
+		const detailEditor = within(markerCard).getByLabelText("Detail");
 
-		fireEvent.click(screen.getByDisplayValue("Marker 0:54"));
+		fireEvent.click(detailEditor);
 		fireEvent.click(screen.getByLabelText("Start time"));
 		fireEvent.pointerDown(screen.getByLabelText("Start time"), {
 			button: 0,
@@ -313,7 +327,6 @@ describe("InspectorPane", () => {
 		expect(onSelectAnnotation).not.toHaveBeenCalled();
 		expect(onUpdateAnnotation).not.toHaveBeenCalled();
 
-		const markerCard = screen.getByTestId("marker-card-annotation-1");
 		fireEvent.click(markerCard);
 
 		expect(markerCard.classList.contains("marker-card--selected")).toBe(true);
@@ -335,7 +348,7 @@ describe("InspectorPane", () => {
 
 		onOpenTarget.mockClear();
 		onSelectAnnotation.mockClear();
-		fireEvent.click(screen.getByDisplayValue("Marker 0:54"));
+		fireEvent.click(detailEditor);
 		expect(onOpenTarget).not.toHaveBeenCalled();
 		expect(onSelectAnnotation).not.toHaveBeenCalled();
 	});

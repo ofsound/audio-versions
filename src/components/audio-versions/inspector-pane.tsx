@@ -23,8 +23,8 @@ interface InspectorPaneProps {
 	) => Promise<void>;
 	onDeleteAnnotation: (annotationId: string) => Promise<void>;
 	onSelectAnnotation: (annotationId: string) => void;
-	annotationTitleFocusId?: string | null;
-	onAnnotationTitleFocusHandled?: () => void;
+	annotationDetailFocusId?: string | null;
+	onAnnotationDetailFocusHandled?: () => void;
 }
 
 export function InspectorPane({
@@ -37,8 +37,8 @@ export function InspectorPane({
 	onUpdateAnnotation,
 	onDeleteAnnotation,
 	onSelectAnnotation,
-	annotationTitleFocusId = null,
-	onAnnotationTitleFocusHandled = () => {},
+	annotationDetailFocusId = null,
+	onAnnotationDetailFocusHandled = () => {},
 }: InspectorPaneProps) {
 	const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
@@ -106,8 +106,8 @@ export function InspectorPane({
 									isActive={activeAnnotation?.id === annotation.id}
 									selectedFile={selectedFile}
 									songId={song.id}
-									requestTitleFocus={annotationTitleFocusId === annotation.id}
-									onTitleFocusHandled={onAnnotationTitleFocusHandled}
+									requestDetailFocus={annotationDetailFocusId === annotation.id}
+									onDetailFocusHandled={onAnnotationDetailFocusHandled}
 									onOpenTarget={onOpenTarget}
 									onSelectAnnotation={onSelectAnnotation}
 									onUpdateAnnotation={onUpdateAnnotation}

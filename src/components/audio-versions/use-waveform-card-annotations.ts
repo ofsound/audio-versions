@@ -5,7 +5,7 @@ import type {
 	AudioFileRecord,
 	CreateAnnotationInput,
 } from "#/lib/audio-versions/types";
-import { clampTime, formatDuration } from "#/lib/audio-versions/waveform";
+import { clampTime } from "#/lib/audio-versions/waveform";
 
 const DEFAULT_RANGE_ANNOTATION_DURATION_MS = 10_000;
 
@@ -37,8 +37,7 @@ export function useWaveformCardAnnotations({
 			const annotation = await onCreateAnnotation({
 				type: "point",
 				startMs: timeMs,
-				title: `Marker ${formatDuration(timeMs)}`,
-				body: EMPTY_RICH_TEXT,
+				detail: EMPTY_RICH_TEXT,
 				color: "var(--color-marker-point)",
 			});
 			onSelectAnnotation(annotation.id);
@@ -54,8 +53,7 @@ export function useWaveformCardAnnotations({
 				type: "range",
 				startMs,
 				endMs,
-				title: `Range ${formatDuration(startMs)}`,
-				body: EMPTY_RICH_TEXT,
+				detail: EMPTY_RICH_TEXT,
 				color: "var(--color-marker-range)",
 			});
 			onSelectAnnotation(annotation.id);

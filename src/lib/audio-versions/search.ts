@@ -81,13 +81,17 @@ export function searchAudioVersions(
 			);
 
 			for (const annotation of annotationsByFile[audioFile.id] ?? []) {
-				const annotationPlain = `${annotation.title} ${richTextToPlainText(annotation.body)}`;
+				const annotationPlain = richTextToPlainText(annotation.detail);
+				const resultTitle = richTextPreview(
+					annotation.detail,
+					annotation.type === "range" ? "Untitled range" : "Untitled marker",
+				);
 				pushMatch(
 					results,
-					buildScore(annotation.title, annotationPlain, terms, 2.2),
-					annotation.title || `${audioFile.title} marker`,
+					buildScore(annotationPlain, "", terms, 2.2),
+					resultTitle,
 					`${song.title} · ${audioFile.title}`,
-					richTextPreview(annotation.body, "Jump to marker"),
+					"Jump to annotation",
 					{
 						songId: song.id,
 						fileId: audioFile.id,

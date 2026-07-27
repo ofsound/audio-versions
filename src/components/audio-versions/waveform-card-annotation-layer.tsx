@@ -1,7 +1,7 @@
 import { type PointerEvent, useRef, useState } from "react";
 import {
-	hasRichTextContent,
 	richTextPreview,
+	richTextToPlainText,
 } from "#/lib/audio-versions/rich-text";
 import type { Annotation, AudioFileRecord } from "#/lib/audio-versions/types";
 import { formatDuration } from "#/lib/audio-versions/waveform";
@@ -451,16 +451,8 @@ export function WaveformCardAnnotationLayer({
 						{formatAnnotationTime(hoveredAnnotationRecord)}
 					</p>
 					<p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
-						{hoveredAnnotationRecord.title?.trim() ||
-							(hoveredAnnotationRecord.type === "range"
-								? "Untitled range"
-								: "Untitled marker")}
+						{annotationDetailLabel(hoveredAnnotationRecord)}
 					</p>
-					{hasRichTextContent(hoveredAnnotationRecord.body) ? (
-						<p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-							{richTextPreview(hoveredAnnotationRecord.body)}
-						</p>
-					) : null}
 				</div>
 			) : null}
 		</>
@@ -481,14 +473,24 @@ function formatAnnotationTime(annotation: Annotation): string {
 
 function buildAnnotationAriaLabel(annotation: Annotation): string {
 	const typeLabel = annotation.type === "range" ? "range" : "marker";
-	const title = annotation.title?.trim() || `Untitled ${typeLabel}`;
-	return `${title} at ${formatAnnotationTime(annotation)}`;
+	const detail = richTextToPlainText(annotation.detail);
+	return detail
+		? `${richTextPreview(annotation.detail)} at ${formatAnnotationTime(annotation)}`
+		: `${typeLabel} at ${formatAnnotationTime(annotation)}`;
 }
 
 function buildRangeHandleAriaLabel(
 	annotation: Annotation,
 	edge: "start" | "end",
 ): string {
-	const title = annotation.title.trim() || "Untitled range";
-	return `Adjust ${edge} of ${title}`;
+	return `Adjust ${edge} of ${annotationDetailLabel(annotation)}`;
+}
+
+function annotationDetailLabel(annotation: Annotation): string {
+	const detail = richTextToPlainText(annotation.detail);
+	if (detail) {
+		return richTextPreview(annotation.detail);
+	}
+
+	return annotation.type === "range" ? "Untitled range" : "Untitled marker";
 }

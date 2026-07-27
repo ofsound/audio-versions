@@ -477,8 +477,7 @@ export function useAnnotationMutations({
 			const annotation: Annotation = {
 				id: crypto.randomUUID(),
 				...input,
-				title: input.title.trim(),
-				body: normalizeRichText(input.body),
+				detail: normalizeRichText(input.detail),
 				updatedAt: now,
 				createdAt: now,
 			};
@@ -533,7 +532,7 @@ export function useAnnotationMutations({
 						(annotation) => ({
 							...annotation,
 							...patch,
-							body: normalizeRichText(patch.body ?? annotation.body),
+							detail: normalizeRichText(patch.detail ?? annotation.detail),
 							updatedAt: new Date().toISOString(),
 						}),
 					),

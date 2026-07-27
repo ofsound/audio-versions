@@ -25,6 +25,8 @@ interface RichTextEditorProps {
 	dense?: boolean;
 	placeholder?: string;
 	focusId?: string;
+	requestFocus?: boolean;
+	onFocusHandled?: () => void;
 	/** When false, formatting toolbar is hidden (editor still supports rich content). */
 	showToolbar?: boolean;
 	/** When true, Escape blurs the editor (used in marker cards). */
@@ -42,6 +44,8 @@ export function RichTextEditor({
 	dense = false,
 	placeholder,
 	focusId,
+	requestFocus = false,
+	onFocusHandled,
 	showToolbar = true,
 	blurOnEscape = false,
 	seamless = false,
@@ -185,6 +189,15 @@ export function RichTextEditor({
 			parseOptions: { preserveWhitespace: "full" },
 		});
 	}, [editor, serializedValue, value]);
+
+	useEffect(() => {
+		if (!editor || !requestFocus) {
+			return;
+		}
+
+		editor.commands.focus("end");
+		queueMicrotask(() => onFocusHandled?.());
+	}, [editor, onFocusHandled, requestFocus]);
 
 	useEffect(() => {
 		if (!editor || !wrapperRef.current) {

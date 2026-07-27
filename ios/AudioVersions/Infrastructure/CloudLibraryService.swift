@@ -51,7 +51,7 @@ final class CloudLibraryService: @unchecked Sendable {
 
         let annotationRows: [AnnotationRow] = try await client
             .from("annotations")
-            .select("id,audio_file_id,type,start_ms,end_ms,title,body,color,updated_at")
+            .select("id,audio_file_id,type,start_ms,end_ms,detail,color,updated_at")
             .is("deleted_at", value: nil)
             .execute()
             .value
@@ -132,8 +132,7 @@ final class CloudLibraryService: @unchecked Sendable {
             type: annotation.kind,
             startMilliseconds: annotation.startTime * 1_000,
             endMilliseconds: annotation.endTime.map { $0 * 1_000 },
-            title: annotation.title.trimmingCharacters(in: .whitespacesAndNewlines),
-            body: .plainText(annotation.body),
+            detail: .plainText(annotation.detail),
             color: annotation.color ?? defaultColor(for: annotation.kind),
             createdAt: CloudTimestamp.format(createdAt),
             updatedAt: CloudTimestamp.format(annotation.updatedAt)
@@ -147,7 +146,7 @@ final class CloudLibraryService: @unchecked Sendable {
 
         guard let row = rows.first else {
             throw CloudDataError.invalidAnnotation(
-                "The server did not return the new annotation."
+                "The server did not return the new marker or range."
             )
         }
         return row.updatedAt
@@ -167,8 +166,7 @@ final class CloudLibraryService: @unchecked Sendable {
             type: annotation.kind,
             startMilliseconds: annotation.startTime * 1_000,
             endMilliseconds: annotation.endTime.map { $0 * 1_000 },
-            title: annotation.title.trimmingCharacters(in: .whitespacesAndNewlines),
-            body: .plainText(annotation.body),
+            detail: .plainText(annotation.detail),
             color: annotation.color ?? defaultColor(for: annotation.kind),
             updatedAt: CloudTimestamp.format(annotation.updatedAt),
             deletedAt: nil
@@ -234,8 +232,7 @@ final class CloudLibraryService: @unchecked Sendable {
                         kind: row.type,
                         startTime: max(0, row.startMilliseconds / 1_000),
                         endTime: row.endMilliseconds.map { max(0, $0 / 1_000) },
-                        title: row.title,
-                        body: row.body.plainText,
+                        detail: row.detail.plainText,
                         authorName: "You",
                         updatedAt: try CloudTimestamp.parse(row.updatedAt),
                         color: row.color,
@@ -326,7 +323,7 @@ final class CloudLibraryService: @unchecked Sendable {
     private func validate(_ annotation: ReviewAnnotation) throws {
         guard annotation.startTime.isFinite, annotation.startTime >= 0 else {
             throw CloudDataError.invalidAnnotation(
-                "An annotation must start at or after the beginning of the file."
+                "A marker or range must start at or after the beginning of the file."
             )
         }
 
@@ -334,7 +331,7 @@ final class CloudLibraryService: @unchecked Sendable {
         case .point:
             guard annotation.endTime == nil else {
                 throw CloudDataError.invalidAnnotation(
-                    "A point annotation cannot have an end time."
+                    "A marker cannot have an end time."
                 )
             }
         case .range:
@@ -344,7 +341,7 @@ final class CloudLibraryService: @unchecked Sendable {
                 endTime > annotation.startTime
             else {
                 throw CloudDataError.invalidAnnotation(
-                    "A range annotation must end after its start time."
+                    "A range must end after its start time."
                 )
             }
         }

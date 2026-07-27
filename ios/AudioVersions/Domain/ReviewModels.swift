@@ -55,8 +55,7 @@ struct ReviewAnnotation: Identifiable, Hashable {
     var kind: Kind
     var startTime: TimeInterval
     var endTime: TimeInterval?
-    var title: String
-    var body: String
+    var detail: String
     var authorName: String
     var updatedAt: Date
     var color: String? = nil

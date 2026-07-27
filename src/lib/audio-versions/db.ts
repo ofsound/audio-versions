@@ -47,7 +47,7 @@ interface AudioVersionsDB extends DBSchema {
 }
 
 const DB_NAME = "audio-versions";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const SETTINGS_KEY = "app-settings";
 const LOCAL_OWNER_KEY = "cloud-owner-id";
 const IDENTITY_MIGRATION_KEY = "identity-migration-complete";
@@ -169,6 +169,10 @@ function openAudioVersionsDb(
 						}),
 					),
 				);
+			}
+
+			if (oldVersion < 6) {
+				await transaction.objectStore("annotations").clear();
 			}
 		},
 	});

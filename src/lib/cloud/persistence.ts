@@ -48,8 +48,7 @@ interface AnnotationRow {
 	type: Annotation["type"];
 	start_ms: number;
 	end_ms: number | null;
-	title: string;
-	body: Annotation["body"];
+	detail: Annotation["detail"];
 	color: string | null;
 	created_at: string;
 	updated_at: string;
@@ -129,8 +128,7 @@ function annotationToRow(userId: string, annotation: Annotation) {
 		type: annotation.type,
 		start_ms: annotation.startMs,
 		end_ms: annotation.endMs ?? null,
-		title: annotation.title,
-		body: annotation.body,
+		detail: annotation.detail,
 		color: annotation.color ?? null,
 		created_at: annotation.createdAt,
 		updated_at: annotation.updatedAt,
@@ -193,8 +191,7 @@ function annotationFromRow(row: AnnotationRow): Annotation {
 		type: row.type,
 		startMs: row.start_ms,
 		...(row.end_ms == null ? {} : { endMs: row.end_ms }),
-		title: row.title,
-		body: row.body,
+		detail: row.detail,
 		...(row.color == null ? {} : { color: row.color }),
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,

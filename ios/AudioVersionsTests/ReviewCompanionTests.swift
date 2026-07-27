@@ -220,8 +220,7 @@ struct ReviewCompanionTests {
             kind: .point,
             startTime: 3,
             endTime: nil,
-            title: "First",
-            body: "",
+            detail: "First",
             authorName: "Ben",
             updatedAt: .now
         )
@@ -229,12 +228,12 @@ struct ReviewCompanionTests {
         store.save(annotation, in: version.id)
         #expect(store.version(id: version.id)?.annotations.first?.id == annotation.id)
 
-        annotation.title = "Updated"
+        annotation.detail = "Updated"
         store.save(annotation, in: version.id)
         #expect(
             store.version(id: version.id)?.annotations.first(where: {
                 $0.id == annotation.id
-            })?.title == "Updated"
+            })?.detail == "Updated"
         )
 
         store.delete(annotation, from: version.id)

@@ -1,20 +1,19 @@
 import { Copy, Trash2 } from "lucide-react";
-import {
-	type MouseEvent as ReactMouseEvent,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-} from "react";
+import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
+import {
+	richTextPreview,
+	richTextToPlainText,
+} from "#/lib/audio-versions/rich-text";
 import type {
 	Annotation,
 	AudioFileRecord,
 	RichTextDoc,
 	SongLinkTarget,
 } from "#/lib/audio-versions/types";
+import { formatDuration } from "#/lib/audio-versions/waveform";
 import { MarkerTimeField } from "./marker-time-field";
 import { RichTextEditor } from "./rich-text-editor";
-import { useBufferedInputValue } from "./use-buffered-input-value";
 import { useDebouncedAsyncCallback } from "./use-debounced-async-callback";
 
 interface InspectorMarkerCardProps {
@@ -30,8 +29,8 @@ interface InspectorMarkerCardProps {
 	) => Promise<void>;
 	onDeleteAnnotation: (annotationId: string) => Promise<void>;
 	onCopyLink: (target: SongLinkTarget, label: string) => Promise<void>;
-	requestTitleFocus?: boolean;
-	onTitleFocusHandled?: () => void;
+	requestDetailFocus?: boolean;
+	onDetailFocusHandled?: () => void;
 }
 
 export function InspectorMarkerCard({
@@ -44,43 +43,26 @@ export function InspectorMarkerCard({
 	onUpdateAnnotation,
 	onDeleteAnnotation,
 	onCopyLink,
-	requestTitleFocus = false,
-	onTitleFocusHandled,
+	requestDetailFocus = false,
+	onDetailFocusHandled,
 }: InspectorMarkerCardProps) {
 	const cardRef = useRef<HTMLDivElement>(null);
-	const titleInputRef = useRef<HTMLInputElement>(null);
-	const title = useBufferedInputValue({
-		value: annotation.title,
-		onCommit: (nextValue) =>
-			onUpdateAnnotation(annotation.id, {
-				title: nextValue,
-			}),
-	});
-	const persistBody = useDebouncedAsyncCallback({
+	const persistDetail = useDebouncedAsyncCallback({
 		callback: async (nextValue: RichTextDoc) => {
 			await onUpdateAnnotation(annotation.id, {
-				body: nextValue,
+				detail: nextValue,
 			});
 		},
 		delayMs: DEBOUNCE_MS.notes,
 	});
 
-	useLayoutEffect(() => {
-		if (!requestTitleFocus || !onTitleFocusHandled) {
+	useEffect(() => {
+		if (!requestDetailFocus) {
 			return;
 		}
 
-		const card = cardRef.current;
-		const input = titleInputRef.current;
-		if (card) {
-			card.scrollIntoView({ block: "nearest", behavior: "auto" });
-		}
-		if (input) {
-			input.focus();
-			input.select();
-		}
-		queueMicrotask(onTitleFocusHandled);
-	}, [requestTitleFocus, onTitleFocusHandled]);
+		cardRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
+	}, [requestDetailFocus]);
 
 	useEffect(() => {
 		if (!isActive) {
@@ -95,9 +77,9 @@ export function InspectorMarkerCard({
 
 	useEffect(
 		() => () => {
-			void persistBody.flush();
+			void persistDetail.flush();
 		},
-		[persistBody],
+		[persistDetail],
 	);
 
 	const maxStartMs =
@@ -190,11 +172,7 @@ export function InspectorMarkerCard({
 						onClick={(event) => {
 							event.stopPropagation();
 							const fileLabel = selectedFile?.title.trim() || "Untitled file";
-							const markerLabel =
-								annotation.title.trim() ||
-								(annotation.type === "range"
-									? "Untitled range"
-									: "Untitled marker");
+							const markerLabel = annotationDetailLabel(annotation);
 							void onCopyLink(
 								buildAnnotationTarget(songId, annotation),
 								`${fileLabel} - ${markerLabel}`,
@@ -222,28 +200,14 @@ export function InspectorMarkerCard({
 					</button>
 				</div>
 			</div>
-			<div className="marker-interactive marker-title-row">
-				<input
-					ref={titleInputRef}
-					value={title.draft}
-					onChange={(event) => title.setDraft(event.target.value)}
-					onBlur={() => void title.flush()}
-					onKeyDown={(event) => {
-						if (event.key === "Escape") {
-							event.preventDefault();
-							event.currentTarget.blur();
-						}
-					}}
-					className="field-input field-input--compact min-w-0 flex-1"
-					placeholder="Untitled marker"
-					aria-label="Title"
-				/>
-			</div>
 			<div className="marker-interactive marker-editor">
 				<RichTextEditor
-					value={annotation.body as RichTextDoc}
-					onChange={(nextValue) => persistBody.schedule(nextValue)}
+					value={annotation.detail}
+					onChange={(nextValue) => persistDetail.schedule(nextValue)}
 					onInternalLink={onOpenTarget}
+					placeholder="Add detail"
+					requestFocus={requestDetailFocus}
+					onFocusHandled={onDetailFocusHandled}
 					blurOnEscape
 					seamless
 					compact
@@ -254,6 +218,16 @@ export function InspectorMarkerCard({
 			</div>
 		</div>
 	);
+}
+
+function annotationDetailLabel(annotation: Annotation): string {
+	const detail = richTextToPlainText(annotation.detail);
+	if (detail) {
+		return richTextPreview(annotation.detail);
+	}
+
+	const typeLabel = annotation.type === "range" ? "Range" : "Marker";
+	return `${typeLabel} ${formatDuration(annotation.startMs)}`;
 }
 
 function buildAnnotationTarget(

@@ -124,8 +124,7 @@ function createAnnotation(overrides: Partial<Annotation> = {}): Annotation {
 		audioFileId: "file-1",
 		type: "point",
 		startMs: 100,
-		title: "Cue",
-		body: EMPTY_RICH_TEXT,
+		detail: plainTextToRichText("Cue"),
 		createdAt: "2026-04-16T00:00:00.000Z",
 		updatedAt: "2026-04-16T00:00:00.000Z",
 		...overrides,
@@ -191,7 +190,7 @@ describe("audio-versions db cascade helpers", () => {
 
 		expect(snapshot.songs).toEqual([song]);
 		expect(snapshot.audioFiles).toEqual([audioFile]);
-		expect(snapshot.annotations).toEqual([annotation]);
+		expect(snapshot.annotations).toEqual([]);
 		expect(snapshot.blobsByAudioId).toEqual({ [audioFile.id]: blob });
 		expect(snapshot.settings).toEqual(baseSettings);
 		expect(await db.getLocalOwnerId()).toBe("user-1");
@@ -287,7 +286,7 @@ describe("audio-versions db cascade helpers", () => {
 		});
 	});
 
-	it("upgrades legacy annotation colors and missing session dates in v3", async () => {
+	it("upgrades missing session dates and clears pre-detail annotations", async () => {
 		const legacyDb = await openLegacyAudioVersionsDatabase(2);
 		const legacyAudioFile = createAudioFile();
 		const { sessionDate: _sessionDate, ...legacyAudioFileWithoutSessionDate } =
@@ -319,12 +318,7 @@ describe("audio-versions db cascade helpers", () => {
 				sessionDate: "2026-04-16",
 			}),
 		]);
-		expect(snapshot.annotations).toEqual([
-			expect.objectContaining({
-				id: "annotation-1",
-				color: "var(--color-marker-point)",
-			}),
-		]);
+		expect(snapshot.annotations).toEqual([]);
 	});
 
 	it("converts cached rich-text journals to plain text in v5", async () => {

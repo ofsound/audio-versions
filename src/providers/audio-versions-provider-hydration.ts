@@ -83,7 +83,7 @@ export async function normalizeLoadedSnapshot(
 			audioFiles,
 			annotations: loadedSnapshot.annotations.map((annotation) => ({
 				...annotation,
-				body: normalizeRichText(annotation.body),
+				detail: normalizeRichText(annotation.detail),
 			})),
 			settings: normalizeAudioVersionsSettings(
 				loadedSnapshot.settings ?? createEmptySettings(),

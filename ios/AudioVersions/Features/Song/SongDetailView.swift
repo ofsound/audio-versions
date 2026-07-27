@@ -231,7 +231,7 @@ private struct VersionRow: View {
 
             if version.annotationCount > 0 {
                 Label(
-                    version.annotationCount == 1 ? "1 annotation" : "\(version.annotationCount) annotations",
+                    version.annotationCount == 1 ? "1 marker" : "\(version.annotationCount) markers",
                     systemImage: "text.bubble"
                 )
                 .font(.caption)

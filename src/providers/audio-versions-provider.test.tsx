@@ -8,7 +8,10 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
+import {
+	EMPTY_RICH_TEXT,
+	plainTextToRichText,
+} from "#/lib/audio-versions/rich-text";
 import { createEmptySettings } from "#/lib/audio-versions/types";
 import {
 	AudioVersionsFatalError,
@@ -397,8 +400,7 @@ describe("AudioVersionsProvider", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 100,
-					title: "Cue",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Cue"),
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
 				},
@@ -509,8 +511,7 @@ describe("AudioVersionsProvider", () => {
 					audioFileId: "file-1",
 					type: "point",
 					startMs: 100,
-					title: "Cue",
-					body: EMPTY_RICH_TEXT,
+					detail: plainTextToRichText("Cue"),
 					createdAt: "2026-04-16T00:00:00.000Z",
 					updatedAt: "2026-04-16T00:00:00.000Z",
 				},

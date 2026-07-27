@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EMPTY_RICH_TEXT } from "#/lib/audio-versions/rich-text";
+import {
+	EMPTY_RICH_TEXT,
+	plainTextToRichText,
+} from "#/lib/audio-versions/rich-text";
 import type { Annotation, AudioFileRecord } from "#/lib/audio-versions/types";
 import { WaveformCardAnnotationLayer } from "./waveform-card-annotation-layer";
 
@@ -58,8 +61,7 @@ describe("WaveformCardAnnotationLayer", () => {
 			audioFileId: "file-1",
 			type: "point",
 			startMs: 30000,
-			title: "Verse",
-			body: EMPTY_RICH_TEXT,
+			detail: plainTextToRichText("Verse"),
 			color: "var(--color-marker-point)",
 			createdAt: "2026-04-16T00:00:00.000Z",
 			updatedAt: "2026-04-16T00:00:00.000Z",
@@ -81,8 +83,7 @@ describe("WaveformCardAnnotationLayer", () => {
 			audioFileId: "file-1",
 			type: "point",
 			startMs: 30000,
-			title: "Verse",
-			body: EMPTY_RICH_TEXT,
+			detail: plainTextToRichText("Verse"),
 			color: "var(--color-marker-point)",
 			createdAt: "2026-04-16T00:00:00.000Z",
 			updatedAt: "2026-04-16T00:00:00.000Z",
@@ -107,8 +108,7 @@ describe("WaveformCardAnnotationLayer", () => {
 			type: "range",
 			startMs: 30000,
 			endMs: 45000,
-			title: "Chorus",
-			body: EMPTY_RICH_TEXT,
+			detail: plainTextToRichText("Chorus"),
 			color: "var(--color-marker-range)",
 			createdAt: "2026-04-16T00:00:00.000Z",
 			updatedAt: "2026-04-16T00:00:00.000Z",
