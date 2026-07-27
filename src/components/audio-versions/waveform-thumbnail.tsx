@@ -68,6 +68,7 @@ export function WaveformThumbnail({
 
 	return (
 		<div
+			data-selected={isSelected}
 			className={`waveform-thumbnail group relative w-full min-w-0 overflow-hidden border text-left transition-[border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
 				isSelected
 					? "border-[var(--color-waveform-selected)] shadow-[inset_0_0_0_1px_var(--color-waveform-selected)]"
@@ -87,16 +88,16 @@ export function WaveformThumbnail({
 			>
 				<canvas ref={canvasRef} className="block h-full w-full min-w-0" />
 				<div className="waveform-thumbnail__overlay pointer-events-none absolute inset-0 flex flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface)_78%,transparent),color-mix(in_srgb,var(--color-surface)_12%,transparent)_46%,color-mix(in_srgb,var(--color-surface)_78%,transparent))] p-2">
-					<span className="font-title waveform-thumbnail__title max-w-[calc(100%-4.5rem)] self-start truncate bg-black px-1.5 py-0.5 text-xs font-semibold text-white sm:text-sm">
+					<span className="font-title waveform-thumbnail__floating-label waveform-thumbnail__title max-w-[calc(100%-4.5rem)] self-start truncate px-1.5 py-0.5 text-xs font-semibold sm:text-sm">
 						{audioFile.title}
 					</span>
 					<div className="flex w-full items-end justify-between gap-2">
 						{sessionDateLabel ? (
-							<span className="waveform-thumbnail__date bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
+							<span className="waveform-thumbnail__floating-label waveform-thumbnail__date px-1.5 py-0.5 text-[10px] tabular-nums sm:text-xs">
 								{sessionDateLabel}
 							</span>
 						) : null}
-						<span className="waveform-thumbnail__date ml-auto bg-black px-1.5 py-0.5 text-[10px] tabular-nums text-white sm:text-xs">
+						<span className="waveform-thumbnail__floating-label waveform-thumbnail__date ml-auto px-1.5 py-0.5 text-[10px] tabular-nums sm:text-xs">
 							{formatDuration(audioFile.durationMs)}
 						</span>
 					</div>
@@ -107,7 +108,7 @@ export function WaveformThumbnail({
 					type="button"
 					onClick={() => void handleDownloadFile()}
 					disabled={!canDownloadFile || downloadingFile}
-					className="icon-button icon-button--sm bg-black text-white disabled:cursor-not-allowed disabled:opacity-55"
+					className="icon-button icon-button--sm waveform-thumbnail__action disabled:cursor-not-allowed disabled:opacity-55"
 					title="Download file"
 					aria-label={`Download ${audioFile.title}`}
 				>
@@ -117,7 +118,7 @@ export function WaveformThumbnail({
 					type="button"
 					onClick={() => onDeleteFile(audioFile.id)}
 					disabled={deletingFile}
-					className="icon-button icon-button--sm bg-black text-[var(--color-danger)] disabled:cursor-not-allowed disabled:opacity-55"
+					className="icon-button icon-button--sm waveform-thumbnail__action disabled:cursor-not-allowed disabled:opacity-55"
 					title="Delete file"
 					aria-label={`Delete ${audioFile.title}`}
 				>

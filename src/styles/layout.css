@@ -62,6 +62,31 @@
 		inset 0 18px 34px -30px var(--color-text);
 }
 
+.waveform-thumbnail {
+	--waveform-thumbnail-overlay-color: color-mix(
+		in srgb,
+		var(--color-white) 72%,
+		transparent
+	);
+}
+
+.waveform-thumbnail[data-selected="true"] {
+	--waveform-thumbnail-overlay-color: var(--color-white);
+}
+
+.waveform-thumbnail__floating-label,
+.waveform-thumbnail__action,
+.waveform-thumbnail__action:hover,
+.waveform-thumbnail__action:focus-visible {
+	border-color: transparent;
+	background: var(--color-black);
+	color: var(--waveform-thumbnail-overlay-color);
+}
+
+.waveform-thumbnail__action {
+	border-width: 0;
+}
+
 @media (min-width: 1280px) {
 	.song-workspace-panel-grid {
 		--song-workspace-resize-handle-height: 1rem;
