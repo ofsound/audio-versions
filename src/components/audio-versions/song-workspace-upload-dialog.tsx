@@ -67,7 +67,6 @@ export function SongWorkspaceUploadDialog({
 					<input
 						value={uploadTitle}
 						onChange={(event) => onUploadTitleChange(event.target.value)}
-						placeholder="Mix v3, ref print, master candidate..."
 						className="field-input font-title"
 					/>
 				</label>
@@ -77,7 +76,6 @@ export function SongWorkspaceUploadDialog({
 						value={uploadNotes}
 						onChange={(event) => onUploadNotesChange(event.target.value)}
 						rows={3}
-						placeholder="Context for this file"
 						className="field-input resize-y"
 					/>
 				</label>
@@ -90,11 +88,7 @@ export function SongWorkspaceUploadDialog({
 						className="field-input"
 					/>
 				</label>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div className="text-sm text-[var(--color-text-muted)]">
-						Large files decode in-browser, and peak data is cached locally in
-						IndexedDB for future visits.
-					</div>
+				<div className="flex flex-wrap items-center justify-end gap-3">
 					<button
 						type="submit"
 						disabled={uploading || !uploadFile}

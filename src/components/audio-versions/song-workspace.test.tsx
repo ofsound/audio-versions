@@ -1138,13 +1138,19 @@ describe("SongWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /add file/i }));
 
+		const dialog = screen.getByRole("dialog", {
+			name: /add file/i,
+		});
+		expect(dialog).toBeTruthy();
+		expect(within(dialog).getByLabelText(/audio file/i)).toBeTruthy();
 		expect(
-			screen.getByRole("dialog", {
-				name: /add file/i,
-			}),
-		).toBeTruthy();
-		expect(screen.getByLabelText(/audio file/i)).toBeTruthy();
-		expect(screen.getByPlaceholderText(/context for this file/i)).toBeTruthy();
+			within(dialog)
+				.getByLabelText(/display title/i)
+				.getAttribute("placeholder"),
+		).toBeNull();
+		expect(
+			within(dialog).getByLabelText(/notes/i).getAttribute("placeholder"),
+		).toBeNull();
 	});
 
 	it("opens the upload modal when an audio file is dropped onto the song workspace", () => {
