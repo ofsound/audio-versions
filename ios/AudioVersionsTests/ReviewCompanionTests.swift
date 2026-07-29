@@ -170,12 +170,14 @@ struct ReviewCompanionTests {
 
     @Test
     func playbackStateDistinguishesAudibleIntentFromStaticStates() {
-        #expect(PlaybackState.playing.isPlayingOrWaiting)
-        #expect(PlaybackState.buffering.isPlayingOrWaiting)
-        #expect(!PlaybackState.preparing.isPlayingOrWaiting)
-        #expect(!PlaybackState.paused.isPlayingOrWaiting)
-        #expect(PlaybackState.buffering.statusText == "Buffering…")
-        #expect(PlaybackState.failed("Unavailable").statusText == "Unavailable")
+        #expect(PlaybackState.playing.hasPlaybackIntent)
+        #expect(!PlaybackState.preparing.hasPlaybackIntent)
+        #expect(!PlaybackState.paused.hasPlaybackIntent)
+        #expect(PlaybackState.playing.isReadyForControl)
+        #expect(PlaybackState.paused.isReadyForControl)
+        #expect(PlaybackState.ended.isReadyForControl)
+        #expect(!PlaybackState.preparing.isReadyForControl)
+        #expect(!PlaybackState.failed("Unavailable").isReadyForControl)
     }
 
     @Test

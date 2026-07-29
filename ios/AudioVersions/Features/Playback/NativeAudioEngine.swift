@@ -16,24 +16,19 @@ enum PlaybackState: Equatable, Sendable {
     case preparing
     case playing
     case paused
-    case buffering
     case ended
     case failed(String)
 
-    var isPlayingOrWaiting: Bool {
-        self == .playing || self == .buffering
+    var hasPlaybackIntent: Bool {
+        self == .playing
     }
 
-    var statusText: String? {
+    var isReadyForControl: Bool {
         switch self {
-        case .idle, .playing, .paused, .ended:
-            nil
-        case .preparing:
-            "Loading audio…"
-        case .buffering:
-            "Buffering…"
-        case let .failed(message):
-            message
+        case .playing, .paused, .ended:
+            true
+        case .idle, .preparing, .failed:
+            false
         }
     }
 }
@@ -67,6 +62,7 @@ final class NativeAudioEngine: NSObject, ObservableObject {
     private let nowPlayingCenter: MPNowPlayingInfoCenter
 
     private var player: AVPlayer?
+    private var ownedFileURL: URL?
     private var currentTrack: PlaybackTrack?
     private var periodicTimeObserver: Any?
     private var playerObservation: NSKeyValueObservation?
@@ -113,10 +109,12 @@ final class NativeAudioEngine: NSObject, ObservableObject {
     func load(
         track: PlaybackTrack,
         url: URL,
+        deleteFileWhenStopped: Bool = false,
         autoplay: Bool,
         startTime: TimeInterval = 0
     ) {
         removePlayer()
+        ownedFileURL = deleteFileWhenStopped ? url : nil
         currentTrack = track
         currentTime = PlaybackTimeline.clamp(startTime, duration: track.duration)
         pendingStartTime = currentTime
@@ -125,9 +123,6 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         let generation = playerGeneration
 
         let item = AVPlayerItem(url: url)
-        item.preferredForwardBufferDuration = 20
-        item.canUseNetworkResourcesForLiveStreamingWhilePaused = false
-
         let player = AVPlayer(playerItem: item)
         player.actionAtItemEnd = .pause
         player.allowsExternalPlayback = true
@@ -149,6 +144,10 @@ final class NativeAudioEngine: NSObject, ObservableObject {
 
     func isLoaded(trackID: String) -> Bool {
         currentTrack?.id == trackID && player != nil
+    }
+
+    func isReadyForControl(trackID: String) -> Bool {
+        currentTrack?.id == trackID && player != nil && state.isReadyForControl
     }
 
     func play() {
@@ -175,7 +174,7 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         }
 
         player.playImmediately(atRate: playbackRate)
-        state = player.timeControlStatus == .waitingToPlayAtSpecifiedRate ? .buffering : .playing
+        state = .playing
         updateNowPlayingPlaybackState()
     }
 
@@ -263,30 +262,6 @@ final class NativeAudioEngine: NSObject, ObservableObject {
                 Task { @MainActor [weak self] in
                     self?.handleItemStatus(item, generation: generation)
                 }
-            },
-            item.observe(\.isPlaybackBufferEmpty, options: [.new]) { [weak self] item, _ in
-                guard item.isPlaybackBufferEmpty else { return }
-                Task { @MainActor [weak self] in
-                    guard
-                        let self,
-                        generation == playerGeneration,
-                        self.player?.currentItem === item,
-                        wantsPlayback
-                    else { return }
-                    state = .buffering
-                }
-            },
-            item.observe(\.isPlaybackLikelyToKeepUp, options: [.new]) { [weak self] item, _ in
-                guard item.isPlaybackLikelyToKeepUp else { return }
-                Task { @MainActor [weak self] in
-                    guard
-                        let self,
-                        generation == playerGeneration,
-                        self.player?.currentItem === item,
-                        wantsPlayback
-                    else { return }
-                    self.player?.playImmediately(atRate: playbackRate)
-                }
             }
         ]
 
@@ -316,18 +291,6 @@ final class NativeAudioEngine: NSObject, ObservableObject {
                 }
             }
         )
-        itemNotificationTokens.append(
-            notificationCenter.addObserver(
-                forName: AVPlayerItem.playbackStalledNotification,
-                object: item,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self, generation == playerGeneration, wantsPlayback else { return }
-                    state = .buffering
-                }
-            }
-        )
     }
 
     private func installTimeObserver(player: AVPlayer, generation: Int) {
@@ -349,6 +312,8 @@ final class NativeAudioEngine: NSObject, ObservableObject {
     }
 
     private func removePlayer() {
+        let fileURLToRemove = ownedFileURL
+        ownedFileURL = nil
         playerGeneration += 1
         failedPlayerGeneration = nil
         playerObservation = nil
@@ -359,6 +324,9 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         periodicTimeObserver = nil
         player?.pause()
         player = nil
+        if let fileURLToRemove {
+            try? FileManager.default.removeItem(at: fileURLToRemove)
+        }
         itemNotificationTokens.removeAll { token in
             notificationCenter.removeObserver(token)
             return true
@@ -395,14 +363,12 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         guard generation == playerGeneration, currentTrack != nil else { return }
         switch status {
         case .paused:
-            if wantsPlayback, state != .preparing, state.failureMessage == nil {
-                state = .buffering
-            } else if state != .preparing, state != .ended, state.failureMessage == nil {
-                state = .paused
+            if state != .preparing, state != .ended, state.failureMessage == nil {
+                state = wantsPlayback ? .playing : .paused
             }
         case .waitingToPlayAtSpecifiedRate:
-            if wantsPlayback {
-                state = .buffering
+            if wantsPlayback, state.failureMessage == nil {
+                state = .playing
             }
         case .playing:
             state = .playing

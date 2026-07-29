@@ -173,6 +173,7 @@ struct ReviewPlayerView: View {
                 annotations: version.annotations,
                 onSeek: { store.seek(to: $0, in: version) }
             )
+            .allowsHitTesting(store.isPlaybackReady(for: version))
 
             HStack {
                 Text(store.currentTime.playbackTimestamp)
@@ -184,11 +185,9 @@ struct ReviewPlayerView: View {
             .overlay {
                 if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
                     HStack(spacing: 4) {
-                        if store.isPreparingPlayback || status == "Buffering…" {
-                            ProgressView()
-                                .controlSize(.mini)
-                                .tint(palette.accent)
-                        }
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(palette.accent)
                         Text(status)
                     }
                     .font(.caption2)
@@ -222,6 +221,7 @@ struct ReviewPlayerView: View {
                         .background(palette.accentSoft, in: Circle())
                 }
                 .frame(maxWidth: .infinity)
+                .disabled(!store.isPlaybackReady(for: version))
                 .accessibilityLabel("Reset playhead")
 
                 Button {
@@ -233,15 +233,19 @@ struct ReviewPlayerView: View {
                         .contentShape(Rectangle())
                 }
                 .frame(maxWidth: .infinity)
+                .disabled(!store.isPlaybackReady(for: version))
                 .accessibilityLabel("Skip back 10 seconds")
 
                 Button {
                     store.togglePlayback(for: version)
                 } label: {
                     Group {
-                        if store.isPreparingPlayback {
+                        if !store.isPlaybackReady(for: version),
+                           store.playbackErrorMessage == nil {
                             ProgressView()
                                 .tint(palette.onAccent)
+                        } else if store.playbackErrorMessage != nil {
+                            Image(systemName: "exclamationmark")
                         } else {
                             Image(systemName: store.isPlaying ? "pause.fill" : "play.fill")
                         }
@@ -253,8 +257,8 @@ struct ReviewPlayerView: View {
                     .shadow(color: palette.accentGlow, radius: 14, y: 4)
                 }
                 .frame(maxWidth: .infinity)
-                .disabled(store.isPreparingPlayback)
-                .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+                .disabled(!store.isPlaybackReady(for: version))
+                .accessibilityLabel(playbackControlAccessibilityLabel(for: version))
 
                 Button {
                     store.skip(by: 10, in: version)
@@ -265,6 +269,7 @@ struct ReviewPlayerView: View {
                         .contentShape(Rectangle())
                 }
                 .frame(maxWidth: .infinity)
+                .disabled(!store.isPlaybackReady(for: version))
                 .accessibilityLabel("Skip forward 10 seconds")
 
                 Menu {
@@ -294,6 +299,16 @@ struct ReviewPlayerView: View {
         }
         .padding(18)
         .appCard()
+    }
+
+    private func playbackControlAccessibilityLabel(for version: AudioVersion) -> String {
+        if !store.isPlaybackReady(for: version), store.playbackErrorMessage == nil {
+            return "Loading audio"
+        }
+        if store.playbackErrorMessage != nil {
+            return "Audio unavailable"
+        }
+        return store.isPlaying ? "Pause" : "Play"
     }
 
     private var audioRouteControls: some View {

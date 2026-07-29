@@ -21,13 +21,12 @@ final class ReviewCompanionStore: ObservableObject {
     private var cloudLibrary: CloudLibraryService?
     private var signedMedia: SignedMediaURLProvider?
     private let audioEngine = NativeAudioEngine()
+    private let playbackFileLoader = PlaybackFileLoader()
     private var cancellables: Set<AnyCancellable> = []
     private var playbackTask: Task<Void, Never>?
     private var playbackPreparationTask: Task<Void, Never>?
-    private var leaseRenewalTask: Task<Void, Never>?
     private var playbackLoadGeneration = 0
     private var hasAttemptedPlaybackRecovery = false
-    private var playbackLeaseExpiresAt: Date?
 
     init(songs: [Song] = FixtureLibrary.songs) {
         self.songs = songs
@@ -46,14 +45,24 @@ final class ReviewCompanionStore: ObservableObject {
     }
 
     var isPlaying: Bool {
-        signedMedia == nil ? fixtureIsPlaying : audioEngine.state.isPlayingOrWaiting
+        signedMedia == nil ? fixtureIsPlaying : audioEngine.state.hasPlaybackIntent
+    }
+
+    var isPlaybackLoading: Bool {
+        signedMedia != nil && (isPreparingPlayback || audioEngine.state == .preparing)
     }
 
     var playbackStatusText: String? {
-        if isPreparingPlayback {
-            return hasAttemptedPlaybackRecovery ? "Reconnecting audio…" : "Loading audio…"
-        }
-        return signedMedia == nil ? nil : audioEngine.state.statusText
+        guard isPlaybackLoading else { return nil }
+        return "Loading audio…"
+    }
+
+    func isPlaybackReady(for version: AudioVersion) -> Bool {
+        signedMedia == nil || (
+            playbackErrorMessage == nil
+                && !isPlaybackLoading
+                && audioEngine.isReadyForControl(trackID: version.id)
+        )
     }
 
     var outputRouteName: String {
@@ -181,8 +190,8 @@ final class ReviewCompanionStore: ObservableObject {
         )
     }
 
-    /// Fetches the signed media lease and buffers the track when the player
-    /// screen appears, without starting playback.
+    /// Downloads the complete track and prepares the local player when the
+    /// player screen appears, without starting playback.
     func preparePlayback(for version: AudioVersion) {
         activate(version: version)
 
@@ -397,15 +406,6 @@ final class ReviewCompanionStore: ObservableObject {
                 audioEngine.pause()
                 return
             }
-            if (playbackLeaseExpiresAt ?? .distantPast) <= .now.addingTimeInterval(5 * 60) {
-                beginCloudPlaybackPreparation(
-                    for: version,
-                    startTime: currentTime,
-                    invalidateLease: true,
-                    autoplay: true
-                )
-                return
-            }
             audioEngine.togglePlayback()
             return
         }
@@ -443,30 +443,45 @@ final class ReviewCompanionStore: ObservableObject {
         playbackErrorMessage = nil
 
         playbackPreparationTask = Task { [weak self] in
+            var downloadedFileURL: URL?
             do {
                 if invalidateLease {
                     await signedMedia.invalidate(audioFileID: version.id)
                 }
                 let lease = try await signedMedia.signedLease(for: version.id)
+                let fileURL = try await self?.playbackFileLoader.download(from: lease.url)
+                downloadedFileURL = fileURL
                 try Task.checkCancellation()
                 guard
                     let self,
+                    let fileURL,
                     generation == self.playbackLoadGeneration,
                     self.activeVersionID == version.id
-                else { return }
+                else {
+                    if let downloadedFileURL {
+                        try? FileManager.default.removeItem(at: downloadedFileURL)
+                    }
+                    return
+                }
 
                 self.audioEngine.load(
                     track: self.playbackTrack(for: version),
-                    url: lease.url,
+                    url: fileURL,
+                    deleteFileWhenStopped: true,
                     autoplay: autoplay,
                     startTime: startTime
                 )
-                self.playbackLeaseExpiresAt = lease.expiresAt
-                self.scheduleLeaseRenewal(for: version, expiresAt: lease.expiresAt)
+                downloadedFileURL = nil
                 self.isPreparingPlayback = false
             } catch is CancellationError {
+                if let downloadedFileURL {
+                    try? FileManager.default.removeItem(at: downloadedFileURL)
+                }
                 return
             } catch {
+                if let downloadedFileURL {
+                    try? FileManager.default.removeItem(at: downloadedFileURL)
+                }
                 guard let self, generation == self.playbackLoadGeneration else { return }
                 self.isPreparingPlayback = false
                 self.playbackErrorMessage = error.localizedDescription
@@ -518,9 +533,6 @@ final class ReviewCompanionStore: ObservableObject {
         fixtureIsPlaying = false
         playbackPreparationTask?.cancel()
         playbackPreparationTask = nil
-        leaseRenewalTask?.cancel()
-        leaseRenewalTask = nil
-        playbackLeaseExpiresAt = nil
         playbackLoadGeneration += 1
         isPreparingPlayback = false
         audioEngine.stop()
@@ -539,29 +551,6 @@ final class ReviewCompanionStore: ObservableObject {
             versionName: version.name,
             duration: version.duration
         )
-    }
-
-    private func scheduleLeaseRenewal(for version: AudioVersion, expiresAt: Date) {
-        leaseRenewalTask?.cancel()
-        let renewalDelay = max(0, expiresAt.timeIntervalSinceNow - (5 * 60))
-        leaseRenewalTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(for: .seconds(renewalDelay))
-            } catch {
-                return
-            }
-            guard
-                let self,
-                self.activeVersionID == version.id,
-                self.isPlaying
-            else { return }
-            self.beginCloudPlaybackPreparation(
-                for: version,
-                startTime: self.currentTime,
-                invalidateLease: true,
-                autoplay: true
-            )
-        }
     }
 
     private func songID(containingVersion versionID: String) -> String? {

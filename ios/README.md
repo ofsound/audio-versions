@@ -48,8 +48,8 @@ a second production identity.
 - Restored email/password Supabase sessions
 - Active songs, files, waveforms, and annotations under existing RLS policies
 - Private playback through the bearer-authenticated signed-media endpoint
-- Native `AVPlayer` streaming with observable loading, buffering, failure, and
-  end-of-track states
+- Complete, temporary track preloading before native `AVPlayer` controls become
+  available
 - Playback audio session that remains audible through Silent mode and while the
   phone is locked or the app is backgrounded
 - Lock Screen, Control Center, headset, Bluetooth, and AirPlay controls for
@@ -57,8 +57,8 @@ a second production identity.
 - Now Playing song/version metadata and an in-app AirPlay route picker
 - Safe interruption behavior for calls and Siri, including conditional resume
 - Automatic pause when headphones or Bluetooth audio disconnect
-- One bounded signed-link recovery that preserves the playhead, plus proactive
-  renewal before long-lived links expire
+- One bounded signed-link recovery that reloads the track and preserves the
+  playhead
 - Coalesced playback preparation, HTTPS/expiry validation, and in-memory link
   invalidation on sign-out
 - Coalesced waveform scrubbing, skipping, and rate changes
@@ -73,10 +73,10 @@ a second production identity.
   mint waveform gradient.
 - Fixture fallback whenever cloud values are absent
 
-Real downloads, offline mutation queues, Google OAuth, full rich-text editing,
-and TestFlight are deliberately deferred. The download button is hidden until
-it can represent a real, encrypted-at-rest offline file rather than UI-only
-state.
+Persistent offline downloads, offline mutation queues, Google OAuth, full
+rich-text editing, and TestFlight are deliberately deferred. The download
+button is hidden until it can represent an encrypted-at-rest file that remains
+available offline rather than the temporary playback preload.
 
 ## Physical-device audio acceptance
 
@@ -94,9 +94,10 @@ Run these checks after installing a new build from Xcode:
    only when iOS permits it and it was not manually paused during interruption.
 6. Select an AirPlay destination with the route button and confirm metadata,
    seeking, and remote controls remain synchronized.
-7. Disable networking until the buffer drains. The app should show
-   **Buffering…**; pausing while stalled must prevent surprise autoplay when the
-   network returns.
+7. Open a version on a slow connection. The transport must remain disabled with
+   one **Loading audio…** state until the entire track is ready. After it is
+   ready, disable networking and confirm playback and seeking still work without
+   a buffering state.
 8. Leave one version playing with the phone locked for at least 30 minutes, then
    seek and switch playback speed. No gap, duplicate audio, or playhead reset is
    acceptable.
