@@ -39,7 +39,7 @@ describe("ui settings helpers", () => {
 			document.documentElement.style.getPropertyValue(
 				"--song-workspace-waveform-height",
 			),
-		).toBe("92px");
+		).toBe("128px");
 		expect(
 			document.documentElement.hasAttribute("data-reduce-keyboard-focus"),
 		).toBe(false);

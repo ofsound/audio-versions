@@ -89,17 +89,13 @@ describe("AudioVersionsChrome", () => {
 		});
 		expect(settingsButton.className).toContain("theme-toggle-button");
 		expect(settingsButton.parentElement?.children).toHaveLength(1);
-		expect(
-			screen.queryByRole("button", { name: /switch to dark mode/i }),
-		).toBeNull();
+		expect(screen.queryByRole("switch", { name: /color theme/i })).toBeNull();
 		expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
 
 		fireEvent.click(settingsButton);
 
 		expect(screen.getByRole("dialog", { name: /settings/i })).toBeTruthy();
-		fireEvent.click(
-			screen.getByRole("button", { name: /switch to dark mode/i }),
-		);
+		fireEvent.click(screen.getByRole("switch", { name: /color theme/i }));
 		expect(toggleThemeMock).toHaveBeenCalledTimes(1);
 
 		fireEvent.click(
@@ -126,9 +122,7 @@ describe("AudioVersionsChrome", () => {
 			}),
 		);
 
-		expect(
-			screen.getByRole("button", { name: /switch to dark mode/i }),
-		).toBeTruthy();
+		expect(screen.getByRole("switch", { name: /color theme/i })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
 	});
 
@@ -163,9 +157,10 @@ describe("AudioVersionsChrome", () => {
 			}),
 		);
 
-		const focusCard = screen.getByText("Show focus rings").closest(".border");
-		expect(focusCard).toBeTruthy();
-		fireEvent.click(within(focusCard as HTMLElement).getByRole("button"));
+		const focusSetting =
+			screen.getByText("Show focus rings").parentElement?.parentElement;
+		expect(focusSetting).toBeTruthy();
+		fireEvent.click(within(focusSetting as HTMLElement).getByRole("button"));
 
 		expect(updateUiSettingsMock).toHaveBeenCalledTimes(1);
 		const updater = updateUiSettingsMock.mock.calls[0]?.[0];

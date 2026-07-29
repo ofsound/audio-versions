@@ -345,7 +345,7 @@ export async function loadCloudSnapshot(
 					accentLightStrong: "#047857",
 					accentDarkPrimary: "#6ee7b7",
 					accentDarkStrong: "#a7f3d0",
-					waveformHeight: "large",
+					waveformHeight: "medium",
 					showArtist: true,
 					showProject: true,
 					keyboardFocusHighlights: false,

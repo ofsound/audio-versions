@@ -116,5 +116,23 @@ export function calculateWaveformThumbnailGridLayout({
 		}
 	}
 
-	return bestLayout;
+	if (!bestLayout) {
+		return null;
+	}
+
+	// Preserve the column count chosen for a readable waveform aspect ratio, then
+	// let those rows grow to consume the remaining tray height. This avoids a
+	// short grid floating at the bottom of an otherwise empty left panel.
+	const availableRowHeightPx =
+		(height - bestLayout.gapPx * (bestLayout.rows - 1)) / bestLayout.rows;
+	const rowHeightPx = Math.max(
+		1,
+		Math.min(cappedMaxRowHeightPx, availableRowHeightPx),
+	);
+
+	return {
+		...bestLayout,
+		density: getDensity(rowHeightPx),
+		rowHeightPx: Math.floor(rowHeightPx * 2) / 2,
+	};
 }

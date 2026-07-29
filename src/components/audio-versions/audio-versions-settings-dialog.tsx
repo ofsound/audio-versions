@@ -1,9 +1,6 @@
 import { LogOut, Moon, Sun } from "lucide-react";
 import { type RefObject, useRef } from "react";
-import type {
-	AudioVersionsUiSettings,
-	WaveformHeightPreset,
-} from "#/lib/audio-versions/types";
+import type { AudioVersionsUiSettings } from "#/lib/audio-versions/types";
 import { useTheme } from "#/providers/theme-provider";
 import { SongModal } from "./song-modal";
 import { useBufferedInputValue } from "./use-buffered-input-value";
@@ -21,15 +18,6 @@ interface AudioVersionsSettingsDialogProps {
 	) => Promise<void>;
 }
 
-const WAVEFORM_OPTIONS: Array<{
-	label: string;
-	value: WaveformHeightPreset;
-}> = [
-	{ label: "Large", value: "large" },
-	{ label: "Medium", value: "medium" },
-	{ label: "Small", value: "small" },
-];
-
 export function AudioVersionsSettingsDialog({
 	uiSettings,
 	canSignOut,
@@ -40,7 +28,6 @@ export function AudioVersionsSettingsDialog({
 }: AudioVersionsSettingsDialogProps) {
 	const firstColorInputRef = useRef<HTMLInputElement | null>(null);
 	const { theme, toggleTheme } = useTheme();
-	const nextTheme = theme === "dark" ? "light" : "dark";
 
 	return (
 		<SongModal
@@ -56,64 +43,87 @@ export function AudioVersionsSettingsDialog({
 							App
 						</h3>
 					</div>
-					<div className="grid gap-3 md:grid-cols-2">
-						<div className="border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-4 py-4">
+					{canSignOut ? (
+						<div className="py-2">
 							<div className="flex items-center justify-between gap-4">
-								<div>
+								<div className="min-w-0">
 									<div className="text-sm font-semibold text-[var(--color-text)]">
-										Color theme
+										Account
 									</div>
-									<div className="mt-1 text-sm text-[var(--color-text-muted)]">
-										Currently using {theme} mode
-									</div>
+									{userEmail ? (
+										<div className="mt-1 truncate text-sm text-[var(--color-text-muted)]">
+											{userEmail}
+										</div>
+									) : null}
 								</div>
 								<button
 									type="button"
-									onClick={toggleTheme}
-									aria-label={`Switch to ${nextTheme} mode`}
+									onClick={() => void onSignOut()}
+									aria-label={userEmail ? `Sign out ${userEmail}` : "Sign out"}
 									className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
 								>
-									{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-									{nextTheme === "light" ? "Light" : "Dark"}
+									<LogOut size={18} />
+									Sign out
 								</button>
 							</div>
 						</div>
-
-						{canSignOut ? (
-							<div className="border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-4 py-4">
-								<div className="flex items-center justify-between gap-4">
-									<div className="min-w-0">
-										<div className="text-sm font-semibold text-[var(--color-text)]">
-											Account
-										</div>
-										{userEmail ? (
-											<div className="mt-1 truncate text-sm text-[var(--color-text-muted)]">
-												{userEmail}
-											</div>
-										) : null}
-									</div>
-									<button
-										type="button"
-										onClick={() => void onSignOut()}
-										aria-label={
-											userEmail ? `Sign out ${userEmail}` : "Sign out"
-										}
-										className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
-									>
-										<LogOut size={18} />
-										Sign out
-									</button>
-								</div>
-							</div>
-						) : null}
-					</div>
+					) : null}
 				</section>
 
 				<section className="grid gap-4">
 					<div>
 						<p className="eyebrow mb-2">Appearance</p>
 						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Accent colors
+							Appearance
+						</h3>
+					</div>
+					<div className="py-2">
+						<div className="flex items-center justify-between gap-4">
+							<div>
+								<div className="text-sm font-semibold text-[var(--color-text)]">
+									Color theme
+								</div>
+							</div>
+							<button
+								type="button"
+								role="switch"
+								aria-checked={theme === "dark"}
+								onClick={toggleTheme}
+								aria-label="Color theme"
+								className="relative grid h-14 w-64 grid-cols-2 overflow-hidden border border-[var(--color-border-plain)] bg-[var(--color-surface)] text-base font-semibold"
+							>
+								<span
+									aria-hidden="true"
+									className={`absolute inset-y-1 left-1 w-[calc(50%-0.5rem)] bg-[var(--color-accent)] transition-transform ${
+										theme === "dark" ? "translate-x-[calc(100%+0.5rem)]" : ""
+									}`}
+								/>
+								<span
+									className={`relative z-10 inline-flex items-center justify-center gap-2 ${
+										theme === "light"
+											? "text-[var(--color-on-accent)]"
+											: "text-[var(--color-text-muted)]"
+									}`}
+								>
+									<Sun size={18} />
+									Light
+								</span>
+								<span
+									className={`relative z-10 inline-flex items-center justify-center gap-2 ${
+										theme === "dark"
+											? "text-[var(--color-on-accent)]"
+											: "text-[var(--color-text-muted)]"
+									}`}
+								>
+									<Moon size={18} />
+									Dark
+								</span>
+							</button>
+						</div>
+					</div>
+					<div>
+						<h3 className="text-lg font-semibold text-[var(--color-text)]">
+							Accent color
 						</h3>
 					</div>
 					<div className="grid gap-4 md:grid-cols-2">
@@ -136,43 +146,6 @@ export function AudioVersionsSettingsDialog({
 								inputRef={firstColorInputRef}
 							/>
 						)}
-						<ColorSettingField
-							label="Dark primary"
-							value={uiSettings.accentDarkPrimary}
-							onChange={(value) =>
-								void onUpdateUiSettings({ accentDarkPrimary: value })
-							}
-						/>
-					</div>
-				</section>
-
-				<section className="grid gap-4">
-					<div>
-						<p className="eyebrow mb-2">Workspace</p>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Waveform height
-						</h3>
-					</div>
-					<div className="flex flex-wrap gap-2">
-						{WAVEFORM_OPTIONS.map((option) => (
-							<button
-								key={option.value}
-								type="button"
-								aria-pressed={uiSettings.waveformHeight === option.value}
-								onClick={() =>
-									void onUpdateUiSettings({
-										waveformHeight: option.value,
-									})
-								}
-								className={`inline-flex h-11 items-center justify-center px-4 text-sm font-semibold ${
-									uiSettings.waveformHeight === option.value
-										? "action-primary"
-										: "action-secondary"
-								}`}
-							>
-								{option.label}
-							</button>
-						))}
 					</div>
 				</section>
 
@@ -254,7 +227,7 @@ function ColorSettingField({
 	return (
 		<label className="grid gap-2">
 			<span className="field-label">{label}</span>
-			<div className="flex h-12 items-center gap-3 border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-3 py-0 text-[var(--color-text)]">
+			<div className="flex h-12 items-center gap-3 text-[var(--color-text)]">
 				<input
 					ref={inputRef}
 					type="color"
@@ -286,7 +259,7 @@ function ToggleSettingCard({
 	detailWhenOff?: string;
 }) {
 	return (
-		<div className="border border-[var(--color-border-plain)] bg-[var(--color-surface-elevated)] px-4 py-4">
+		<div className="py-2">
 			<div className="flex items-center justify-between gap-4">
 				<div>
 					<div className="text-sm font-semibold text-[var(--color-text)]">

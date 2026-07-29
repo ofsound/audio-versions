@@ -26,9 +26,7 @@ function getUiSettingsRootVariables(uiSettings: AudioVersionsUiSettings) {
 	return {
 		"--accent-light-primary-base": uiSettings.accentLightPrimary,
 		"--accent-dark-primary-base": uiSettings.accentDarkPrimary,
-		"--song-workspace-waveform-height": `${getWaveformHeightPx(
-			uiSettings.waveformHeight,
-		)}px`,
+		"--song-workspace-waveform-height": `${getWaveformHeightPx("medium")}px`,
 	};
 }
 
@@ -55,7 +53,6 @@ export function buildUiSettingsBootstrapScript({
 	themeStorageKey: string;
 	uiSettingsStorageKey: string;
 }) {
-	const waveformHeights = JSON.stringify(WAVEFORM_HEIGHT_PX_BY_PRESET);
 	const previousUiSettingsStorageKey = JSON.stringify(
 		PREVIOUS_UI_SETTINGS_STORAGE_KEY,
 	);
@@ -95,16 +92,9 @@ export function buildUiSettingsBootstrapScript({
 				root.style.setProperty(name, value);
 			}
 		};
-		const waveformHeights = ${waveformHeights};
 		applySetting("--accent-light-primary-base", uiSettings.accentLightPrimary);
 		applySetting("--accent-dark-primary-base", uiSettings.accentDarkPrimary);
-		const waveformHeight =
-			typeof uiSettings.waveformHeight === "string"
-				? waveformHeights[uiSettings.waveformHeight]
-				: undefined;
-		if (typeof waveformHeight === "number") {
-			root.style.setProperty("--song-workspace-waveform-height", waveformHeight + "px");
-		}
+		root.style.setProperty("--song-workspace-waveform-height", "${WAVEFORM_HEIGHT_PX_BY_PRESET.medium}px");
 
 		if (uiSettings.keyboardFocusHighlights === false) {
 			root.setAttribute("data-reduce-keyboard-focus", "");

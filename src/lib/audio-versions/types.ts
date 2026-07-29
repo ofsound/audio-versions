@@ -187,7 +187,7 @@ export function createDefaultUiSettings(): AudioVersionsUiSettings {
 		accentLightStrong: "#047857",
 		accentDarkPrimary: "#6ee7b7",
 		accentDarkStrong: "#a7f3d0",
-		waveformHeight: "large",
+		waveformHeight: "medium",
 		showArtist: true,
 		showProject: true,
 		keyboardFocusHighlights: false,
@@ -203,9 +203,9 @@ export function createEmptySettings(): AudioVersionsSettings {
 }
 
 function normalizeWaveformHeightPreset(
-	value: string | null | undefined,
+	_value: string | null | undefined,
 ): WaveformHeightPreset {
-	return value === "medium" || value === "small" ? value : "large";
+	return "medium";
 }
 
 function normalizeHexColor(

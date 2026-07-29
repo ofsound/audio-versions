@@ -61,7 +61,7 @@ describe("calculateWaveformThumbnailGridLayout", () => {
 		expect(
 			(shortViewport?.rowHeightPx ?? 0) * (shortViewport?.rows ?? 0) +
 				(shortViewport?.gapPx ?? 0) * ((shortViewport?.rows ?? 0) - 1),
-		).toBeLessThanOrEqual(400);
+		).toBeGreaterThanOrEqual(396);
 	});
 
 	it("falls back to a compressed treatment in a very short viewport", () => {

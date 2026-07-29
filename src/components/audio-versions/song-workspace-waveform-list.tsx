@@ -7,7 +7,6 @@ import type {
 } from "#/lib/audio-versions/types";
 import { getWaveformHeightPx } from "#/lib/audio-versions/ui-settings";
 import { normalizeVolumeDb } from "#/lib/audio-versions/waveform";
-import { useAudioVersions } from "#/providers/audio-versions-provider";
 import type { PlaybackState } from "#/providers/use-audio-versions-playback";
 import { reorderAudioFileIds } from "./reorder-audio-file-ids";
 import { WaveformCard } from "./waveform-card";
@@ -91,7 +90,6 @@ export function SongWorkspaceWaveformList({
 	onSelectFile,
 	onOpenUpload,
 }: SongWorkspaceWaveformListProps) {
-	const { settings } = useAudioVersions();
 	const hasAudioFiles = audioFiles.length > 0;
 	const [draggingFileId, setDraggingFileId] = useState<string | null>(null);
 	const [isPhoneViewport, setIsPhoneViewport] = useState(false);
@@ -184,7 +182,7 @@ export function SongWorkspaceWaveformList({
 		? calculateWaveformThumbnailGridLayout({
 				height: thumbnailsViewportSize.height,
 				itemCount: audioFiles.length,
-				maxRowHeightPx: getWaveformHeightPx(settings.ui.waveformHeight),
+				maxRowHeightPx: getWaveformHeightPx("medium"),
 				width: thumbnailsViewportSize.width,
 			})
 		: null;
