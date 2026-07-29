@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDefaultUiSettings } from "#/lib/audio-versions/types";
 import { AudioVersionsChrome } from "./app-chrome";
@@ -157,10 +151,7 @@ describe("AudioVersionsChrome", () => {
 			}),
 		);
 
-		const focusSetting =
-			screen.getByText("Show focus rings").parentElement?.parentElement;
-		expect(focusSetting).toBeTruthy();
-		fireEvent.click(within(focusSetting as HTMLElement).getByRole("button"));
+		fireEvent.click(screen.getByRole("switch", { name: "Focus Rings" }));
 
 		expect(updateUiSettingsMock).toHaveBeenCalledTimes(1);
 		const updater = updateUiSettingsMock.mock.calls[0]?.[0];

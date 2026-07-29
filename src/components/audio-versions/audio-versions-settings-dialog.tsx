@@ -133,56 +133,37 @@ export function AudioVersionsSettingsDialog({
 					</div>
 				</section>
 
-				<section className="grid gap-4">
-					<div>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Visible song fields
-						</h3>
-					</div>
-					<div className="grid gap-3 md:grid-cols-2">
-						<ToggleSettingCard
-							label="Artist"
-							enabled={uiSettings.showArtist}
-							onToggle={() =>
-								void onUpdateUiSettings((current) => ({
-									...current,
-									showArtist: !current.showArtist,
-								}))
-							}
-						/>
-						<ToggleSettingCard
-							label="Project"
-							enabled={uiSettings.showProject}
-							onToggle={() =>
-								void onUpdateUiSettings((current) => ({
-									...current,
-									showProject: !current.showProject,
-								}))
-							}
-						/>
-					</div>
-				</section>
-
-				<section className="grid gap-4">
-					<div>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Keyboard focus highlights
-						</h3>
-					</div>
-					<div className="grid gap-3 md:grid-cols-2">
-						<ToggleSettingCard
-							label="Show focus rings"
-							enabled={uiSettings.keyboardFocusHighlights}
-							detailWhenOn="Focused controls show a ring when using the keyboard."
-							detailWhenOff="Keyboard focus rings are hidden; pointer use is unchanged."
-							onToggle={() =>
-								void onUpdateUiSettings((current) => ({
-									...current,
-									keyboardFocusHighlights: !current.keyboardFocusHighlights,
-								}))
-							}
-						/>
-					</div>
+				<section className="grid gap-6">
+					<ToggleSettingCard
+						label="Artist"
+						enabled={uiSettings.showArtist}
+						onToggle={() =>
+							void onUpdateUiSettings((current) => ({
+								...current,
+								showArtist: !current.showArtist,
+							}))
+						}
+					/>
+					<ToggleSettingCard
+						label="Project"
+						enabled={uiSettings.showProject}
+						onToggle={() =>
+							void onUpdateUiSettings((current) => ({
+								...current,
+								showProject: !current.showProject,
+							}))
+						}
+					/>
+					<ToggleSettingCard
+						label="Focus Rings"
+						enabled={uiSettings.keyboardFocusHighlights}
+						onToggle={() =>
+							void onUpdateUiSettings((current) => ({
+								...current,
+								keyboardFocusHighlights: !current.keyboardFocusHighlights,
+							}))
+						}
+					/>
 				</section>
 			</div>
 		</SongModal>
@@ -231,37 +212,49 @@ function ToggleSettingCard({
 	label,
 	enabled,
 	onToggle,
-	detailWhenOn = "Visible across the UI",
-	detailWhenOff = "Hidden until re-enabled",
 }: {
 	label: string;
 	enabled: boolean;
 	onToggle: () => void;
-	detailWhenOn?: string;
-	detailWhenOff?: string;
 }) {
 	return (
-		<div className="py-2">
-			<div className="flex items-center justify-between gap-4">
-				<div>
-					<div className="text-sm font-semibold text-[var(--color-text)]">
-						{label}
-					</div>
-					<div className="mt-1 text-sm text-[var(--color-text-muted)]">
-						{enabled ? detailWhenOn : detailWhenOff}
-					</div>
-				</div>
-				<button
-					type="button"
-					aria-pressed={enabled}
-					onClick={onToggle}
-					className={`inline-flex h-11 items-center justify-center px-4 text-sm font-semibold ${
-						enabled ? "action-primary" : "action-secondary"
+		<div className="grid justify-items-start gap-2 py-2">
+			<div className="text-sm font-semibold text-[var(--color-text)]">
+				{label}
+			</div>
+			<button
+				type="button"
+				role="switch"
+				aria-checked={enabled}
+				aria-label={label}
+				onClick={onToggle}
+				className="relative grid h-8 w-[9.25rem] grid-cols-2 overflow-hidden border border-[var(--color-border-plain)] bg-[var(--color-surface)] text-xs font-semibold"
+			>
+				<span
+					aria-hidden="true"
+					className={`absolute inset-y-0.5 left-0.5 w-[calc(50%-0.25rem)] bg-[var(--color-accent)] transition-transform ${
+						enabled ? "" : "translate-x-[calc(100%+0.25rem)]"
+					}`}
+				/>
+				<span
+					className={`relative z-10 inline-flex items-center justify-center ${
+						enabled
+							? "text-[var(--color-on-accent)]"
+							: "text-[var(--color-text-muted)]"
 					}`}
 				>
-					{enabled ? "Shown" : "Hidden"}
-				</button>
-			</div>
+					Show
+				</span>
+				<span
+					className={`relative z-10 inline-flex items-center justify-center ${
+						enabled
+							? "text-[var(--color-text-muted)]"
+							: "text-[var(--color-on-accent)]"
+					}`}
+				>
+					Hide
+				</span>
+			</button>
 		</div>
 	);
 }
