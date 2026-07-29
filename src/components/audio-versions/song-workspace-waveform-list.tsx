@@ -190,6 +190,10 @@ export function SongWorkspaceWaveformList({
 		? getWaveformThumbnailGridContentHeight(thumbnailGridLayout) +
 			VERSION_TRAY_CHROME_HEIGHT_PX
 		: undefined;
+	const shouldStretchVersionTray =
+		!versionTrayHeight ||
+		versionTrayHeight >=
+			thumbnailsViewportSize.height + VERSION_TRAY_CHROME_HEIGHT_PX;
 
 	if (!hasAudioFiles) {
 		return (
@@ -288,7 +292,9 @@ export function SongWorkspaceWaveformList({
 			>
 				<AddFileButton onClick={onOpenUpload} />
 				<div
-					className="song-workspace-version-tray flex min-h-0 w-full flex-1 flex-col p-3"
+					className={`song-workspace-version-tray flex min-h-0 w-full flex-col p-3 ${
+						shouldStretchVersionTray ? "flex-1" : "shrink-0"
+					}`}
 					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
 				>
 					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
