@@ -1,6 +1,6 @@
 import { Link, useMatchRoute } from "@tanstack/react-router";
 import { Library, Settings } from "lucide-react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useOptionalAuth } from "#/providers/auth-provider";
 import { AudioVersionsSettingsDialog } from "./audio-versions-settings-dialog";
@@ -57,6 +57,19 @@ export function AudioVersionsChrome({
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	useCloseOnEscape(isSettingsOpen, () => setIsSettingsOpen(false));
+	useEffect(() => {
+		const handleSettingsShortcut = (event: KeyboardEvent) => {
+			if (!(event.metaKey || event.ctrlKey) || event.key !== ",") {
+				return;
+			}
+
+			event.preventDefault();
+			setIsSettingsOpen(true);
+		};
+
+		window.addEventListener("keydown", handleSettingsShortcut);
+		return () => window.removeEventListener("keydown", handleSettingsShortcut);
+	}, []);
 
 	return (
 		<HeaderSlotsContext.Provider

@@ -138,6 +138,23 @@ describe("AudioVersionsChrome", () => {
 		expect(screen.queryByRole("dialog", { name: /settings/i })).toBeNull();
 	});
 
+	it("opens settings with the platform settings shortcut", () => {
+		render(
+			<AudioVersionsChrome>
+				<main>Library</main>
+			</AudioVersionsChrome>,
+		);
+
+		fireEvent.keyDown(window, { key: ",", metaKey: true });
+
+		expect(screen.getByRole("dialog", { name: /settings/i })).toBeTruthy();
+
+		fireEvent.keyDown(window, { key: "Escape" });
+		fireEvent.keyDown(window, { key: ",", ctrlKey: true });
+
+		expect(screen.getByRole("dialog", { name: /settings/i })).toBeTruthy();
+	});
+
 	it("updates keyboard focus highlights from the settings dialog", () => {
 		render(
 			<AudioVersionsChrome>

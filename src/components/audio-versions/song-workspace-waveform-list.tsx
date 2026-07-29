@@ -188,17 +188,19 @@ export function SongWorkspaceWaveformList({
 		: null;
 	const versionTrayHeight = thumbnailGridLayout
 		? getWaveformThumbnailGridContentHeight(thumbnailGridLayout) +
-			VERSION_TRAY_CHROME_HEIGHT_PX +
-			VERSION_TRAY_ACTION_HEIGHT_PX
+			VERSION_TRAY_CHROME_HEIGHT_PX
 		: undefined;
 
 	if (!hasAudioFiles) {
 		return (
-			<div className="song-workspace-version-tray flex min-h-[9rem] flex-col gap-3 p-3">
+			<div className="grid gap-3">
 				<AddFileButton onClick={onOpenUpload} />
-				<div className="flex flex-1 items-center border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
-					Add audio to start reviewing waveforms. Each file gets its own notes,
-					time markers, range annotations, and immediate seek-and-play links.
+				<div className="song-workspace-version-tray flex min-h-[9rem] p-3">
+					<div className="flex flex-1 items-center border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
+						Add audio to start reviewing waveforms. Each file gets its own
+						notes, time markers, range annotations, and immediate seek-and-play
+						links.
+					</div>
 				</div>
 			</div>
 		);
@@ -282,13 +284,13 @@ export function SongWorkspaceWaveformList({
 			</div>
 			<div
 				ref={thumbnailsViewportRef}
-				className="flex min-h-[9rem] flex-1 items-end xl:min-h-0"
+				className="flex min-h-[9rem] flex-1 flex-col justify-end gap-3 xl:min-h-0"
 			>
+				<AddFileButton onClick={onOpenUpload} />
 				<div
-					className="song-workspace-version-tray flex h-full w-full flex-col gap-3 p-3"
+					className="song-workspace-version-tray flex min-h-0 w-full flex-1 flex-col p-3"
 					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
 				>
-					<AddFileButton onClick={onOpenUpload} />
 					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
 						<div
 							className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"

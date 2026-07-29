@@ -189,7 +189,9 @@ function ColorSettingField({
 
 	return (
 		<label className="grid gap-2">
-			<span className="field-label">{label}</span>
+			<span className="text-sm font-semibold text-[var(--color-text)]">
+				{label}
+			</span>
 			<div className="flex h-12 items-center gap-3 text-[var(--color-text)]">
 				<input
 					ref={inputRef}
@@ -198,7 +200,7 @@ function ColorSettingField({
 					onChange={(event) => bufferedValue.setDraft(event.target.value)}
 					onBlur={() => void bufferedValue.flush()}
 					aria-label={label}
-					className="h-7 w-9 shrink-0 cursor-pointer border-0 bg-transparent p-0"
+					className="h-11 w-16 shrink-0 cursor-pointer border-0 bg-transparent p-0"
 				/>
 				<span className="text-sm font-semibold uppercase text-[var(--color-text)]">
 					{bufferedValue.draft}
