@@ -50,20 +50,20 @@
 		var(--accent-dark-primary-base)
 	);
 	--color-accent-strong: light-dark(
-		var(--accent-light-strong-base),
-		var(--accent-dark-strong-base)
+		color-mix(in srgb, var(--accent-light-primary-base) 78%, black),
+		color-mix(in srgb, var(--accent-dark-primary-base) 72%, white)
 	);
 	--color-accent-surface: light-dark(
 		color-mix(in srgb, var(--accent-light-primary-base) 14%, transparent),
 		color-mix(in srgb, var(--accent-dark-primary-base) 16%, transparent)
 	);
 	--color-link: light-dark(
-		color-mix(in srgb, var(--accent-light-strong-base) 88%, black),
-		color-mix(in srgb, var(--accent-dark-strong-base) 82%, white)
+		color-mix(in srgb, var(--accent-light-primary-base) 68%, black),
+		color-mix(in srgb, var(--accent-dark-primary-base) 88%, white)
 	);
 	--color-link-hover: light-dark(
-		color-mix(in srgb, var(--accent-light-strong-base) 72%, black),
-		color-mix(in srgb, var(--accent-dark-strong-base) 92%, white)
+		color-mix(in srgb, var(--accent-light-primary-base) 56%, black),
+		color-mix(in srgb, var(--accent-dark-primary-base) 96%, white)
 	);
 	--color-danger: light-dark(var(--color-red-700), var(--color-red-200));
 	--color-danger-surface: light-dark(
@@ -72,8 +72,8 @@
 	);
 	--color-danger-border: light-dark(var(--color-red-200), var(--color-red-800));
 	--color-focus-ring: light-dark(
-		color-mix(in srgb, var(--accent-light-strong-base) 22%, transparent),
-		color-mix(in srgb, var(--accent-dark-strong-base) 28%, transparent)
+		color-mix(in srgb, var(--accent-light-primary-base) 22%, transparent),
+		color-mix(in srgb, var(--accent-dark-primary-base) 28%, transparent)
 	);
 	--color-selection: light-dark(
 		color-mix(in srgb, var(--accent-light-primary-base) 28%, transparent),
@@ -260,9 +260,7 @@
 :root {
 	color-scheme: light dark;
 	--accent-light-primary-base: #059669;
-	--accent-light-strong-base: #0284c7;
 	--accent-dark-primary-base: #6ee7b7;
-	--accent-dark-strong-base: #38bdf8;
 	--waveform-ruler-height: 14px;
 	--waveform-ruler-font-size: 8px;
 	--waveform-marker-gutter-height: 20.5px;

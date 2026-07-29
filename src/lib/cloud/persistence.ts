@@ -342,9 +342,9 @@ export async function loadCloudSnapshot(
 				workspaceBySongId: {},
 				ui: {
 					accentLightPrimary: "#059669",
-					accentLightStrong: "#0284c7",
+					accentLightStrong: "#047857",
 					accentDarkPrimary: "#6ee7b7",
-					accentDarkStrong: "#38bdf8",
+					accentDarkStrong: "#a7f3d0",
 					waveformHeight: "large",
 					showArtist: true,
 					showProject: true,

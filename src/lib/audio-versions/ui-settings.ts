@@ -25,9 +25,7 @@ export function getWaveformHeightPx(preset: WaveformHeightPreset): number {
 function getUiSettingsRootVariables(uiSettings: AudioVersionsUiSettings) {
 	return {
 		"--accent-light-primary-base": uiSettings.accentLightPrimary,
-		"--accent-light-strong-base": uiSettings.accentLightStrong,
 		"--accent-dark-primary-base": uiSettings.accentDarkPrimary,
-		"--accent-dark-strong-base": uiSettings.accentDarkStrong,
 		"--song-workspace-waveform-height": `${getWaveformHeightPx(
 			uiSettings.waveformHeight,
 		)}px`,
@@ -99,9 +97,7 @@ export function buildUiSettingsBootstrapScript({
 		};
 		const waveformHeights = ${waveformHeights};
 		applySetting("--accent-light-primary-base", uiSettings.accentLightPrimary);
-		applySetting("--accent-light-strong-base", uiSettings.accentLightStrong);
 		applySetting("--accent-dark-primary-base", uiSettings.accentDarkPrimary);
-		applySetting("--accent-dark-strong-base", uiSettings.accentDarkStrong);
 		const waveformHeight =
 			typeof uiSettings.waveformHeight === "string"
 				? waveformHeights[uiSettings.waveformHeight]

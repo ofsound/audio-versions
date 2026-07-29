@@ -19,7 +19,6 @@ describe("ui settings helpers", () => {
 		const uiSettings = {
 			...createDefaultUiSettings(),
 			accentLightPrimary: "#112233",
-			accentDarkStrong: "#abcdef",
 			waveformHeight: "small" as const,
 			keyboardFocusHighlights: true,
 		};
@@ -35,7 +34,7 @@ describe("ui settings helpers", () => {
 			document.documentElement.style.getPropertyValue(
 				"--accent-dark-strong-base",
 			),
-		).toBe("#abcdef");
+		).toBe("");
 		expect(
 			document.documentElement.style.getPropertyValue(
 				"--song-workspace-waveform-height",

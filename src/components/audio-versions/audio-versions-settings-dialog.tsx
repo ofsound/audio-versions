@@ -117,33 +117,30 @@ export function AudioVersionsSettingsDialog({
 						</h3>
 					</div>
 					<div className="grid gap-4 md:grid-cols-2">
-						<ColorSettingField
-							label="Light primary"
-							value={uiSettings.accentLightPrimary}
-							onChange={(value) =>
-								void onUpdateUiSettings({ accentLightPrimary: value })
-							}
-							inputRef={firstColorInputRef}
-						/>
-						<ColorSettingField
-							label="Light strong"
-							value={uiSettings.accentLightStrong}
-							onChange={(value) =>
-								void onUpdateUiSettings({ accentLightStrong: value })
-							}
-						/>
+						{theme === "light" ? (
+							<ColorSettingField
+								label="Light accent"
+								value={uiSettings.accentLightPrimary}
+								onChange={(value) =>
+									void onUpdateUiSettings({ accentLightPrimary: value })
+								}
+								inputRef={firstColorInputRef}
+							/>
+						) : (
+							<ColorSettingField
+								label="Dark accent"
+								value={uiSettings.accentDarkPrimary}
+								onChange={(value) =>
+									void onUpdateUiSettings({ accentDarkPrimary: value })
+								}
+								inputRef={firstColorInputRef}
+							/>
+						)}
 						<ColorSettingField
 							label="Dark primary"
 							value={uiSettings.accentDarkPrimary}
 							onChange={(value) =>
 								void onUpdateUiSettings({ accentDarkPrimary: value })
-							}
-						/>
-						<ColorSettingField
-							label="Dark strong"
-							value={uiSettings.accentDarkStrong}
-							onChange={(value) =>
-								void onUpdateUiSettings({ accentDarkStrong: value })
 							}
 						/>
 					</div>
