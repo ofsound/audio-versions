@@ -189,8 +189,8 @@ export function LibraryView() {
 		<>
 			{renderedCreateSongTrigger}
 			<main
-				className={`flex w-full flex-col gap-8 px-3 py-8 [transition:filter_200ms_ease,opacity_200ms_ease] ${
-					isModalOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
+				className={`flex w-full flex-col gap-8 px-3 py-8 ${
+					isModalOpen ? "pointer-events-none" : ""
 				}`}
 				aria-hidden={isModalOpen}
 			>

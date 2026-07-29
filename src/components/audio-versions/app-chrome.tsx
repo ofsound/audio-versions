@@ -127,8 +127,8 @@ export function AudioVersionsChrome({
 
 				{isSongRoute ? (
 					<div
-						className={`flex min-h-0 flex-1 flex-col overflow-hidden [transition:filter_200ms_ease,opacity_200ms_ease] ${
-							isSettingsOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
+						className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+							isSettingsOpen ? "pointer-events-none" : ""
 						}`}
 						aria-hidden={isSettingsOpen}
 					>
@@ -136,9 +136,7 @@ export function AudioVersionsChrome({
 					</div>
 				) : (
 					<div
-						className={`[transition:filter_200ms_ease,opacity_200ms_ease] ${
-							isSettingsOpen ? "pointer-events-none blur-[3px] opacity-45" : ""
-						}`}
+						className={isSettingsOpen ? "pointer-events-none" : undefined}
 						aria-hidden={isSettingsOpen}
 					>
 						{children}

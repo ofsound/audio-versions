@@ -38,11 +38,6 @@ export function AudioVersionsSettingsDialog({
 		>
 			<div className="grid gap-8 p-5 sm:p-6">
 				<section className="grid gap-4">
-					<div>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							App
-						</h3>
-					</div>
 					{canSignOut ? (
 						<div className="py-2">
 							<div className="flex items-center justify-between gap-4">
@@ -71,14 +66,8 @@ export function AudioVersionsSettingsDialog({
 				</section>
 
 				<section className="grid gap-4">
-					<div>
-						<p className="eyebrow mb-2">Appearance</p>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Appearance
-						</h3>
-					</div>
 					<div className="py-2">
-						<div className="flex items-center justify-between gap-4">
+						<div className="grid justify-items-start gap-3">
 							<div>
 								<div className="text-sm font-semibold text-[var(--color-text)]">
 									Color theme
@@ -121,11 +110,6 @@ export function AudioVersionsSettingsDialog({
 							</button>
 						</div>
 					</div>
-					<div>
-						<h3 className="text-lg font-semibold text-[var(--color-text)]">
-							Accent color
-						</h3>
-					</div>
 					<div className="grid gap-4 md:grid-cols-2">
 						{theme === "light" ? (
 							<ColorSettingField
@@ -151,7 +135,6 @@ export function AudioVersionsSettingsDialog({
 
 				<section className="grid gap-4">
 					<div>
-						<p className="eyebrow mb-2">Metadata</p>
 						<h3 className="text-lg font-semibold text-[var(--color-text)]">
 							Visible song fields
 						</h3>
@@ -182,7 +165,6 @@ export function AudioVersionsSettingsDialog({
 
 				<section className="grid gap-4">
 					<div>
-						<p className="eyebrow mb-2">Accessibility</p>
 						<h3 className="text-lg font-semibold text-[var(--color-text)]">
 							Keyboard focus highlights
 						</h3>

@@ -464,12 +464,7 @@
 	align-items: center;
 	justify-content: center;
 	padding: 1rem;
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-zinc-950) 22%, transparent),
-		color-mix(in srgb, var(--color-zinc-950) 42%, transparent)
-	);
-	backdrop-filter: blur(14px);
+	background: transparent;
 }
 
 .song-workspace-file-dropzone {
@@ -503,7 +498,12 @@
 	position: absolute;
 	inset: 0;
 	border: 0;
-	background: transparent;
+	background: light-dark(
+		color-mix(in srgb, var(--color-white) 42%, transparent),
+		color-mix(in srgb, var(--color-zinc-950) 48%, transparent)
+	);
+	-webkit-backdrop-filter: blur(8px) saturate(68%);
+	backdrop-filter: blur(8px) saturate(68%);
 }
 
 .song-modal__panel {
@@ -513,8 +513,15 @@
 	overflow: auto;
 	border: 1px solid var(--color-border-strong);
 	background: var(--background-image-panel), var(--color-surface-overlay);
-	box-shadow: var(--shadow-overlay);
-	backdrop-filter: blur(22px);
+	box-shadow:
+		0 28px 72px -32px
+		light-dark(
+			color-mix(in srgb, var(--color-zinc-950) 32%, transparent),
+			color-mix(in srgb, var(--color-black) 76%, transparent)
+		),
+		var(--shadow-overlay);
+	-webkit-backdrop-filter: blur(16px) saturate(90%);
+	backdrop-filter: blur(16px) saturate(90%);
 }
 
 @media (max-width: 1100px) {
