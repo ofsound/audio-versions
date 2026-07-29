@@ -21,8 +21,12 @@ struct JournalContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         JournalContentLineView(line: line, onOpenLink: onOpenLink)
+                            .padding(
+                                .bottom,
+                                line.hasTimestamp && index < lines.count - 1 ? 8 : 0
+                            )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -30,6 +34,17 @@ struct JournalContentView: View {
         }
         .multilineTextAlignment(.leading)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private extension JournalRenderedLine {
+    var hasTimestamp: Bool {
+        segments.contains {
+            if case .timestamp = $0 {
+                return true
+            }
+            return false
+        }
     }
 }
 

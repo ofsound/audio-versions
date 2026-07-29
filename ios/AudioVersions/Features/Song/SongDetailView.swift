@@ -166,6 +166,15 @@ private struct ScrollableVersionList: View {
                         )
                     ) {
                         HStack(spacing: 10) {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(palette.brandTile)
+                                .frame(width: 36, height: 36)
+                                .overlay {
+                                    Image(systemName: "waveform")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(palette.onAccent)
+                                }
+
                             VersionRow(version: version)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Image(systemName: "chevron.right")
