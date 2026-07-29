@@ -48,7 +48,6 @@ export function AudioVersionsSettingsDialog({
 			titleId="settings-title"
 			onClose={onClose}
 			initialFocusRef={firstColorInputRef}
-			maxWidthClassName="max-w-[min(96rem,calc(100vw-2rem))]"
 		>
 			<div className="grid gap-8 p-5 sm:p-6">
 				<section className="grid gap-4">

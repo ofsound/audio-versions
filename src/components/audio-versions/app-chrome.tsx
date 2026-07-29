@@ -5,6 +5,7 @@ import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useOptionalAuth } from "#/providers/auth-provider";
 import { AudioVersionsSettingsDialog } from "./audio-versions-settings-dialog";
 import { GlobalSearch } from "./global-search";
+import { QuickSongSwitcher } from "./quick-song-switcher";
 import { useCloseOnEscape } from "./use-close-on-escape";
 
 interface HeaderSlotValue {
@@ -154,6 +155,7 @@ export function AudioVersionsChrome({
 						onUpdateUiSettings={updateUiSettings}
 					/>
 				) : null}
+				<QuickSongSwitcher />
 			</div>
 		</HeaderSlotsContext.Provider>
 	);

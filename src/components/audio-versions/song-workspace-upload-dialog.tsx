@@ -39,7 +39,6 @@ export function SongWorkspaceUploadDialog({
 			titleId="upload-audio-title"
 			onClose={onClose}
 			initialFocusRef={fileInputRef}
-			maxWidthClassName="max-w-[min(96rem,calc(100vw-2rem))]"
 		>
 			<form
 				className="grid gap-4 p-5 sm:p-6"

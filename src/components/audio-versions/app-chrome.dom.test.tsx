@@ -60,6 +60,10 @@ vi.mock("./global-search", () => ({
 	GlobalSearch: () => <div data-testid="global-search" />,
 }));
 
+vi.mock("./quick-song-switcher", () => ({
+	QuickSongSwitcher: () => null,
+}));
+
 describe("AudioVersionsChrome", () => {
 	beforeEach(() => {
 		updateUiSettingsMock.mockClear();

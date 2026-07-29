@@ -5,7 +5,6 @@ import { useModalFocusTrap } from "./use-modal-focus-trap";
 interface SongModalProps {
 	children: React.ReactNode;
 	initialFocusRef?: MutableRefObject<HTMLElement | null>;
-	maxWidthClassName?: string;
 	onClose: () => void;
 	title: string;
 	titleId: string;
@@ -14,7 +13,6 @@ interface SongModalProps {
 export function SongModal({
 	children,
 	initialFocusRef,
-	maxWidthClassName = "max-w-[min(42rem,calc(100vw-2rem))]",
 	onClose,
 	title,
 	titleId,
@@ -50,7 +48,7 @@ export function SongModal({
 				aria-modal="true"
 				aria-labelledby={titleId}
 				tabIndex={-1}
-				className={`song-modal__panel w-full ${maxWidthClassName}`}
+				className="song-modal__panel w-[calc(100vw-2rem)] max-w-[72rem] sm:w-[65vw]"
 			>
 				<div className="flex items-start justify-between gap-4 border-b border-[var(--color-border-plain)] px-5 py-4 sm:px-6">
 					<div className="min-w-0">

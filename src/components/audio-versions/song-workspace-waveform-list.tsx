@@ -197,11 +197,11 @@ export function SongWorkspaceWaveformList({
 	if (!hasAudioFiles) {
 		return (
 			<div className="song-workspace-version-tray flex min-h-[9rem] flex-col gap-3 p-3">
+				<AddFileButton onClick={onOpenUpload} />
 				<div className="flex flex-1 items-center border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
 					Add audio to start reviewing waveforms. Each file gets its own notes,
 					time markers, range annotations, and immediate seek-and-play links.
 				</div>
-				<AddFileButton onClick={onOpenUpload} />
 			</div>
 		);
 	}
@@ -290,6 +290,7 @@ export function SongWorkspaceWaveformList({
 					className="song-workspace-version-tray flex h-full w-full flex-col gap-3 p-3"
 					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
 				>
+					<AddFileButton onClick={onOpenUpload} />
 					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
 						<div
 							className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
@@ -323,7 +324,6 @@ export function SongWorkspaceWaveformList({
 							))}
 						</div>
 					</div>
-					<AddFileButton onClick={onOpenUpload} />
 				</div>
 			</div>
 		</div>

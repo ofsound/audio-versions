@@ -309,7 +309,6 @@ export function LibraryView() {
 					titleId="create-song-title"
 					onClose={() => setIsCreateSongOpen(false)}
 					initialFocusRef={createSongTitleInputRef}
-					maxWidthClassName="max-w-[min(96rem,calc(100vw-2rem))]"
 				>
 					<form className="grid gap-4 p-5 sm:p-6" onSubmit={handleSubmit}>
 						<label className="grid gap-2">
