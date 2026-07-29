@@ -1290,14 +1290,14 @@ describe("SongWorkspace", () => {
 			}),
 		).toBeTruthy();
 		expect(
-			within(headerSlot).getByRole("button", { name: /add file/i }),
-		).toBeTruthy();
+			within(headerSlot).queryByRole("button", { name: /add file/i }),
+		).toBeNull();
 		expect(
-			within(container.querySelector("main") as HTMLElement).queryByRole(
+			within(container.querySelector("main") as HTMLElement).getByRole(
 				"button",
 				{ name: /add file/i },
 			),
-		).toBeNull();
+		).toBeTruthy();
 		expect(
 			within(headerSlot).queryByRole("textbox", { name: /song title/i }),
 		).toBeNull();

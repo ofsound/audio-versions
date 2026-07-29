@@ -26,6 +26,7 @@ const navigateMock = vi.fn();
 const createSongMock = vi.fn();
 const updateSongMock = vi.fn();
 const deleteSongMock = vi.fn();
+const resetSongPlayheadsMock = vi.fn();
 let songs: Song[] = [];
 let audioFiles: AudioFileRecord[] = [];
 let annotations: Annotation[] = [];
@@ -38,12 +39,14 @@ vi.mock("@tanstack/react-router", () => ({
 		"aria-label": ariaLabel,
 		params,
 		to,
+		onClick,
 	}: {
 		children?: ReactNode;
 		className?: string;
 		"aria-label"?: string;
 		params: { songId: string };
 		to: string;
+		onClick?: () => void;
 	}) => (
 		<a
 			href={to.replace("$songId", params.songId)}
@@ -51,6 +54,7 @@ vi.mock("@tanstack/react-router", () => ({
 			aria-label={ariaLabel}
 			onClick={(event: MouseEvent<HTMLAnchorElement>) => {
 				event.preventDefault();
+				onClick?.();
 				navigateMock({ to, params });
 			}}
 		>
@@ -75,6 +79,7 @@ vi.mock("#/providers/audio-versions-provider", () => ({
 		createSong: createSongMock,
 		updateSong: updateSongMock,
 		deleteSong: deleteSongMock,
+		resetSongPlayheads: resetSongPlayheadsMock,
 	}),
 }));
 
@@ -110,6 +115,8 @@ describe("LibraryView", () => {
 		createSongMock.mockReset();
 		updateSongMock.mockReset();
 		deleteSongMock.mockReset();
+		resetSongPlayheadsMock.mockReset();
+		resetSongPlayheadsMock.mockResolvedValue(undefined);
 		createSongMock.mockResolvedValue(makeSong("song-2"));
 		songs = [];
 		audioFiles = [];
@@ -318,6 +325,7 @@ describe("LibraryView", () => {
 		expect(navigateMock).not.toHaveBeenCalled();
 
 		fireEvent.click(songCard);
+		expect(resetSongPlayheadsMock).toHaveBeenCalledWith("song-1");
 		expect(navigateMock).toHaveBeenCalledWith({
 			to: "/songs/$songId",
 			params: { songId: "song-1" },

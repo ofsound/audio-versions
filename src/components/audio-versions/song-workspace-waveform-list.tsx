@@ -1,3 +1,4 @@
+import { Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type {
 	Annotation,
@@ -17,6 +18,7 @@ import {
 } from "./waveform-thumbnail-grid-layout";
 
 const VERSION_TRAY_CHROME_HEIGHT_PX = 26;
+const VERSION_TRAY_ACTION_HEIGHT_PX = 48;
 
 interface SongWorkspaceWaveformListProps {
 	activeAnnotationId?: string;
@@ -62,6 +64,7 @@ interface SongWorkspaceWaveformListProps {
 	workspacePlayheadMsByFileId: Record<string, number>;
 	onSelectFile: (fileId: string) => void;
 	onSelectAnnotation: (fileId: string, annotationId: string) => void;
+	onOpenUpload: () => void;
 }
 
 export function SongWorkspaceWaveformList({
@@ -86,6 +89,7 @@ export function SongWorkspaceWaveformList({
 	workspacePlayheadMsByFileId,
 	onSelectAnnotation,
 	onSelectFile,
+	onOpenUpload,
 }: SongWorkspaceWaveformListProps) {
 	const { settings } = useAudioVersions();
 	const hasAudioFiles = audioFiles.length > 0;
@@ -136,7 +140,9 @@ export function SongWorkspaceWaveformList({
 				height: Math.max(
 					0,
 					viewport.clientHeight -
-						(isFitGridViewport ? VERSION_TRAY_CHROME_HEIGHT_PX : 0),
+						(isFitGridViewport
+							? VERSION_TRAY_CHROME_HEIGHT_PX + VERSION_TRAY_ACTION_HEIGHT_PX
+							: 0),
 				),
 				width: Math.max(
 					0,
@@ -184,14 +190,18 @@ export function SongWorkspaceWaveformList({
 		: null;
 	const versionTrayHeight = thumbnailGridLayout
 		? getWaveformThumbnailGridContentHeight(thumbnailGridLayout) +
-			VERSION_TRAY_CHROME_HEIGHT_PX
+			VERSION_TRAY_CHROME_HEIGHT_PX +
+			VERSION_TRAY_ACTION_HEIGHT_PX
 		: undefined;
 
 	if (!hasAudioFiles) {
 		return (
-			<div className="border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
-				Add audio to start reviewing waveforms. Each file gets its own notes,
-				time markers, range annotations, and immediate seek-and-play links.
+			<div className="song-workspace-version-tray flex min-h-[9rem] flex-col gap-3 p-3">
+				<div className="flex flex-1 items-center border border-dashed border-[var(--color-border-plain)] px-6 py-10 text-sm leading-7 text-[var(--color-text-muted)]">
+					Add audio to start reviewing waveforms. Each file gets its own notes,
+					time markers, range annotations, and immediate seek-and-play links.
+				</div>
+				<AddFileButton onClick={onOpenUpload} />
 			</div>
 		);
 	}
@@ -277,7 +287,7 @@ export function SongWorkspaceWaveformList({
 				className="flex min-h-[9rem] flex-1 items-end xl:min-h-0"
 			>
 				<div
-					className="song-workspace-version-tray flex h-full w-full p-3"
+					className="song-workspace-version-tray flex h-full w-full flex-col gap-3 p-3"
 					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
 				>
 					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
@@ -313,8 +323,24 @@ export function SongWorkspaceWaveformList({
 							))}
 						</div>
 					</div>
+					<AddFileButton onClick={onOpenUpload} />
 				</div>
 			</div>
+		</div>
+	);
+}
+
+function AddFileButton({ onClick }: { onClick: () => void }) {
+	return (
+		<div className="flex shrink-0 justify-end">
+			<button
+				type="button"
+				onClick={onClick}
+				className="song-workspace-add-file action-primary inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3 text-xs font-semibold leading-none"
+			>
+				<Upload size={16} />
+				Add file
+			</button>
 		</div>
 	);
 }

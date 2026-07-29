@@ -94,6 +94,7 @@ interface AudioVersionsContextValue extends AudioVersionsSnapshot {
 		autoplay?: boolean,
 	) => Promise<void>;
 	seekActiveBy: (deltaMs: number) => Promise<void>;
+	resetSongPlayheads: (songId: string) => Promise<void>;
 	jumpBetweenAnnotations: (
 		songId: string,
 		audioFileId: string,
@@ -205,6 +206,37 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		cloud,
 		commitSnapshot,
 	});
+	const resetSongPlayheads = useCallback(
+		async (songId: string) => {
+			const fileIds = snapshotRef.current.audioFiles
+				.filter((audioFile) => audioFile.songId === songId)
+				.map((audioFile) => audioFile.id);
+
+			for (const fileId of fileIds) {
+				const element = audioRefs.current.get(fileId);
+				if (element) {
+					element.currentTime = 0;
+				}
+			}
+
+			setPlayback((current) => ({
+				...current,
+				currentTimeByFileId: {
+					...current.currentTimeByFileId,
+					...Object.fromEntries(fileIds.map((fileId) => [fileId, 0])),
+				},
+			}));
+
+			await workspaceMutations.updateWorkspaceState(songId, (current) => ({
+				...current,
+				playheadMsByFileId: {
+					...current.playheadMsByFileId,
+					...Object.fromEntries(fileIds.map((fileId) => [fileId, 0])),
+				},
+			}));
+		},
+		[audioRefs, setPlayback, snapshotRef, workspaceMutations],
+	);
 
 	const value = useMemo<AudioVersionsContextValue>(
 		() => ({
@@ -223,6 +255,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			togglePlayback,
 			seekFile,
 			seekActiveBy,
+			resetSongPlayheads,
 			jumpBetweenAnnotations,
 		}),
 		[
@@ -234,6 +267,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			ready,
 			registerAudioElement,
 			reportPlaybackState,
+			resetSongPlayheads,
 			search,
 			seekActiveBy,
 			seekFile,

@@ -51,7 +51,7 @@ export function WaveformCardHeader({
 					<span
 						data-testid="waveform-card-current-file-title"
 						title={audioFileTitle}
-						className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text-muted)]"
+						className="min-w-0 flex-1 truncate text-base font-medium text-[var(--color-text-muted)]"
 					>
 						{audioFileTitle}
 					</span>

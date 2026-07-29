@@ -457,12 +457,7 @@ export function SongWorkspace({
 		);
 	}
 
-	const songHeaderControls = (
-		<SongWorkspaceHeaderControls
-			song={song}
-			onOpenUpload={() => setIsUploadOpen(true)}
-		/>
-	);
+	const songHeaderControls = <SongWorkspaceHeaderControls song={song} />;
 
 	const renderedSongHeaderControls = songRouteHeaderSlot?.slot ? (
 		createPortal(songHeaderControls, songRouteHeaderSlot.slot)
@@ -537,6 +532,7 @@ export function SongWorkspace({
 									clearPlaybackParams: true,
 								})
 							}
+							onOpenUpload={() => setIsUploadOpen(true)}
 						/>
 					</div>
 

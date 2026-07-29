@@ -29,6 +29,7 @@ export function LibraryView() {
 		createSong,
 		updateSong,
 		deleteSong,
+		resetSongPlayheads,
 	} = useAudioVersions();
 	const [title, setTitle] = useState("");
 	const [artist, setArtist] = useState("");
@@ -243,6 +244,9 @@ export function LibraryView() {
 											<Link
 												to="/songs/$songId"
 												params={{ songId: song.id }}
+												onClick={() => {
+													void resetSongPlayheads(song.id);
+												}}
 												aria-label={`Open ${song.title}`}
 												className="absolute inset-0 cursor-pointer"
 											/>
