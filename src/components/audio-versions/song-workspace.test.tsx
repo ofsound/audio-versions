@@ -1129,17 +1129,17 @@ describe("SongWorkspace", () => {
 		).toContain("Mix A:false");
 	});
 
-	it("opens the upload form inside a modal when add file is clicked", () => {
+	it("opens the upload form inside a modal when import file is clicked", () => {
 		currentAudioFiles = [createAudioFile()];
 
 		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
 
 		expect(screen.queryByRole("dialog")).toBeNull();
 
-		fireEvent.click(screen.getByRole("button", { name: /add file/i }));
+		fireEvent.click(screen.getByRole("button", { name: /import file/i }));
 
 		const dialog = screen.getByRole("dialog", {
-			name: /add file/i,
+			name: /import file/i,
 		});
 		expect(dialog).toBeTruthy();
 		expect(within(dialog).getByLabelText(/audio file/i)).toBeTruthy();
@@ -1179,7 +1179,7 @@ describe("SongWorkspace", () => {
 
 		expect(
 			screen.getByRole("dialog", {
-				name: /add file/i,
+				name: /import file/i,
 			}),
 		).toBeTruthy();
 		expect(screen.getByDisplayValue("High Plains Drifter v16")).toBeTruthy();
@@ -1194,11 +1194,11 @@ describe("SongWorkspace", () => {
 
 		render(<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />);
 
-		fireEvent.click(screen.getByRole("button", { name: /add file/i }));
-		expect(screen.getByRole("dialog", { name: /add file/i })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: /import file/i }));
+		expect(screen.getByRole("dialog", { name: /import file/i })).toBeTruthy();
 
 		fireEvent.keyDown(window, { key: "Escape" });
-		expect(screen.queryByRole("dialog", { name: /add file/i })).toBeNull();
+		expect(screen.queryByRole("dialog", { name: /import file/i })).toBeNull();
 	});
 
 	it("renders the journal editor without an outer journal shell", () => {
@@ -1290,12 +1290,12 @@ describe("SongWorkspace", () => {
 			}),
 		).toBeTruthy();
 		expect(
-			within(headerSlot).queryByRole("button", { name: /add file/i }),
+			within(headerSlot).queryByRole("button", { name: /import file/i }),
 		).toBeNull();
 		expect(
 			within(container.querySelector("main") as HTMLElement).getByRole(
 				"button",
-				{ name: /add file/i },
+				{ name: /import file/i },
 			),
 		).toBeTruthy();
 		expect(

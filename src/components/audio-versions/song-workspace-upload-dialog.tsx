@@ -35,7 +35,7 @@ export function SongWorkspaceUploadDialog({
 
 	return (
 		<SongModal
-			title="Add file"
+			title="Import file"
 			titleId="upload-audio-title"
 			onClose={onClose}
 			initialFocusRef={fileInputRef}
@@ -94,7 +94,7 @@ export function SongWorkspaceUploadDialog({
 						className="action-primary inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
 					>
 						<Save size={15} />
-						{uploading ? "Importing audio..." : "Import into song"}
+						{uploading ? "Importing audio..." : "Import"}
 					</button>
 				</div>
 				{uploadError && (

@@ -345,7 +345,7 @@ function AddFileButton({ onClick }: { onClick: () => void }) {
 				className="song-workspace-add-file action-secondary inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3 text-xs font-medium leading-none"
 			>
 				<Upload size={14} />
-				Add file
+				Import file
 			</button>
 		</div>
 	);
