@@ -17,26 +17,6 @@
 	color: var(--color-white);
 }
 
-.song-workspace-add-file {
-	border: 1px solid color-mix(in srgb, var(--color-accent) 72%, white);
-	background: linear-gradient(
-		135deg,
-		color-mix(in srgb, var(--color-accent) 92%, white),
-		var(--color-accent),
-		color-mix(in srgb, var(--color-accent) 78%, black)
-	);
-	color: var(--color-white);
-	box-shadow: 0 8px 20px -14px var(--color-accent-strong);
-	transition:
-		filter 160ms ease,
-		box-shadow 160ms ease;
-}
-
-.song-workspace-add-file:hover {
-	filter: saturate(1.12) brightness(1.08);
-	box-shadow: 0 10px 24px -14px var(--color-accent-strong);
-}
-
 .theme-toggle-button {
 	display: inline-flex;
 	align-items: center;

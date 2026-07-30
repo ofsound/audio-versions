@@ -342,9 +342,9 @@ function AddFileButton({ onClick }: { onClick: () => void }) {
 			<button
 				type="button"
 				onClick={onClick}
-				className="song-workspace-add-file action-primary inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3 text-xs font-semibold leading-none"
+				className="song-workspace-add-file action-secondary inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3 text-xs font-medium leading-none"
 			>
-				<Upload size={16} />
+				<Upload size={14} />
 				Add file
 			</button>
 		</div>
