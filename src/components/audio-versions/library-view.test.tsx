@@ -404,6 +404,14 @@ describe("LibraryView", () => {
 		expect(screen.getByText(sessionDateRange)).toBeTruthy();
 
 		const songCardLink = screen.getByRole("link", { name: /open new song/i });
+		const datePosition = songCardLink.compareDocumentPosition(
+			screen.getByText(sessionDateRange),
+		);
+		const filesPosition = screen
+			.getByText(sessionDateRange)
+			.compareDocumentPosition(screen.getByText("2 files"));
+		expect(datePosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(filesPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		fireEvent.click(songCardLink);
 		fireEvent.click(songCardLink);
 		fireEvent.click(songCardLink);

@@ -353,6 +353,23 @@ describe("InspectorPane", () => {
 		expect(onSelectAnnotation).not.toHaveBeenCalled();
 	});
 
+	it("provides an explicit control for jumping to a marker and playing", () => {
+		const { onOpenTarget, onSelectAnnotation } = renderInspector();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Jump to 0:54 and play" }),
+		);
+
+		expect(onSelectAnnotation).toHaveBeenCalledWith("annotation-1");
+		expect(onOpenTarget).toHaveBeenCalledWith({
+			songId: "song-1",
+			fileId: "file-1",
+			annotationId: "annotation-1",
+			timeMs: 54000,
+			autoplay: true,
+		});
+	});
+
 	it("supports keyboard activation from the marker card itself", () => {
 		const { onOpenTarget, onSelectAnnotation } = renderInspector();
 

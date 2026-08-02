@@ -275,6 +275,12 @@ export function LibraryView() {
 											</div>
 
 											<div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2">
+												{sessionDateRange ? (
+													<StatChip
+														icon={<Calendar size={14} />}
+														label={sessionDateRange}
+													/>
+												) : null}
 												<StatChip
 													icon={<File size={14} />}
 													label={`${
@@ -287,12 +293,6 @@ export function LibraryView() {
 														annotationCountBySongId.get(song.id) ?? 0
 													} markers`}
 												/>
-												{sessionDateRange ? (
-													<StatChip
-														icon={<Calendar size={14} />}
-														label={sessionDateRange}
-													/>
-												) : null}
 											</div>
 										</div>
 									);

@@ -1,4 +1,4 @@
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Play, Trash2 } from "lucide-react";
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import {
@@ -130,9 +130,17 @@ export function InspectorMarkerCard({
 				activateAnnotation();
 			}}
 		>
-			<div className="marker-play-cell" aria-hidden="true" />
 			<div className="marker-footer">
 				<div className="marker-interactive marker-times-row">
+					<button
+						type="button"
+						onClick={activateAnnotation}
+						className="marker-jump-button icon-button icon-button--sm shrink-0"
+						title="Jump to marker and play"
+						aria-label={`Jump to ${formatDuration(annotation.startMs)} and play`}
+					>
+						<Play size={11} fill="currentColor" />
+					</button>
 					<MarkerTimeField
 						ariaLabel="Start time"
 						valueMs={annotation.startMs}
