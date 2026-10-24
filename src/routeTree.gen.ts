@@ -9,18 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrashRouteImport } from './routes/trash'
-import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SongsSongIdRouteImport } from './routes/songs.$songId'
+import { Route as PlaylistsRouteImport } from './routes/playlists'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
-import { Route as ApiBlobSignedUrlRouteImport } from './routes/api/blob/signed-url'
+import { Route as SongsSongIdRouteImport } from './routes/songs.$songId'
 import { Route as ApiBlobDeleteRouteImport } from './routes/api/blob/delete'
+import { Route as ApiBlobSignedUrlRouteImport } from './routes/api/blob/signed-url'
+import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
 
-const TrashRoute = TrashRouteImport.update({
-  id: '/trash',
-  path: '/trash',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlaylistsRoute = PlaylistsRouteImport.update({
@@ -28,14 +28,9 @@ const PlaylistsRoute = PlaylistsRouteImport.update({
   path: '/playlists',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SongsSongIdRoute = SongsSongIdRouteImport.update({
-  id: '/songs/$songId',
-  path: '/songs/$songId',
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -43,9 +38,14 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
-  id: '/api/blob/upload',
-  path: '/api/blob/upload',
+const SongsSongIdRoute = SongsSongIdRouteImport.update({
+  id: '/songs/$songId',
+  path: '/songs/$songId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBlobDeleteRoute = ApiBlobDeleteRouteImport.update({
+  id: '/api/blob/delete',
+  path: '/api/blob/delete',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBlobSignedUrlRoute = ApiBlobSignedUrlRouteImport.update({
@@ -53,9 +53,9 @@ const ApiBlobSignedUrlRoute = ApiBlobSignedUrlRouteImport.update({
   path: '/api/blob/signed-url',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiBlobDeleteRoute = ApiBlobDeleteRouteImport.update({
-  id: '/api/blob/delete',
-  path: '/api/blob/delete',
+const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
+  id: '/api/blob/upload',
+  path: '/api/blob/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -136,11 +136,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trash': {
-      id: '/trash'
-      path: '/trash'
-      fullPath: '/trash'
-      preLoaderRoute: typeof TrashRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists': {
@@ -150,18 +150,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlaylistsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/songs/$songId': {
-      id: '/songs/$songId'
-      path: '/songs/$songId'
-      fullPath: '/songs/$songId'
-      preLoaderRoute: typeof SongsSongIdRouteImport
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -171,11 +164,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/blob/upload': {
-      id: '/api/blob/upload'
-      path: '/api/blob/upload'
-      fullPath: '/api/blob/upload'
-      preLoaderRoute: typeof ApiBlobUploadRouteImport
+    '/songs/$songId': {
+      id: '/songs/$songId'
+      path: '/songs/$songId'
+      fullPath: '/songs/$songId'
+      preLoaderRoute: typeof SongsSongIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/blob/delete': {
+      id: '/api/blob/delete'
+      path: '/api/blob/delete'
+      fullPath: '/api/blob/delete'
+      preLoaderRoute: typeof ApiBlobDeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/blob/signed-url': {
@@ -185,11 +185,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBlobSignedUrlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/blob/delete': {
-      id: '/api/blob/delete'
-      path: '/api/blob/delete'
-      fullPath: '/api/blob/delete'
-      preLoaderRoute: typeof ApiBlobDeleteRouteImport
+    '/api/blob/upload': {
+      id: '/api/blob/upload'
+      path: '/api/blob/upload'
+      fullPath: '/api/blob/upload'
+      preLoaderRoute: typeof ApiBlobUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
