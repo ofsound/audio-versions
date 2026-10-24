@@ -4,6 +4,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 } from "react";
 import { searchAudioVersions } from "#/lib/audio-versions/search";
@@ -14,7 +15,9 @@ import type {
 	AudioVersionsSnapshot,
 	AudioVersionsUiSettings,
 	CreateAnnotationInput,
+	CreatePlaylistInput,
 	CreateSongInput,
+	Playlist,
 	SearchResult,
 	Song,
 	WorkspaceState,
@@ -26,6 +29,7 @@ import {
 	useSongMutations,
 	useWorkspaceMutations,
 } from "./audio-versions-provider-mutations";
+import { usePlaylistMutations } from "./audio-versions-provider-playlist-mutations";
 import { useAudioVersionsSelectors } from "./audio-versions-provider-selectors";
 import { useAudioVersionsSnapshotState } from "./audio-versions-provider-state";
 import { useOptionalAuth } from "./auth-provider";
@@ -35,6 +39,7 @@ import {
 } from "./use-audio-versions-playback";
 
 interface AudioVersionsContextValue extends AudioVersionsSnapshot {
+	trashedSongs: Song[];
 	ready: boolean;
 	error: string | null;
 	playback: PlaybackState;
@@ -44,9 +49,30 @@ interface AudioVersionsContextValue extends AudioVersionsSnapshot {
 	getSongAudioFiles: (songId: string) => AudioFileRecord[];
 	getAnnotationsForFile: (audioFileId: string) => Annotation[];
 	getWorkspaceState: (songId: string) => WorkspaceState;
+	createPlaylist: (input: CreatePlaylistInput) => Promise<Playlist>;
+	updatePlaylist: (
+		playlistId: string,
+		patch: Partial<Pick<Playlist, "name" | "audioFileIds">>,
+	) => Promise<void>;
+	deletePlaylist: (playlistId: string) => Promise<void>;
+	addAudioFileToPlaylist: (
+		playlistId: string,
+		audioFileId: string,
+	) => Promise<void>;
+	removeAudioFileFromPlaylist: (
+		playlistId: string,
+		audioFileId: string,
+	) => Promise<void>;
+	setPlaylistAudioFileIds: (
+		playlistId: string,
+		audioFileIds: string[],
+	) => Promise<void>;
+	reorderPlaylists: (orderedIds: string[]) => Promise<void>;
 	createSong: (input: CreateSongInput) => Promise<Song>;
 	updateSong: (songId: string, patch: Partial<Song>) => Promise<void>;
 	deleteSong: (songId: string) => Promise<void>;
+	restoreSong: (songId: string) => Promise<void>;
+	permanentlyDeleteSong: (songId: string) => Promise<void>;
 	addAudioFile: (
 		songId: string,
 		input: AddAudioFileInput,
@@ -106,6 +132,8 @@ const AudioVersionsContext = createContext<AudioVersionsContextValue | null>(
 	null,
 );
 
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
 export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 	const { cloudAvailable, user } = useOptionalAuth();
 	const cloudUserId = cloudAvailable ? user?.id : undefined;
@@ -115,7 +143,35 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 	);
 	const { commitSnapshot, error, ready, setError, snapshot, snapshotRef } =
 		useAudioVersionsSnapshotState(cloudUserId);
-	const selectors = useAudioVersionsSelectors({ snapshot });
+	const trashedSongs = useMemo(
+		() => snapshot.songs.filter((song) => Boolean(song.deletedAt)),
+		[snapshot.songs],
+	);
+	const visibleSnapshot = useMemo<AudioVersionsSnapshot>(() => {
+		const activeSongs = snapshot.songs.filter((song) => !song.deletedAt);
+		const trashedSongIds = new Set(trashedSongs.map((song) => song.id));
+		const activeAudioFiles = snapshot.audioFiles.filter(
+			(audioFile) => !trashedSongIds.has(audioFile.songId),
+		);
+		const activeAudioFileIds = new Set(
+			activeAudioFiles.map((audioFile) => audioFile.id),
+		);
+
+		return {
+			...snapshot,
+			songs: activeSongs,
+			audioFiles: activeAudioFiles,
+			annotations: snapshot.annotations.filter(
+				(annotation) => !trashedSongIds.has(annotation.songId),
+			),
+			blobsByAudioId: Object.fromEntries(
+				Object.entries(snapshot.blobsByAudioId).filter(([audioFileId]) =>
+					activeAudioFileIds.has(audioFileId),
+				),
+			),
+		};
+	}, [snapshot, trashedSongs]);
+	const selectors = useAudioVersionsSelectors({ snapshot: visibleSnapshot });
 
 	const {
 		audioRefs,
@@ -137,18 +193,18 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		(query: string) =>
 			searchAudioVersions(
 				{
-					songs: snapshot.songs,
-					audioFiles: snapshot.audioFiles,
-					annotations: snapshot.annotations,
+					songs: visibleSnapshot.songs,
+					audioFiles: visibleSnapshot.audioFiles,
+					annotations: visibleSnapshot.annotations,
 				},
 				query,
 				snapshot.settings.ui,
 			),
 		[
-			snapshot.annotations,
-			snapshot.audioFiles,
+			visibleSnapshot.annotations,
+			visibleSnapshot.audioFiles,
 			snapshot.settings.ui,
-			snapshot.songs,
+			visibleSnapshot.songs,
 		],
 	);
 
@@ -190,6 +246,17 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		prunePlaybackState,
 		removeRegisteredAudio,
 	});
+	useEffect(() => {
+		if (!ready) return;
+		const cutoff = Date.now() - TRASH_RETENTION_MS;
+		for (const song of trashedSongs) {
+			if (song.deletedAt && Date.parse(song.deletedAt) <= cutoff) {
+				void songMutations
+					.permanentlyDeleteSong(song.id)
+					.catch(() => undefined);
+			}
+		}
+	}, [ready, songMutations, trashedSongs]);
 	const audioFileMutations = useAudioFileMutations({
 		cloud,
 		cloudUserId,
@@ -206,6 +273,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		cloud,
 		commitSnapshot,
 	});
+	const playlistMutations = usePlaylistMutations({ cloud, commitSnapshot });
 	const resetSongPlayheads = useCallback(
 		async (songId: string) => {
 			const fileIds = snapshotRef.current.audioFiles
@@ -240,7 +308,8 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 
 	const value = useMemo<AudioVersionsContextValue>(
 		() => ({
-			...snapshot,
+			...visibleSnapshot,
+			trashedSongs,
 			ready,
 			error,
 			playback,
@@ -250,6 +319,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			...audioFileMutations,
 			...annotationMutations,
 			...workspaceMutations,
+			...playlistMutations,
 			registerAudioElement,
 			reportPlaybackState,
 			togglePlayback,
@@ -264,6 +334,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			error,
 			jumpBetweenAnnotations,
 			playback,
+			playlistMutations,
 			ready,
 			registerAudioElement,
 			reportPlaybackState,
@@ -272,7 +343,8 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			seekActiveBy,
 			seekFile,
 			selectors,
-			snapshot,
+			visibleSnapshot,
+			trashedSongs,
 			songMutations,
 			togglePlayback,
 			workspaceMutations,
@@ -292,7 +364,7 @@ export function AudioVersionsFatalError({ error }: { error: string }) {
 		? "Session out of sync"
 		: "Audio Versions can’t continue";
 	const message = isSessionClockError
-		? "The session timestamp could not be verified. Check that your Mac’s date and time are set automatically, then reload."
+		? "The cloud server could not verify your session after retrying. This can happen while the servers’ clocks are out of sync. Wait a moment, then reload."
 		: error;
 
 	return (

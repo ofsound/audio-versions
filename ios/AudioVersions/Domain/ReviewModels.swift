@@ -6,6 +6,7 @@ struct Song: Identifiable, Hashable {
     var artist: String
     var generalNotes: String = ""
     var updatedAt: Date
+    var deletedAt: Date? = nil
     var versions: [AudioVersion]
 
     var latestVersion: AudioVersion? {
@@ -28,6 +29,27 @@ struct AudioVersion: Identifiable, Hashable {
 
     var annotationCount: Int {
         annotations.count
+    }
+}
+
+struct Playlist: Identifiable, Hashable {
+    let id: String
+    var name: String
+    var audioFileIDs: [String]
+    var sortOrder: Int
+    var createdAt: Date
+    var updatedAt: Date
+}
+
+enum PlaylistLoopMode: String, CaseIterable, Identifiable {
+    case off
+    case all
+    case one
+
+    var id: String { rawValue }
+
+    var symbolName: String {
+        self == .one ? "repeat.1" : "repeat"
     }
 }
 

@@ -56,6 +56,7 @@ describe("useAudioVersionsPlayback", () => {
 					},
 				],
 				annotations: [],
+				playlists: [],
 				blobsByAudioId: {},
 				settings: createEmptySettings(),
 			},

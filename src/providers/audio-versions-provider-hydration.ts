@@ -20,6 +20,7 @@ export const EMPTY_SNAPSHOT: AudioVersionsSnapshot = {
 	songs: [],
 	audioFiles: [],
 	annotations: [],
+	playlists: [],
 	blobsByAudioId: {},
 	settings: createEmptySettings(),
 };
@@ -70,6 +71,13 @@ export async function normalizeLoadedSnapshot(
 		audioFilesToPersist,
 		normalizedSnapshot: {
 			...loadedSnapshot,
+			playlists: (loadedSnapshot.playlists ?? []).map((playlist, index) => ({
+				...playlist,
+				audioFileIds: Array.from(new Set(playlist.audioFileIds ?? [])),
+				sortOrder: Number.isFinite(playlist.sortOrder)
+					? playlist.sortOrder
+					: index,
+			})),
 			songs: loadedSnapshot.songs.map((song) => ({
 				id: song.id,
 				title: song.title,
@@ -79,6 +87,7 @@ export async function normalizeLoadedSnapshot(
 				audioFileOrder: song.audioFileOrder,
 				createdAt: song.createdAt,
 				updatedAt: song.updatedAt,
+				...(song.deletedAt ? { deletedAt: song.deletedAt } : {}),
 			})),
 			audioFiles,
 			annotations: loadedSnapshot.annotations.map((annotation) => ({

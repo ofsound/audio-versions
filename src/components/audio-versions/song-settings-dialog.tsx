@@ -104,7 +104,7 @@ export function SongSettingsDialog({
 					className="inline-flex h-11 items-center gap-2 border border-[var(--color-danger-border)] bg-[var(--color-danger-surface)] px-4 text-sm font-semibold text-[var(--color-danger)] disabled:cursor-not-allowed disabled:opacity-55"
 				>
 					<Trash2 size={15} />
-					Delete song
+					Move to Trash
 				</button>
 			</div>
 		</SongModal>

@@ -1,4 +1,5 @@
-import { LogOut, Moon, Sun } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { LogOut, Moon, Sun, Trash2 } from "lucide-react";
 import { type RefObject, useRef } from "react";
 import type { AudioVersionsUiSettings } from "#/lib/audio-versions/types";
 import { useTheme } from "#/providers/theme-provider";
@@ -164,6 +165,17 @@ export function AudioVersionsSettingsDialog({
 							}))
 						}
 					/>
+				</section>
+
+				<section className="border-t border-[var(--color-border-plain)] pt-6">
+					<Link
+						to="/trash"
+						onClick={onClose}
+						className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold no-underline"
+					>
+						<Trash2 size={18} />
+						Open Trash
+					</Link>
 				</section>
 			</div>
 		</SongModal>

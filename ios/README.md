@@ -62,6 +62,10 @@ a second production identity.
 - Coalesced playback preparation, HTTPS/expiry validation, and in-memory link
   invalidation on sign-out
 - Coalesced waveform scrubbing, skipping, and rate changes
+- Cloud-synced playlists with creation, renaming, deletion, manual ordering,
+  cross-song file search, per-file add/remove menus, and ordered file editing
+- Native playlist playback with play/pause, previous/next, off/all/one looping,
+  background audio, and Lock Screen next/previous controls
 - Point and range annotation insertion
 - Conflict-aware annotation editing and tombstone deletion
 - Plain-text song journal stored directly as shared text, plus plain-text editing
@@ -103,6 +107,9 @@ Run these checks after installing a new build from Xcode:
    acceptable.
 9. Sign out while audio is playing. Playback and Now Playing must stop and the
    private signed-link cache must be cleared.
+10. Play a multi-file playlist through a track boundary. Verify automatic next,
+    previous/next from Lock Screen and a headset, repeat-all wrapping, repeat-one,
+    interruption behavior, and that Now Playing metadata changes to the new file.
 
 ## Verification
 

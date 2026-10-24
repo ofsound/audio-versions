@@ -168,9 +168,7 @@ describe("AudioVersionsProvider", () => {
 		expect(
 			screen.getByRole("heading", { name: "Session out of sync" }),
 		).toBeTruthy();
-		expect(
-			screen.getByText(/date and time are set automatically/i),
-		).toBeTruthy();
+		expect(screen.getByText(/servers’ clocks are out of sync/i)).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
 		expect(screen.queryByText("JWT issued at future")).toBeNull();
 	});
@@ -446,6 +444,7 @@ describe("AudioVersionsProvider", () => {
 		expect(deleteAudioFileCascadeMock).toHaveBeenCalledWith({
 			audioFileId: "file-1",
 			annotationIds: ["annotation-1"],
+			playlists: [],
 			settings: {
 				...createEmptySettings(),
 				recents: [],
@@ -472,7 +471,7 @@ describe("AudioVersionsProvider", () => {
 		);
 	});
 
-	it("persists song deletes through the atomic cascade helper", async () => {
+	it("moves songs to trash without deleting their persisted audio", async () => {
 		loadSnapshotMock.mockResolvedValue({
 			songs: [
 				{
@@ -534,7 +533,8 @@ describe("AudioVersionsProvider", () => {
 				},
 			},
 		});
-		deleteSongCascadeMock.mockResolvedValue(undefined);
+		saveSongMock.mockResolvedValue(undefined);
+		saveSettingsMock.mockResolvedValue(undefined);
 
 		render(
 			<AudioVersionsProvider>
@@ -551,20 +551,15 @@ describe("AudioVersionsProvider", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Delete song" }));
 
 		await waitFor(() => {
-			expect(deleteSongCascadeMock).toHaveBeenCalledTimes(1);
+			expect(saveSongMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					id: "song-1",
+					deletedAt: expect.any(String),
+				}),
+			);
 		});
 
-		expect(deleteSongCascadeMock).toHaveBeenCalledWith({
-			songId: "song-1",
-			audioFileIds: ["file-1"],
-			annotationIds: ["annotation-1"],
-			settings: {
-				recents: ["song-2"],
-				lastOpenSongId: "song-2",
-				workspaceBySongId: {},
-				ui: createEmptySettings().ui,
-			},
-		});
+		expect(deleteSongCascadeMock).not.toHaveBeenCalled();
 
 		expect(screen.getByTestId("delete-state").textContent).toContain(
 			'"songId":null',

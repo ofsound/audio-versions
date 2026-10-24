@@ -156,7 +156,11 @@ export function LibraryView() {
 	}
 
 	async function handleDeleteSong(songId: string) {
-		if (!window.confirm("Delete this song?")) {
+		if (
+			!window.confirm(
+				"Move this song to Trash? You can restore it for 30 days.",
+			)
+		) {
 			return;
 		}
 

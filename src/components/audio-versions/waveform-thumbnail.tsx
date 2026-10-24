@@ -7,6 +7,7 @@ import {
 	formatDuration,
 	normalizeWaveformData,
 } from "#/lib/audio-versions/waveform";
+import { AddToPlaylistMenu } from "./add-to-playlist-menu";
 import { useWaveformCanvas } from "./use-waveform-canvas";
 
 interface WaveformThumbnailProps {
@@ -104,6 +105,10 @@ export function WaveformThumbnail({
 				</div>
 			</div>
 			<div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+				<AddToPlaylistMenu
+					audioFileId={audioFile.id}
+					audioFileTitle={audioFile.title}
+				/>
 				<button
 					type="button"
 					onClick={() => void handleDownloadFile()}

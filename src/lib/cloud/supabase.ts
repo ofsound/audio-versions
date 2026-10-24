@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { fetchWithSessionRetry } from "./session-fetch";
+
 let browserClient: SupabaseClient | null = null;
 
 export function isCloudConfigured(): boolean {
@@ -18,6 +20,7 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
 		import.meta.env.VITE_SUPABASE_URL,
 		import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
 		{
+			global: { fetch: fetchWithSessionRetry },
 			auth: {
 				autoRefreshToken: true,
 				detectSessionInUrl: false,

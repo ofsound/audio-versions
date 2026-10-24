@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 final class ReviewCompanionStore: ObservableObject {
     @Published private(set) var songs: [Song]
+    @Published private(set) var trashedSongs: [Song]
+    @Published private(set) var playlists: [Playlist]
     @Published var navigationPath: [LibraryDestination] = []
     @Published var activeVersionID: String?
     @Published var playbackRate: Double = 1 {
@@ -17,6 +19,7 @@ final class ReviewCompanionStore: ObservableObject {
     @Published private(set) var playbackErrorMessage: String?
     @Published private var fixtureCurrentTime: TimeInterval = 0
     @Published private var fixtureIsPlaying = false
+    @Published var playlistLoopMode: PlaylistLoopMode = .off
 
     private var cloudLibrary: CloudLibraryService?
     private var signedMedia: SignedMediaURLProvider?
@@ -27,9 +30,26 @@ final class ReviewCompanionStore: ObservableObject {
     private var playbackPreparationTask: Task<Void, Never>?
     private var playbackLoadGeneration = 0
     private var hasAttemptedPlaybackRecovery = false
+    private var activePlaylistID: String?
 
-    init(songs: [Song] = FixtureLibrary.songs) {
+    init(songs: [Song] = FixtureLibrary.songs, playlists: [Playlist]? = nil) {
         self.songs = songs
+        trashedSongs = []
+        if let playlists {
+            self.playlists = playlists
+        } else {
+            let versionIDs = songs.flatMap(\.versions).prefix(4).map(\.id)
+            self.playlists = versionIDs.isEmpty ? [] : [
+                Playlist(
+                    id: UUID().uuidString.lowercased(),
+                    name: "Listening Queue",
+                    audioFileIDs: Array(versionIDs),
+                    sortOrder: 0,
+                    createdAt: .now,
+                    updatedAt: .now
+                )
+            ]
+        }
         audioEngine.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
@@ -37,6 +57,16 @@ final class ReviewCompanionStore: ObservableObject {
             .store(in: &cancellables)
         audioEngine.onPlaybackFailure = { [weak self] context in
             self?.recoverPlayback(after: context)
+        }
+        audioEngine.onPlaybackEnded = { [weak self] track in
+            guard self?.activeVersionID == track.id else { return }
+            self?.handlePlaylistPlaybackEnded()
+        }
+        audioEngine.onNextTrack = { [weak self] in
+            self?.playAdjacentPlaylistVersion(direction: 1)
+        }
+        audioEngine.onPreviousTrack = { [weak self] in
+            self?.playPreviousPlaylistVersion()
         }
     }
 
@@ -81,7 +111,7 @@ final class ReviewCompanionStore: ObservableObject {
         cloudLibrary = library
         self.signedMedia = signedMedia
         if isNewCloudSession {
-            replaceLibrary(with: [])
+            replaceLibrary(with: [], playlists: [])
         }
     }
 
@@ -93,7 +123,15 @@ final class ReviewCompanionStore: ObservableObject {
 
         do {
             let snapshot = try await cloudLibrary.fetchActiveSnapshot()
-            replaceLibrary(with: snapshot.songs)
+            replaceLibrary(
+                with: snapshot.songs,
+                trashedSongs: snapshot.trashedSongs,
+                playlists: snapshot.playlists
+            )
+            let cutoff = Date.now.addingTimeInterval(-30 * 24 * 60 * 60)
+            for song in snapshot.trashedSongs where (song.deletedAt ?? .distantFuture) <= cutoff {
+                permanentlyDeleteSong(song)
+            }
         } catch {
             cloudErrorMessage = error.localizedDescription
         }
@@ -105,22 +143,114 @@ final class ReviewCompanionStore: ObservableObject {
         Task { await previousSignedMedia?.invalidateAll() }
         cloudLibrary = nil
         signedMedia = nil
-        replaceLibrary(with: FixtureLibrary.songs)
+        let fixtureSongs = FixtureLibrary.songs
+        let versionIDs = fixtureSongs.flatMap(\.versions).prefix(4).map(\.id)
+        let fixturePlaylists = versionIDs.isEmpty ? [] : [
+            Playlist(
+                id: UUID().uuidString.lowercased(),
+                name: "Listening Queue",
+                audioFileIDs: Array(versionIDs),
+                sortOrder: 0,
+                createdAt: .now,
+                updatedAt: .now
+            )
+        ]
+        replaceLibrary(with: fixtureSongs, playlists: fixturePlaylists)
         navigationPath = []
     }
 
-    func replaceLibrary(with songs: [Song]) {
+    func replaceLibrary(
+        with songs: [Song],
+        trashedSongs: [Song] = [],
+        playlists: [Playlist] = []
+    ) {
         stopPlayback()
         activeVersionID = nil
         fixtureCurrentTime = 0
         self.songs = songs
+        self.trashedSongs = trashedSongs
+        self.playlists = playlists
+        activePlaylistID = nil
+        audioEngine.setQueueControlsEnabled(false)
+    }
+
+    func trashSong(_ song: Song) {
+        guard let index = songs.firstIndex(where: { $0.id == song.id }) else { return }
+        var trashedSong = songs.remove(at: index)
+        trashedSong.deletedAt = .now
+        trashedSong.updatedAt = .now
+        trashedSongs.insert(trashedSong, at: 0)
+        if trashedSong.versions.contains(where: { $0.id == activeVersionID }) {
+            stopPlayback()
+            navigationPath = []
+        }
+
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                try await cloudLibrary.trashSong(id: song.id)
+            } catch {
+                trashedSongs.removeAll { $0.id == song.id }
+                songs.insert(song, at: min(index, songs.count))
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func restoreSong(_ song: Song) {
+        guard let index = trashedSongs.firstIndex(where: { $0.id == song.id }) else { return }
+        var restoredSong = trashedSongs.remove(at: index)
+        restoredSong.deletedAt = nil
+        restoredSong.updatedAt = .now
+        songs.insert(restoredSong, at: 0)
+
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                try await cloudLibrary.restoreSong(id: song.id)
+            } catch {
+                songs.removeAll { $0.id == song.id }
+                trashedSongs.insert(song, at: min(index, trashedSongs.count))
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func permanentlyDeleteSong(_ song: Song) {
+        guard let index = trashedSongs.firstIndex(where: { $0.id == song.id }) else { return }
+        trashedSongs.remove(at: index)
+
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                if let signedMedia {
+                    for version in song.versions {
+                        try await signedMedia.deleteMedia(audioFileID: version.id)
+                    }
+                }
+                try await cloudLibrary.permanentlyDeleteSong(id: song.id)
+            } catch {
+                trashedSongs.insert(song, at: min(index, trashedSongs.count))
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func emptyTrash() {
+        for song in trashedSongs {
+            permanentlyDeleteSong(song)
+        }
     }
 
     func version(id: String) -> AudioVersion? {
         songs.lazy.flatMap(\.versions).first { $0.id == id }
     }
 
-    func activate(version: AudioVersion) {
+    func activate(version: AudioVersion, preservePlaylistQueue: Bool = false) {
+        if !preservePlaylistQueue {
+            activePlaylistID = nil
+            audioEngine.setQueueControlsEnabled(false)
+        }
         guard activeVersionID != version.id else { return }
         stopPlayback()
         activeVersionID = version.id
@@ -129,19 +259,22 @@ final class ReviewCompanionStore: ObservableObject {
         hasAttemptedPlaybackRecovery = false
     }
 
-    func togglePlayback(for version: AudioVersion) {
+    func togglePlayback(for version: AudioVersion, preservePlaylistQueue: Bool = false) {
         guard signedMedia != nil else {
-            toggleFixturePlayback(for: version)
+            toggleFixturePlayback(for: version, preservePlaylistQueue: preservePlaylistQueue)
             return
         }
 
         Task {
-            await toggleCloudPlayback(for: version)
+            await toggleCloudPlayback(for: version, preservePlaylistQueue: preservePlaylistQueue)
         }
     }
 
-    private func toggleFixturePlayback(for version: AudioVersion) {
-        activate(version: version)
+    private func toggleFixturePlayback(
+        for version: AudioVersion,
+        preservePlaylistQueue: Bool
+    ) {
+        activate(version: version, preservePlaylistQueue: preservePlaylistQueue)
         fixtureIsPlaying.toggle()
 
         if fixtureIsPlaying {
@@ -151,8 +284,12 @@ final class ReviewCompanionStore: ObservableObject {
         }
     }
 
-    func seek(to time: TimeInterval, in version: AudioVersion) {
-        activate(version: version)
+    func seek(
+        to time: TimeInterval,
+        in version: AudioVersion,
+        preservePlaylistQueue: Bool = false
+    ) {
+        activate(version: version, preservePlaylistQueue: preservePlaylistQueue)
         let clampedTime = PlaybackTimeline.clamp(time, duration: version.duration)
         if signedMedia == nil {
             fixtureCurrentTime = clampedTime
@@ -161,8 +298,13 @@ final class ReviewCompanionStore: ObservableObject {
         }
     }
 
-    func open(version: AudioVersion, at time: TimeInterval, autoplay: Bool) {
-        activate(version: version)
+    func open(
+        version: AudioVersion,
+        at time: TimeInterval,
+        autoplay: Bool,
+        preservePlaylistQueue: Bool = false
+    ) {
+        activate(version: version, preservePlaylistQueue: preservePlaylistQueue)
         let clampedTime = PlaybackTimeline.clamp(time, duration: version.duration)
 
         guard signedMedia != nil else {
@@ -398,8 +540,207 @@ final class ReviewCompanionStore: ObservableObject {
         cloudErrorMessage = nil
     }
 
-    private func toggleCloudPlayback(for version: AudioVersion) async {
+    @discardableResult
+    func createPlaylist(named value: String, audioFileIDs: [String] = []) -> Playlist? {
+        let name = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        let now = Date.now
+        let playlist = Playlist(
+            id: UUID().uuidString.lowercased(),
+            name: name,
+            audioFileIDs: audioFileIDs.reduce(into: []) { result, id in
+                if !result.contains(id) {
+                    result.append(id)
+                }
+            },
+            sortOrder: (playlists.map(\.sortOrder).max() ?? -1) + 1,
+            createdAt: now,
+            updatedAt: now
+        )
+        playlists.append(playlist)
+        guard let cloudLibrary else { return playlist }
+        Task {
+            do {
+                try await cloudLibrary.insertPlaylist(playlist)
+            } catch {
+                playlists.removeAll { $0.id == playlist.id }
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+        return playlist
+    }
+
+    func renamePlaylist(id: String, name value: String) {
+        let name = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        updatePlaylist(id: id) { $0.name = name }
+    }
+
+    func addVersion(_ versionID: String, toPlaylist playlistID: String) {
+        updatePlaylist(id: playlistID) { playlist in
+            guard !playlist.audioFileIDs.contains(versionID) else { return }
+            playlist.audioFileIDs.append(versionID)
+        }
+    }
+
+    func removeVersion(_ versionID: String, fromPlaylist playlistID: String) {
+        updatePlaylist(id: playlistID) { playlist in
+            playlist.audioFileIDs.removeAll { $0 == versionID }
+        }
+    }
+
+    func setPlaylistVersionOrder(playlistID: String, audioFileIDs: [String]) {
+        updatePlaylist(id: playlistID) { playlist in
+            playlist.audioFileIDs = audioFileIDs.reduce(into: []) { result, id in
+                if !result.contains(id) {
+                    result.append(id)
+                }
+            }
+        }
+    }
+
+    func reorderPlaylists(fromOffsets: IndexSet, toOffset: Int) {
+        var reordered = playlists.sorted {
+            $0.sortOrder == $1.sortOrder
+                ? $0.createdAt < $1.createdAt
+                : $0.sortOrder < $1.sortOrder
+        }
+        reordered.move(fromOffsets: fromOffsets, toOffset: toOffset)
+        let previous = playlists
+        let now = Date.now
+        reordered = reordered.enumerated().map { index, playlist in
+            var playlist = playlist
+            playlist.sortOrder = index
+            playlist.updatedAt = now
+            return playlist
+        }
+        playlists = reordered
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                for playlist in reordered {
+                    try await cloudLibrary.updatePlaylist(playlist)
+                }
+            } catch {
+                playlists = previous
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func deletePlaylist(id: String) {
+        guard let playlist = playlists.first(where: { $0.id == id }) else { return }
+        playlists.removeAll { $0.id == id }
+        if activePlaylistID == id {
+            stopPlayback()
+            activePlaylistID = nil
+        }
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                try await cloudLibrary.tombstonePlaylist(id: id)
+            } catch {
+                playlists.append(playlist)
+                playlists.sort { $0.sortOrder < $1.sortOrder }
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func togglePlaylistPlayback(version: AudioVersion, playlist: Playlist) {
+        if activePlaylistID == playlist.id, activeVersionID == version.id {
+            togglePlayback(for: version, preservePlaylistQueue: true)
+        } else {
+            play(version: version, in: playlist)
+        }
+    }
+
+    func play(version: AudioVersion, in playlist: Playlist) {
         activate(version: version)
+        activePlaylistID = playlist.id
+        audioEngine.setQueueControlsEnabled(true)
+        open(
+            version: version,
+            at: 0,
+            autoplay: true,
+            preservePlaylistQueue: true
+        )
+    }
+
+    func playNextPlaylistVersion() {
+        playAdjacentPlaylistVersion(direction: 1)
+    }
+
+    func playPreviousPlaylistVersion() {
+        guard currentTime <= 3 else {
+            if let activeVersionID, let version = version(id: activeVersionID) {
+                seek(to: 0, in: version, preservePlaylistQueue: true)
+            }
+            return
+        }
+        playAdjacentPlaylistVersion(direction: -1)
+    }
+
+    private func updatePlaylist(id: String, mutation: (inout Playlist) -> Void) {
+        guard let index = playlists.firstIndex(where: { $0.id == id }) else { return }
+        let previous = playlists[index]
+        mutation(&playlists[index])
+        guard playlists[index] != previous else { return }
+        playlists[index].updatedAt = .now
+        let updated = playlists[index]
+        guard let cloudLibrary else { return }
+        Task {
+            do {
+                try await cloudLibrary.updatePlaylist(updated)
+            } catch {
+                if let currentIndex = playlists.firstIndex(where: { $0.id == id }),
+                   playlists[currentIndex].updatedAt == updated.updatedAt {
+                    playlists[currentIndex] = previous
+                }
+                cloudErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func handlePlaylistPlaybackEnded() {
+        guard activePlaylistID != nil else { return }
+        if playlistLoopMode == .one,
+           let activeVersionID,
+           let version = version(id: activeVersionID),
+           let playlist = playlists.first(where: { $0.id == self.activePlaylistID }) {
+            play(version: version, in: playlist)
+        } else {
+            playAdjacentPlaylistVersion(direction: 1, fromEndedTrack: true)
+        }
+    }
+
+    private func playAdjacentPlaylistVersion(direction: Int, fromEndedTrack: Bool = false) {
+        guard
+            let activePlaylistID,
+            let playlist = playlists.first(where: { $0.id == activePlaylistID })
+        else { return }
+        let availableIDs = playlist.audioFileIDs.filter { version(id: $0) != nil }
+        guard !availableIDs.isEmpty else { return }
+        let currentIndex = activeVersionID.flatMap { availableIDs.firstIndex(of: $0) } ?? 0
+        var targetIndex = currentIndex + direction
+        if !availableIDs.indices.contains(targetIndex) {
+            guard playlistLoopMode == .all else {
+                if fromEndedTrack {
+                    stopPlayback()
+                }
+                return
+            }
+            targetIndex = targetIndex < 0 ? availableIDs.count - 1 : 0
+        }
+        guard let target = version(id: availableIDs[targetIndex]) else { return }
+        play(version: target, in: playlist)
+    }
+
+    private func toggleCloudPlayback(
+        for version: AudioVersion,
+        preservePlaylistQueue: Bool
+    ) async {
+        activate(version: version, preservePlaylistQueue: preservePlaylistQueue)
 
         if audioEngine.isLoaded(trackID: version.id) {
             if isPlaying {
@@ -522,7 +863,12 @@ final class ReviewCompanionStore: ObservableObject {
                 self.fixtureCurrentTime += 0.25 * self.playbackRate
                 if self.fixtureCurrentTime >= version.duration {
                     self.fixtureCurrentTime = version.duration
-                    self.stopPlayback()
+                    if self.activePlaylistID == nil {
+                        self.stopPlayback()
+                    } else {
+                        self.fixtureIsPlaying = false
+                        self.handlePlaylistPlaybackEnded()
+                    }
                     return
                 }
             }

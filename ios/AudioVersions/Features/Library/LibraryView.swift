@@ -6,6 +6,7 @@ struct LibraryView: View {
     @Environment(\.palette) private var palette
     @State private var searchText = ""
     @State private var isShowingAppearanceSettings = false
+    @State private var songPendingTrash: Song?
 
     let accountEmail: String?
     let onSignOut: (() -> Void)?
@@ -31,8 +32,9 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $store.navigationPath) {
-            Group {
+        TabView {
+            NavigationStack(path: $store.navigationPath) {
+                Group {
                 if isBootstrappingLibrary {
                     LibraryBootstrapView()
                 } else if filteredSongs.isEmpty {
@@ -52,6 +54,11 @@ struct LibraryView: View {
                         }
                         .listRowBackground(palette.canvas)
                         .listRowSeparatorTint(palette.hairline)
+                        .swipeActions(edge: .trailing) {
+                            Button("Move to Trash", systemImage: "trash", role: .destructive) {
+                                songPendingTrash = song
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -60,14 +67,14 @@ struct LibraryView: View {
                     }
                 }
             }
-            .appCanvas()
-            .navigationTitle("Audio Versions")
-            .bottomScreenChrome {
+                .appCanvas()
+                .navigationTitle("Audio Versions")
+                .bottomScreenChrome {
                 if !isBootstrappingLibrary {
                     LibrarySearchField(text: $searchText)
                 }
             }
-            .toolbar {
+                .toolbar {
                 if !isBootstrappingLibrary {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
@@ -100,7 +107,7 @@ struct LibraryView: View {
                     }
                 }
             }
-            .navigationDestination(for: LibraryDestination.self) { destination in
+                .navigationDestination(for: LibraryDestination.self) { destination in
                 switch destination {
                 case let .song(id):
                     SongDetailView(songID: id)
@@ -111,10 +118,44 @@ struct LibraryView: View {
                         linkTarget: target
                     )
                 }
+                }
             }
+            .tabItem {
+                Label("Songs", systemImage: "music.note.house")
+            }
+
+            PlaylistLibraryView()
+                .tabItem {
+                    Label("Playlists", systemImage: "music.note.list")
+                }
+
+            TrashLibraryView()
+                .tabItem {
+                    Label("Trash", systemImage: "trash")
+                }
         }
         .sheet(isPresented: $isShowingAppearanceSettings) {
             AppearanceSettingsView(appearance: appearance)
+        }
+        .confirmationDialog(
+            "Move this song to Trash?",
+            isPresented: Binding(
+                get: { songPendingTrash != nil },
+                set: { if !$0 { songPendingTrash = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                if let songPendingTrash {
+                    store.trashSong(songPendingTrash)
+                }
+                songPendingTrash = nil
+            }
+            Button("Cancel", role: .cancel) {
+                songPendingTrash = nil
+            }
+        } message: {
+            Text("You can restore it for 30 days. Its audio files will be kept until then.")
         }
         .alert(
             "Audio Versions couldn’t complete that request",
@@ -132,6 +173,98 @@ struct LibraryView: View {
             }
         } message: {
             Text(store.cloudErrorMessage ?? "Please try again.")
+        }
+    }
+}
+
+private struct TrashLibraryView: View {
+    @EnvironmentObject private var store: ReviewCompanionStore
+    @Environment(\.palette) private var palette
+    @State private var songPendingPermanentDeletion: Song?
+    @State private var isConfirmingEmptyTrash = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if store.trashedSongs.isEmpty {
+                    ContentUnavailableView(
+                        "Trash is empty",
+                        systemImage: "trash",
+                        description: Text("Deleted songs remain recoverable for 30 days.")
+                    )
+                } else {
+                    List(store.trashedSongs) { song in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(song.title)
+                                .font(.headline)
+                                .foregroundStyle(palette.textPrimary)
+                            if let deletionDate = song.deletedAt?.addingTimeInterval(30 * 24 * 60 * 60) {
+                                Text("Permanently deletes \(deletionDate.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(.caption)
+                                    .foregroundStyle(palette.textTertiary)
+                            }
+                        }
+                        .swipeActions(edge: .leading) {
+                            Button("Restore", systemImage: "arrow.uturn.backward") {
+                                store.restoreSong(song)
+                            }
+                            .tint(.green)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button("Delete permanently", systemImage: "trash.slash", role: .destructive) {
+                                songPendingPermanentDeletion = song
+                            }
+                        }
+                        .listRowBackground(palette.canvas)
+                        .listRowSeparatorTint(palette.hairline)
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .appCanvas()
+            .navigationTitle("Trash")
+            .toolbar {
+                if !store.trashedSongs.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Empty", role: .destructive) {
+                            isConfirmingEmptyTrash = true
+                        }
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Permanently delete this song?",
+            isPresented: Binding(
+                get: { songPendingPermanentDeletion != nil },
+                set: { if !$0 { songPendingPermanentDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete permanently", role: .destructive) {
+                if let songPendingPermanentDeletion {
+                    store.permanentlyDeleteSong(songPendingPermanentDeletion)
+                }
+                songPendingPermanentDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                songPendingPermanentDeletion = nil
+            }
+        } message: {
+            Text("The song and all of its audio files will be deleted. This cannot be undone.")
+        }
+        .confirmationDialog(
+            "Empty Trash?",
+            isPresented: $isConfirmingEmptyTrash,
+            titleVisibility: .visible
+        ) {
+            Button("Delete everything permanently", role: .destructive) {
+                store.emptyTrash()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every trashed song and audio file will be permanently deleted. This cannot be undone.")
         }
     }
 }

@@ -49,6 +49,7 @@ describe("GlobalSearch", () => {
 		);
 
 		const dialog = screen.getByRole("dialog", { name: "Search" });
+		expect(dialog.closest(".song-modal")?.parentElement).toBe(document.body);
 		fireEvent.change(
 			within(dialog).getByRole("textbox", { name: "Search library" }),
 			{

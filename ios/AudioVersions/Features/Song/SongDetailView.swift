@@ -158,34 +158,40 @@ private struct ScrollableVersionList: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
-                    NavigationLink(
-                        value: LibraryDestination.version(
-                            songID: songID,
-                            versionID: version.id,
-                            target: nil
-                        )
-                    ) {
-                        HStack(spacing: 10) {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(palette.brandTile)
-                                .frame(width: 36, height: 36)
-                                .overlay {
-                                    Image(systemName: "waveform")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(palette.onAccent)
-                                }
+                    HStack(spacing: 10) {
+                        NavigationLink(
+                            value: LibraryDestination.version(
+                                songID: songID,
+                                versionID: version.id,
+                                target: nil
+                            )
+                        ) {
+                            HStack(spacing: 10) {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(palette.brandTile)
+                                    .frame(width: 36, height: 36)
+                                    .overlay {
+                                        Image(systemName: "waveform")
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(palette.onAccent)
+                                    }
 
-                            VersionRow(version: version)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(palette.textTertiary)
+                                VersionRow(version: version)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .contentShape(Rectangle())
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+
+                        AddVersionToPlaylistMenu(version: version)
+                            .frame(width: 36, height: 36)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(palette.textTertiary)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                     .background(
                         GeometryReader { proxy in
                             Color.clear.preference(

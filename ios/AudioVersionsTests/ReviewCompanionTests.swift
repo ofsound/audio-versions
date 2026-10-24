@@ -248,6 +248,58 @@ struct ReviewCompanionTests {
 
     @MainActor
     @Test
+    func playlistsCreateDeduplicateReorderRemoveAndDelete() throws {
+        let store = ReviewCompanionStore(songs: FixtureLibrary.songs, playlists: [])
+        let versions = store.songs.flatMap(\.versions)
+        let first = try #require(versions.first)
+        let second = try #require(versions.dropFirst().first)
+        let playlist = try #require(
+            store.createPlaylist(named: "References", audioFileIDs: [first.id, first.id])
+        )
+
+        #expect(store.playlists.first?.audioFileIDs == [first.id])
+
+        store.addVersion(second.id, toPlaylist: playlist.id)
+        store.addVersion(second.id, toPlaylist: playlist.id)
+        #expect(store.playlists.first?.audioFileIDs == [first.id, second.id])
+
+        store.setPlaylistVersionOrder(
+            playlistID: playlist.id,
+            audioFileIDs: [second.id, first.id]
+        )
+        #expect(store.playlists.first?.audioFileIDs == [second.id, first.id])
+
+        store.removeVersion(second.id, fromPlaylist: playlist.id)
+        #expect(store.playlists.first?.audioFileIDs == [first.id])
+
+        store.deletePlaylist(id: playlist.id)
+        #expect(store.playlists.isEmpty)
+    }
+
+    @MainActor
+    @Test
+    func playlistTransportAdvancesInStoredOrder() throws {
+        let store = ReviewCompanionStore(songs: FixtureLibrary.songs, playlists: [])
+        let versions = store.songs.flatMap(\.versions)
+        let first = try #require(versions.first)
+        let second = try #require(versions.dropFirst().first)
+        let playlist = try #require(
+            store.createPlaylist(named: "Sequence", audioFileIDs: [first.id, second.id])
+        )
+
+        store.play(version: first, in: playlist)
+        #expect(store.activeVersionID == first.id)
+
+        store.playNextPlaylistVersion()
+        #expect(store.activeVersionID == second.id)
+
+        store.playlistLoopMode = .all
+        store.playNextPlaylistVersion()
+        #expect(store.activeVersionID == first.id)
+    }
+
+    @MainActor
+    @Test
     func journalAndFileNotesUpdateTheFixtureLibrary() throws {
         let store = ReviewCompanionStore()
         let song = try #require(store.songs.first)
@@ -484,5 +536,28 @@ struct ReviewCompanionTests {
         #expect(store.activeVersionID == version.id)
         #expect(!store.isPlaying)
         #expect(!store.isPreparingPlayback)
+    }
+
+    @MainActor
+    @Test
+    func songsMoveToTrashRestoreAndPurgeWithoutLosingMediaEarly() throws {
+        let store = ReviewCompanionStore()
+        let song = try #require(store.songs.first)
+        let versionIDs = song.versions.map(\.id)
+
+        store.trashSong(song)
+        let trashedSong = try #require(store.trashedSongs.first { $0.id == song.id })
+        #expect(store.songs.allSatisfy { $0.id != song.id })
+        #expect(trashedSong.versions.map(\.id) == versionIDs)
+        #expect(trashedSong.deletedAt != nil)
+
+        store.restoreSong(trashedSong)
+        let restoredSong = try #require(store.songs.first { $0.id == song.id })
+        #expect(restoredSong.versions.map(\.id) == versionIDs)
+        #expect(restoredSong.deletedAt == nil)
+
+        store.trashSong(restoredSong)
+        store.permanentlyDeleteSong(try #require(store.trashedSongs.first { $0.id == song.id }))
+        #expect(store.trashedSongs.allSatisfy { $0.id != song.id })
     }
 }

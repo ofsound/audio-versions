@@ -1,5 +1,5 @@
 import { Link, useMatchRoute } from "@tanstack/react-router";
-import { Library, Settings } from "lucide-react";
+import { Library, ListMusic, Settings } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useOptionalAuth } from "#/providers/auth-provider";
@@ -39,6 +39,8 @@ export function AudioVersionsChrome({
 	const { cloudAvailable, signOut, user } = useOptionalAuth();
 	const { ready, getSongById, settings, updateUiSettings } = useAudioVersions();
 	const songMatch = matchRoute({ to: "/songs/$songId" });
+	const isPlaylistsRoute = Boolean(matchRoute({ to: "/playlists" }));
+	const isTrashRoute = Boolean(matchRoute({ to: "/trash" }));
 	const songId = songMatch ? songMatch.songId : undefined;
 	const isSongRoute = Boolean(songId);
 	const songTitle = songId ? getSongById(songId)?.title : undefined;
@@ -75,7 +77,7 @@ export function AudioVersionsChrome({
 		<HeaderSlotsContext.Provider
 			value={{
 				library: {
-					enabled: !isSongRoute,
+					enabled: !isSongRoute && !isPlaylistsRoute && !isTrashRoute,
 					slot: libraryHeaderActionSlot,
 				},
 				song: {
@@ -107,6 +109,27 @@ export function AudioVersionsChrome({
 
 								{!isSongRoute ? (
 									<div className="flex min-w-0 flex-1 items-center gap-3">
+										<nav
+											aria-label="Major sections"
+											className="flex shrink-0 items-center gap-1"
+										>
+											<Link
+												to="/"
+												className={`audio-versions-header-control theme-toggle-button h-12 px-3 no-underline ${!isPlaylistsRoute && !isTrashRoute ? "text-[var(--color-accent)]" : ""}`}
+												aria-label="Songs"
+												title="Songs"
+											>
+												<Library size={19} />
+											</Link>
+											<Link
+												to="/playlists"
+												className={`audio-versions-header-control theme-toggle-button h-12 px-3 no-underline ${isPlaylistsRoute ? "text-[var(--color-accent)]" : ""}`}
+												aria-label="Playlists"
+												title="Playlists"
+											>
+												<ListMusic size={19} />
+											</Link>
+										</nav>
 										<GlobalSearch />
 										<div
 											ref={setLibraryHeaderActionSlot}

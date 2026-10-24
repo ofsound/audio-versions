@@ -464,12 +464,14 @@ describe("LibraryView", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: /edit settings for new song/i }),
 		);
-		fireEvent.click(screen.getByRole("button", { name: /^delete song$/i }));
-		expect(confirmSpy).toHaveBeenCalledWith("Delete this song?");
+		fireEvent.click(screen.getByRole("button", { name: /^move to trash$/i }));
+		expect(confirmSpy).toHaveBeenCalledWith(
+			"Move this song to Trash? You can restore it for 30 days.",
+		);
 		expect(deleteSongMock).not.toHaveBeenCalled();
 
 		confirmSpy.mockReturnValue(true);
-		fireEvent.click(screen.getByRole("button", { name: /^delete song$/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^move to trash$/i }));
 
 		await waitFor(() => {
 			expect(deleteSongMock).toHaveBeenCalledWith("song-1");

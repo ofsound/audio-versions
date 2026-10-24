@@ -4,6 +4,7 @@ import type {
 	AudioFileRecord,
 	AudioVersionsSettings,
 	AudioVersionsSnapshot,
+	Playlist,
 	Song,
 } from "#/lib/audio-versions/types";
 
@@ -19,6 +20,7 @@ interface SongRow {
 	audio_file_order: string[];
 	created_at: string;
 	updated_at: string;
+	deleted_at: string | null;
 }
 
 interface AudioFileRow {
@@ -58,6 +60,16 @@ interface SettingsRow {
 	settings: AudioVersionsSettings;
 }
 
+interface PlaylistRow {
+	id: string;
+	user_id: string;
+	name: string;
+	audio_file_ids: string[];
+	sort_order: number;
+	created_at: string;
+	updated_at: string;
+}
+
 interface CloudSnapshotResult {
 	exists: boolean;
 	snapshot: AudioVersionsSnapshot;
@@ -67,10 +79,14 @@ export interface CloudPersistence {
 	deleteAnnotation: (annotationId: string) => Promise<void>;
 	deleteAudioFile: (audioFileId: string) => Promise<void>;
 	deleteSong: (songId: string) => Promise<void>;
+	permanentlyDeleteSong: (songId: string) => Promise<void>;
+	restoreSong: (songId: string) => Promise<void>;
+	deletePlaylist: (playlistId: string) => Promise<void>;
 	saveAnnotation: (annotation: Annotation) => Promise<void>;
 	saveAudioFile: (audioFile: AudioFileRecord) => Promise<void>;
 	saveSettings: (settings: AudioVersionsSettings) => Promise<void>;
 	saveSong: (song: Song) => Promise<void>;
+	savePlaylist: (playlist: Playlist) => Promise<void>;
 }
 
 function requireClient() {
@@ -93,7 +109,7 @@ function songToRow(userId: string, song: Song) {
 		audio_file_order: song.audioFileOrder,
 		created_at: song.createdAt,
 		updated_at: song.updatedAt,
-		deleted_at: null,
+		deleted_at: song.deletedAt ?? null,
 	};
 }
 
@@ -136,6 +152,19 @@ function annotationToRow(userId: string, annotation: Annotation) {
 	};
 }
 
+function playlistToRow(userId: string, playlist: Playlist) {
+	return {
+		id: playlist.id,
+		user_id: userId,
+		name: playlist.name,
+		audio_file_ids: playlist.audioFileIds,
+		sort_order: playlist.sortOrder,
+		created_at: playlist.createdAt,
+		updated_at: playlist.updatedAt,
+		deleted_at: null,
+	};
+}
+
 function songFromRow(row: SongRow): Song {
 	return {
 		id: row.id,
@@ -146,6 +175,7 @@ function songFromRow(row: SongRow): Song {
 		audioFileOrder: row.audio_file_order,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
+		...(row.deleted_at ? { deletedAt: row.deleted_at } : {}),
 	};
 }
 
@@ -198,6 +228,17 @@ function annotationFromRow(row: AnnotationRow): Annotation {
 	};
 }
 
+function playlistFromRow(row: PlaylistRow): Playlist {
+	return {
+		id: row.id,
+		name: row.name,
+		audioFileIds: row.audio_file_ids,
+		sortOrder: row.sort_order,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	};
+}
+
 function throwIfError(error: { message: string } | null): void {
 	if (error) {
 		throw new Error(error.message);
@@ -224,6 +265,12 @@ export function createCloudPersistence(userId: string): CloudPersistence {
 			const { error } = await client
 				.from("annotations")
 				.upsert(annotationToRow(userId, annotation));
+			throwIfError(error);
+		},
+		async savePlaylist(playlist) {
+			const { error } = await client
+				.from("playlists")
+				.upsert(playlistToRow(userId, playlist));
 			throwIfError(error);
 		},
 		async saveSettings(settings) {
@@ -262,28 +309,38 @@ export function createCloudPersistence(userId: string): CloudPersistence {
 		},
 		async deleteSong(songId) {
 			const now = new Date().toISOString();
-			const [annotationResult, audioFileResult, songResult] = await Promise.all(
-				[
-					client
-						.from("annotations")
-						.update({ deleted_at: now, updated_at: now })
-						.eq("user_id", userId)
-						.eq("song_id", songId),
-					client
-						.from("audio_files")
-						.update({ deleted_at: now, updated_at: now })
-						.eq("user_id", userId)
-						.eq("song_id", songId),
-					client
-						.from("songs")
-						.update({ deleted_at: now, updated_at: now })
-						.eq("user_id", userId)
-						.eq("id", songId),
-				],
-			);
-			throwIfError(annotationResult.error);
-			throwIfError(audioFileResult.error);
+			const songResult = await client
+				.from("songs")
+				.update({ deleted_at: now, updated_at: now })
+				.eq("user_id", userId)
+				.eq("id", songId);
 			throwIfError(songResult.error);
+		},
+		async restoreSong(songId) {
+			const now = new Date().toISOString();
+			const { error } = await client
+				.from("songs")
+				.update({ deleted_at: null, updated_at: now })
+				.eq("user_id", userId)
+				.eq("id", songId);
+			throwIfError(error);
+		},
+		async permanentlyDeleteSong(songId) {
+			const { error } = await client
+				.from("songs")
+				.delete()
+				.eq("user_id", userId)
+				.eq("id", songId);
+			throwIfError(error);
+		},
+		async deletePlaylist(playlistId) {
+			const now = new Date().toISOString();
+			const { error } = await client
+				.from("playlists")
+				.update({ deleted_at: now, updated_at: now })
+				.eq("user_id", userId)
+				.eq("id", playlistId);
+			throwIfError(error);
 		},
 	};
 }
@@ -292,38 +349,46 @@ export async function loadCloudSnapshot(
 	userId: string,
 ): Promise<CloudSnapshotResult> {
 	const client = requireClient();
-	const [songsResult, audioFilesResult, annotationsResult, settingsResult] =
-		await Promise.all([
-			client
-				.from("songs")
-				.select("*")
-				.eq("user_id", userId)
-				.is("deleted_at", null),
-			client
-				.from("audio_files")
-				.select("*")
-				.eq("user_id", userId)
-				.is("deleted_at", null),
-			client
-				.from("annotations")
-				.select("*")
-				.eq("user_id", userId)
-				.is("deleted_at", null),
-			client
-				.from("user_settings")
-				.select("settings")
-				.eq("user_id", userId)
-				.maybeSingle(),
-		]);
+	const [
+		songsResult,
+		audioFilesResult,
+		annotationsResult,
+		playlistsResult,
+		settingsResult,
+	] = await Promise.all([
+		client.from("songs").select("*").eq("user_id", userId),
+		client
+			.from("audio_files")
+			.select("*")
+			.eq("user_id", userId)
+			.is("deleted_at", null),
+		client
+			.from("annotations")
+			.select("*")
+			.eq("user_id", userId)
+			.is("deleted_at", null),
+		client
+			.from("playlists")
+			.select("*")
+			.eq("user_id", userId)
+			.is("deleted_at", null),
+		client
+			.from("user_settings")
+			.select("settings")
+			.eq("user_id", userId)
+			.maybeSingle(),
+	]);
 
 	throwIfError(songsResult.error);
 	throwIfError(audioFilesResult.error);
 	throwIfError(annotationsResult.error);
+	throwIfError(playlistsResult.error);
 	throwIfError(settingsResult.error);
 
 	const songRows = (songsResult.data ?? []) as SongRow[];
 	const audioFileRows = (audioFilesResult.data ?? []) as AudioFileRow[];
 	const annotationRows = (annotationsResult.data ?? []) as AnnotationRow[];
+	const playlistRows = (playlistsResult.data ?? []) as PlaylistRow[];
 	const settingsRow = settingsResult.data as SettingsRow | null;
 
 	return {
@@ -331,11 +396,13 @@ export async function loadCloudSnapshot(
 			songRows.length > 0 ||
 			audioFileRows.length > 0 ||
 			annotationRows.length > 0 ||
+			playlistRows.length > 0 ||
 			settingsRow != null,
 		snapshot: {
 			songs: songRows.map(songFromRow),
 			audioFiles: audioFileRows.map(audioFileFromRow),
 			annotations: annotationRows.map(annotationFromRow),
+			playlists: playlistRows.map(playlistFromRow),
 			blobsByAudioId: {},
 			settings: settingsRow?.settings ?? {
 				recents: [],
@@ -363,6 +430,7 @@ export async function uploadCloudSnapshot(
 	await Promise.all(snapshot.songs.map(cloud.saveSong));
 	await Promise.all(snapshot.audioFiles.map(cloud.saveAudioFile));
 	await Promise.all(snapshot.annotations.map(cloud.saveAnnotation));
+	await Promise.all(snapshot.playlists.map(cloud.savePlaylist));
 	await cloud.saveSettings(snapshot.settings);
 }
 
@@ -379,6 +447,16 @@ export function subscribeToCloudChanges(
 				event: "*",
 				schema: "public",
 				table: "songs",
+				filter: `user_id=eq.${userId}`,
+			},
+			onChange,
+		)
+		.on(
+			"postgres_changes",
+			{
+				event: "*",
+				schema: "public",
+				table: "playlists",
 				filter: `user_id=eq.${userId}`,
 			},
 			onChange,

@@ -3,6 +3,8 @@ import Foundation
 
 struct CloudLibrarySnapshot {
     let songs: [Song]
+    let trashedSongs: [Song]
+    let playlists: [Playlist]
 }
 
 final class ReviewCloudEnvironment: @unchecked Sendable {
@@ -37,8 +39,7 @@ final class CloudLibraryService: @unchecked Sendable {
     func fetchActiveSnapshot() async throws -> CloudLibrarySnapshot {
         let songRows: [SongRow] = try await client
             .from("songs")
-            .select("id,title,artist,general_notes,audio_file_order,updated_at")
-            .is("deleted_at", value: nil)
+            .select("id,title,artist,general_notes,audio_file_order,updated_at,deleted_at")
             .execute()
             .value
 
@@ -56,11 +57,121 @@ final class CloudLibraryService: @unchecked Sendable {
             .execute()
             .value
 
+        let playlistRows: [PlaylistRow] = try await client
+            .from("playlists")
+            .select("id,name,audio_file_ids,sort_order,created_at,updated_at")
+            .is("deleted_at", value: nil)
+            .execute()
+            .value
+
         return try Self.mapSnapshot(
             songRows: songRows,
             audioFileRows: audioFileRows,
-            annotationRows: annotationRows
+            annotationRows: annotationRows,
+            playlistRows: playlistRows
         )
+    }
+
+    func trashSong(id value: String) async throws {
+        try await setSongDeletedAt(id: value, deletedAt: .now)
+    }
+
+    func restoreSong(id value: String) async throws {
+        try await setSongDeletedAt(id: value, deletedAt: nil)
+    }
+
+    func permanentlyDeleteSong(id value: String) async throws {
+        guard let id = UUID(uuidString: value) else {
+            throw CloudDataError.invalidIdentifier(value)
+        }
+        try await client
+            .from("songs")
+            .delete()
+            .eq("id", value: id)
+            .execute()
+    }
+
+    private func setSongDeletedAt(id value: String, deletedAt: Date?) async throws {
+        guard let id = UUID(uuidString: value) else {
+            throw CloudDataError.invalidIdentifier(value)
+        }
+        let now = CloudTimestamp.format(.now)
+        try await client
+            .from("songs")
+            .update(
+                SongTrashUpdate(
+                    deletedAt: deletedAt.map(CloudTimestamp.format),
+                    updatedAt: now
+                )
+            )
+            .eq("id", value: id)
+            .execute()
+    }
+
+    func insertPlaylist(_ playlist: Playlist) async throws {
+        let session = try await client.auth.session
+        guard let id = UUID(uuidString: playlist.id) else {
+            throw CloudDataError.invalidIdentifier(playlist.id)
+        }
+        let audioFileIDs = try playlist.audioFileIDs.map { value in
+            guard let id = UUID(uuidString: value) else {
+                throw CloudDataError.invalidIdentifier(value)
+            }
+            return id
+        }
+        try await client
+            .from("playlists")
+            .insert(
+                PlaylistInsert(
+                    id: id,
+                    userID: session.user.id,
+                    name: playlist.name,
+                    audioFileIDs: audioFileIDs,
+                    sortOrder: playlist.sortOrder,
+                    createdAt: CloudTimestamp.format(playlist.createdAt),
+                    updatedAt: CloudTimestamp.format(playlist.updatedAt)
+                )
+            )
+            .execute()
+    }
+
+    func updatePlaylist(_ playlist: Playlist) async throws {
+        guard let id = UUID(uuidString: playlist.id) else {
+            throw CloudDataError.invalidIdentifier(playlist.id)
+        }
+        let audioFileIDs = try playlist.audioFileIDs.map { value in
+            guard let id = UUID(uuidString: value) else {
+                throw CloudDataError.invalidIdentifier(value)
+            }
+            return id
+        }
+        try await client
+            .from("playlists")
+            .update(
+                PlaylistUpdate(
+                    name: playlist.name,
+                    audioFileIDs: audioFileIDs,
+                    sortOrder: playlist.sortOrder,
+                    updatedAt: CloudTimestamp.format(playlist.updatedAt),
+                    deletedAt: nil
+                )
+            )
+            .eq("id", value: id)
+            .is("deleted_at", value: nil)
+            .execute()
+    }
+
+    func tombstonePlaylist(id value: String) async throws {
+        guard let id = UUID(uuidString: value) else {
+            throw CloudDataError.invalidIdentifier(value)
+        }
+        let timestamp = CloudTimestamp.format(.now)
+        try await client
+            .from("playlists")
+            .update(PlaylistTombstone(deletedAt: timestamp, updatedAt: timestamp))
+            .eq("id", value: id)
+            .is("deleted_at", value: nil)
+            .execute()
     }
 
     @discardableResult
@@ -219,7 +330,8 @@ final class CloudLibraryService: @unchecked Sendable {
     static func mapSnapshot(
         songRows: [SongRow],
         audioFileRows: [AudioFileRow],
-        annotationRows: [AnnotationRow]
+        annotationRows: [AnnotationRow],
+        playlistRows: [PlaylistRow] = []
     ) throws -> CloudLibrarySnapshot {
         let annotationsByAudioFileID = try Dictionary(
             grouping: annotationRows,
@@ -287,12 +399,42 @@ final class CloudLibraryService: @unchecked Sendable {
                 artist: row.artist,
                 generalNotes: row.generalNotes,
                 updatedAt: try CloudTimestamp.parse(row.updatedAt),
+                deletedAt: try row.deletedAt.map(CloudTimestamp.parse),
                 versions: versions
             )
         }
 
+        let activeAudioFileIDs = Set(audioFileRows.map(\.id))
+        var playlists: [Playlist] = []
+        for row in playlistRows {
+            let audioFileIDs = row.audioFileIDs
+                .filter { activeAudioFileIDs.contains($0) }
+                .map { $0.uuidString.lowercased() }
+            let createdAt = try CloudTimestamp.parse(row.createdAt)
+            let updatedAt = try CloudTimestamp.parse(row.updatedAt)
+            playlists.append(
+                Playlist(
+                id: row.id.uuidString.lowercased(),
+                name: row.name,
+                audioFileIDs: audioFileIDs,
+                sortOrder: row.sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt
+                )
+            )
+        }
+        playlists.sort {
+            $0.sortOrder == $1.sortOrder
+                ? $0.createdAt < $1.createdAt
+                : $0.sortOrder < $1.sortOrder
+        }
+
         return CloudLibrarySnapshot(
-            songs: songs.sorted { $0.updatedAt > $1.updatedAt }
+            songs: songs.filter { $0.deletedAt == nil }.sorted { $0.updatedAt > $1.updatedAt },
+            trashedSongs: songs.filter { $0.deletedAt != nil }.sorted {
+                ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast)
+            },
+            playlists: playlists
         )
     }
 

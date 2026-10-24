@@ -44,7 +44,8 @@ function hasLibraryContent(snapshot: AudioVersionsSnapshot): boolean {
 	return (
 		snapshot.songs.length > 0 ||
 		snapshot.audioFiles.length > 0 ||
-		snapshot.annotations.length > 0
+		snapshot.annotations.length > 0 ||
+		snapshot.playlists.length > 0
 	);
 }
 
@@ -88,6 +89,7 @@ function mergeLegacySnapshot(
 				cloudById.get(record.id)?.remoteMedia,
 		})),
 		annotations: mergeEntityRecords(local.annotations, cloud.annotations),
+		playlists: mergeEntityRecords(local.playlists, cloud.playlists),
 		blobsByAudioId: local.blobsByAudioId,
 		settings: cloud.settings,
 	};
@@ -126,7 +128,8 @@ function hasNewerCachedEntities(
 	return (
 		hasNewer(cloud.songs, merged.songs) ||
 		hasNewer(cloud.audioFiles, merged.audioFiles) ||
-		hasNewer(cloud.annotations, merged.annotations)
+		hasNewer(cloud.annotations, merged.annotations) ||
+		hasNewer(cloud.playlists, merged.playlists)
 	);
 }
 
@@ -175,6 +178,9 @@ function attachCachedBlobs(
 	const localAnnotations = new Map(
 		local.annotations.map((record) => [record.id, record]),
 	);
+	const localPlaylists = new Map(
+		local.playlists.map((record) => [record.id, record]),
+	);
 	const preferNewerLocal = <T extends { id: string; updatedAt: string }>(
 		cloudRecord: T,
 		localRecord: T | undefined,
@@ -193,6 +199,9 @@ function attachCachedBlobs(
 		),
 		annotations: cloud.annotations.map((record) =>
 			preferNewerLocal(record, localAnnotations.get(record.id)),
+		),
+		playlists: cloud.playlists.map((record) =>
+			preferNewerLocal(record, localPlaylists.get(record.id)),
 		),
 		blobsByAudioId: Object.fromEntries(
 			Object.entries(local.blobsByAudioId).filter(([audioFileId]) =>

@@ -55,6 +55,9 @@ final class NativeAudioEngine: NSObject, ObservableObject {
     @Published private(set) var isExternalPlaybackActive = false
 
     var onPlaybackFailure: ((PlaybackFailureContext) -> Void)?
+    var onPlaybackEnded: ((PlaybackTrack) -> Void)?
+    var onNextTrack: (() -> Void)?
+    var onPreviousTrack: (() -> Void)?
 
     private let audioSession: AVAudioSession
     private let notificationCenter: NotificationCenter
@@ -77,6 +80,7 @@ final class NativeAudioEngine: NSObject, ObservableObject {
     private var resumeAfterInterruption = false
     private var playerGeneration = 0
     private var failedPlayerGeneration: Int?
+    private var queueControlsEnabled = false
 
     init(
         audioSession: AVAudioSession = .sharedInstance(),
@@ -235,6 +239,12 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         updateNowPlayingPlaybackState()
     }
 
+    func setQueueControlsEnabled(_ isEnabled: Bool) {
+        queueControlsEnabled = isEnabled
+        commandCenter.nextTrackCommand.isEnabled = isEnabled && currentTrack != nil
+        commandCenter.previousTrackCommand.isEnabled = isEnabled && currentTrack != nil
+    }
+
     private func activateAudioSession() throws {
         try audioSession.setCategory(
             .playback,
@@ -387,6 +397,9 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         }
         state = .ended
         updateNowPlayingPlaybackState()
+        if let track = currentTrack {
+            onPlaybackEnded?(track)
+        }
     }
 
     private func fail(with message: String, generation: Int? = nil) {
@@ -544,8 +557,17 @@ final class NativeAudioEngine: NSObject, ObservableObject {
             return .success
         }
 
-        commandCenter.nextTrackCommand.isEnabled = false
-        commandCenter.previousTrackCommand.isEnabled = false
+        addRemoteTarget(to: commandCenter.nextTrackCommand) { [weak self] _ in
+            guard self?.onNextTrack != nil else { return .noActionableNowPlayingItem }
+            Task { @MainActor [weak self] in self?.onNextTrack?() }
+            return .success
+        }
+
+        addRemoteTarget(to: commandCenter.previousTrackCommand) { [weak self] _ in
+            guard self?.onPreviousTrack != nil else { return .noActionableNowPlayingItem }
+            Task { @MainActor [weak self] in self?.onPreviousTrack?() }
+            return .success
+        }
         commandCenter.stopCommand.isEnabled = false
         setRemoteCommandsEnabled(false)
     }
@@ -558,6 +580,8 @@ final class NativeAudioEngine: NSObject, ObservableObject {
         commandCenter.skipBackwardCommand.isEnabled = isEnabled
         commandCenter.changePlaybackPositionCommand.isEnabled = isEnabled
         commandCenter.changePlaybackRateCommand.isEnabled = isEnabled
+        commandCenter.nextTrackCommand.isEnabled = isEnabled && queueControlsEnabled
+        commandCenter.previousTrackCommand.isEnabled = isEnabled && queueControlsEnabled
     }
 
     private func addRemoteTarget(

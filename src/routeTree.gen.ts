@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrashRouteImport } from './routes/trash'
+import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SongsSongIdRouteImport } from './routes/songs.$songId'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -16,6 +18,16 @@ import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
 import { Route as ApiBlobSignedUrlRouteImport } from './routes/api/blob/signed-url'
 import { Route as ApiBlobDeleteRouteImport } from './routes/api/blob/delete'
 
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaylistsRoute = PlaylistsRouteImport.update({
+  id: '/playlists',
+  path: '/playlists',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +61,8 @@ const ApiBlobDeleteRoute = ApiBlobDeleteRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/playlists': typeof PlaylistsRoute
+  '/trash': typeof TrashRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
   '/api/blob/delete': typeof ApiBlobDeleteRoute
@@ -57,6 +71,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/playlists': typeof PlaylistsRoute
+  '/trash': typeof TrashRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
   '/api/blob/delete': typeof ApiBlobDeleteRoute
@@ -66,6 +82,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/playlists': typeof PlaylistsRoute
+  '/trash': typeof TrashRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/songs/$songId': typeof SongsSongIdRoute
   '/api/blob/delete': typeof ApiBlobDeleteRoute
@@ -76,6 +94,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/playlists'
+    | '/trash'
     | '/auth/callback'
     | '/songs/$songId'
     | '/api/blob/delete'
@@ -84,6 +104,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/playlists'
+    | '/trash'
     | '/auth/callback'
     | '/songs/$songId'
     | '/api/blob/delete'
@@ -92,6 +114,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/playlists'
+    | '/trash'
     | '/auth/callback'
     | '/songs/$songId'
     | '/api/blob/delete'
@@ -101,6 +125,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PlaylistsRoute: typeof PlaylistsRoute
+  TrashRoute: typeof TrashRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   SongsSongIdRoute: typeof SongsSongIdRoute
   ApiBlobDeleteRoute: typeof ApiBlobDeleteRoute
@@ -110,6 +136,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playlists': {
+      id: '/playlists'
+      path: '/playlists'
+      fullPath: '/playlists'
+      preLoaderRoute: typeof PlaylistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -157,6 +197,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PlaylistsRoute: PlaylistsRoute,
+  TrashRoute: TrashRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   SongsSongIdRoute: SongsSongIdRoute,
   ApiBlobDeleteRoute: ApiBlobDeleteRoute,

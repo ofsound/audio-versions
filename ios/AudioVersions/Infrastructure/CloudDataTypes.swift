@@ -121,6 +121,7 @@ struct SongRow: Decodable, Sendable {
     let generalNotes: String
     let audioFileOrder: [UUID]
     let updatedAt: String
+    let deletedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -128,6 +129,17 @@ struct SongRow: Decodable, Sendable {
         case artist
         case generalNotes = "general_notes"
         case audioFileOrder = "audio_file_order"
+        case updatedAt = "updated_at"
+        case deletedAt = "deleted_at"
+    }
+}
+
+struct SongTrashUpdate: Encodable, Sendable {
+    let deletedAt: String?
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case deletedAt = "deleted_at"
         case updatedAt = "updated_at"
     }
 }
@@ -219,6 +231,24 @@ struct AnnotationRow: Decodable, Sendable {
         case endMilliseconds = "end_ms"
         case detail
         case color
+        case updatedAt = "updated_at"
+    }
+}
+
+struct PlaylistRow: Decodable, Sendable {
+    let id: UUID
+    let name: String
+    let audioFileIDs: [UUID]
+    let sortOrder: Int
+    let createdAt: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case audioFileIDs = "audio_file_ids"
+        case sortOrder = "sort_order"
+        case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
 }
@@ -340,6 +370,52 @@ struct AnnotationUpdate: Encodable, Sendable {
 }
 
 struct AnnotationTombstone: Encodable, Sendable {
+    let deletedAt: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case deletedAt = "deleted_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct PlaylistInsert: Encodable, Sendable {
+    let id: UUID
+    let userID: UUID
+    let name: String
+    let audioFileIDs: [UUID]
+    let sortOrder: Int
+    let createdAt: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case name
+        case audioFileIDs = "audio_file_ids"
+        case sortOrder = "sort_order"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct PlaylistUpdate: Encodable, Sendable {
+    let name: String
+    let audioFileIDs: [UUID]
+    let sortOrder: Int
+    let updatedAt: String
+    let deletedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case audioFileIDs = "audio_file_ids"
+        case sortOrder = "sort_order"
+        case updatedAt = "updated_at"
+        case deletedAt = "deleted_at"
+    }
+}
+
+struct PlaylistTombstone: Encodable, Sendable {
     let deletedAt: String
     let updatedAt: String
 

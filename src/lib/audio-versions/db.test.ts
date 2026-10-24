@@ -5,6 +5,7 @@ import type {
 	Annotation,
 	AudioFileRecord,
 	AudioVersionsSettings,
+	Playlist,
 	Song,
 } from "./types";
 import { createEmptySettings } from "./types";
@@ -361,12 +362,21 @@ describe("audio-versions db cascade helpers", () => {
 			},
 		});
 		const blob = new Blob(["wave"], { type: "audio/wav" });
+		const playlist: Playlist = {
+			id: "playlist-1",
+			name: "References",
+			audioFileIds: [audioFile.id],
+			sortOrder: 0,
+			createdAt: "2026-08-02T00:00:00.000Z",
+			updatedAt: "2026-08-02T00:00:00.000Z",
+		};
 
 		await db.replaceLocalSnapshot(
 			{
 				songs: [song],
 				audioFiles: [audioFile],
 				annotations: [],
+				playlists: [playlist],
 				blobsByAudioId: { [audioFile.id]: blob },
 				settings: baseSettings,
 			},
@@ -377,6 +387,76 @@ describe("audio-versions db cascade helpers", () => {
 		expect(await db.getLocalOwnerId()).toBe("user-1");
 		expect(snapshot.songs.map((entry) => entry.id)).toEqual(["new-song"]);
 		expect(snapshot.audioFiles[0]?.remoteMedia).toEqual(audioFile.remoteMedia);
+		expect(snapshot.playlists).toEqual([playlist]);
 		expect(snapshot.blobsByAudioId).toEqual({ [audioFile.id]: blob });
+	});
+
+	it("refreshes metadata without rewriting retained audio blobs", async () => {
+		const db = await loadDbModule();
+		const audioFile = createAudioFile();
+		const blob = new Blob(["wave"], { type: "audio/wav" });
+		const initial = {
+			songs: [createSong()],
+			audioFiles: [audioFile],
+			annotations: [],
+			playlists: [],
+			blobsByAudioId: { [audioFile.id]: blob },
+			settings: baseSettings,
+		};
+		await db.replaceLocalSnapshot(initial, "user-1");
+		await db.saveAudioBlob("removed-file", new Blob(["removed"]));
+		const cached = await db.loadSnapshot();
+		const putSpy = vi.spyOn(IDBObjectStore.prototype, "put");
+		const clearSpy = vi.spyOn(IDBObjectStore.prototype, "clear");
+		try {
+			await db.replaceLocalSnapshot(
+				{
+					...cached,
+					audioFiles: [{ ...audioFile, title: "Renamed take" }],
+					blobsByAudioId: {
+						[audioFile.id]: cached.blobsByAudioId[audioFile.id],
+					},
+				},
+				"user-1",
+			);
+			expect(
+				putSpy.mock.contexts.some(
+					(store) => store instanceof IDBObjectStore && store.name === "blobs",
+				),
+			).toBe(false);
+			expect(
+				clearSpy.mock.contexts.some(
+					(store) => store instanceof IDBObjectStore && store.name === "blobs",
+				),
+			).toBe(false);
+			const refreshed = await db.loadSnapshot();
+			expect(refreshed.audioFiles[0]?.title).toBe("Renamed take");
+			expect(await refreshed.blobsByAudioId[audioFile.id]?.text()).toBe("wave");
+			expect(await db.getAudioBlob("removed-file")).toBeUndefined();
+		} finally {
+			putSpy.mockRestore();
+			clearSpy.mockRestore();
+		}
+	});
+
+	it("replaces cached media when switching owners even if audio IDs match", async () => {
+		const db = await loadDbModule();
+		const initial = {
+			songs: [createSong()],
+			audioFiles: [createAudioFile()],
+			annotations: [],
+			playlists: [],
+			blobsByAudioId: { "file-1": new Blob(["first owner"]) },
+			settings: baseSettings,
+		};
+		await db.replaceLocalSnapshot(initial, "user-1");
+		await db.replaceLocalSnapshot(
+			{ ...initial, blobsByAudioId: { "file-1": new Blob(["second owner"]) } },
+			"user-2",
+		);
+		expect(await db.getLocalOwnerId()).toBe("user-2");
+		expect(await (await db.getAudioBlob("file-1"))?.text()).toBe(
+			"second owner",
+		);
 	});
 });

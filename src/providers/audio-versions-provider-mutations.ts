@@ -24,6 +24,7 @@ import {
 	type CreateSongInput,
 	createDefaultWorkspaceState,
 	normalizeUiSettings,
+	type Playlist,
 	type Song,
 	type WorkspaceState,
 } from "#/lib/audio-versions/types";
@@ -140,45 +141,25 @@ export function useSongMutations({
 
 	const deleteSong = useCallback(
 		async (songId: string) => {
-			let deletedAudioFileIds: string[] = [];
-			let deletedRemoteAudioFileIds: string[] = [];
-			let deletedAnnotationIds: string[] = [];
+			let audioFileIds: string[] = [];
 
 			await commitSnapshot(
 				(current) => {
-					deletedAudioFileIds = current.audioFiles
+					audioFileIds = current.audioFiles
 						.filter((audioFile) => audioFile.songId === songId)
 						.map((audioFile) => audioFile.id);
-					deletedRemoteAudioFileIds = current.audioFiles
-						.filter(
-							(audioFile) =>
-								audioFile.songId === songId && Boolean(audioFile.remoteMedia),
-						)
-						.map((audioFile) => audioFile.id);
-					deletedAnnotationIds = current.annotations
-						.filter((annotation) => annotation.songId === songId)
-						.map((annotation) => annotation.id);
-					const deletedAudioFileIdSet = new Set(deletedAudioFileIds);
+					const now = new Date().toISOString();
 					const recents = current.settings.recents.filter(
 						(id) => id !== songId,
 					);
-					const workspaceBySongId = { ...current.settings.workspaceBySongId };
-					delete workspaceBySongId[songId];
-					const blobsByAudioId = { ...current.blobsByAudioId };
-					for (const fileId of deletedAudioFileIdSet) {
-						delete blobsByAudioId[fileId];
-					}
 
 					return {
 						...current,
-						songs: removeEntityById(current.songs, songId),
-						audioFiles: current.audioFiles.filter(
-							(audioFile) => audioFile.songId !== songId,
-						),
-						annotations: current.annotations.filter(
-							(annotation) => annotation.songId !== songId,
-						),
-						blobsByAudioId,
+						songs: patchEntityById(current.songs, songId, (song) => ({
+							...song,
+							deletedAt: now,
+							updatedAt: now,
+						})),
 						settings: {
 							...current.settings,
 							recents,
@@ -186,31 +167,127 @@ export function useSongMutations({
 								current.settings.lastOpenSongId === songId
 									? recents[0]
 									: current.settings.lastOpenSongId,
-							workspaceBySongId,
 						},
 					};
 				},
 				async (nextSnapshot) => {
-					await deleteSongCascade({
-						songId,
-						audioFileIds: deletedAudioFileIds,
-						annotationIds: deletedAnnotationIds,
-						settings: nextSnapshot.settings,
-					});
-					await Promise.all(deletedRemoteAudioFileIds.map(deleteRemoteAudio));
+					const song = findEntityById(nextSnapshot.songs, songId);
 					await Promise.all([
+						song ? saveSong(song) : undefined,
 						cloud?.deleteSong(songId),
+						saveSettings(nextSnapshot.settings),
 						cloud?.saveSettings(nextSnapshot.settings),
 					]);
 				},
 			);
 
-			if (deletedAudioFileIds.length === 0) {
-				return;
-			}
+			removeRegisteredAudio(audioFileIds);
+			prunePlaybackState(audioFileIds);
+		},
+		[cloud, commitSnapshot, prunePlaybackState, removeRegisteredAudio],
+	);
 
-			removeRegisteredAudio(deletedAudioFileIds);
-			prunePlaybackState(deletedAudioFileIds);
+	const restoreSong = useCallback(
+		async (songId: string) => {
+			await commitSnapshot(
+				(current) => ({
+					...current,
+					songs: patchEntityById(current.songs, songId, (song) => {
+						const { deletedAt: _deletedAt, ...rest } = song;
+						return { ...rest, updatedAt: new Date().toISOString() };
+					}),
+				}),
+				async (nextSnapshot) => {
+					const song = findEntityById(nextSnapshot.songs, songId);
+					await Promise.all([
+						song ? saveSong(song) : undefined,
+						cloud?.restoreSong(songId),
+					]);
+				},
+			);
+		},
+		[cloud, commitSnapshot],
+	);
+
+	const permanentlyDeleteSong = useCallback(
+		async (songId: string) => {
+			let audioFileIds: string[] = [];
+			let remoteAudioFileIds: string[] = [];
+			let annotationIds: string[] = [];
+			let updatedPlaylists: Playlist[] = [];
+
+			await commitSnapshot(
+				(current) => {
+					audioFileIds = current.audioFiles
+						.filter((audioFile) => audioFile.songId === songId)
+						.map((audioFile) => audioFile.id);
+					remoteAudioFileIds = current.audioFiles
+						.filter(
+							(audioFile) =>
+								audioFile.songId === songId && audioFile.remoteMedia,
+						)
+						.map((audioFile) => audioFile.id);
+					annotationIds = current.annotations
+						.filter((annotation) => annotation.songId === songId)
+						.map((annotation) => annotation.id);
+					const audioFileIdSet = new Set(audioFileIds);
+					const now = new Date().toISOString();
+					updatedPlaylists = current.playlists
+						.filter((playlist) =>
+							playlist.audioFileIds.some((id) => audioFileIdSet.has(id)),
+						)
+						.map((playlist) => ({
+							...playlist,
+							audioFileIds: playlist.audioFileIds.filter(
+								(id) => !audioFileIdSet.has(id),
+							),
+							updatedAt: now,
+						}));
+					const updatedPlaylistsById = new Map(
+						updatedPlaylists.map((playlist) => [playlist.id, playlist]),
+					);
+					const workspaceBySongId = { ...current.settings.workspaceBySongId };
+					delete workspaceBySongId[songId];
+					const blobsByAudioId = { ...current.blobsByAudioId };
+					for (const fileId of audioFileIdSet) delete blobsByAudioId[fileId];
+
+					return {
+						...current,
+						songs: removeEntityById(current.songs, songId),
+						audioFiles: current.audioFiles.filter(
+							(file) => file.songId !== songId,
+						),
+						annotations: current.annotations.filter(
+							(annotation) => annotation.songId !== songId,
+						),
+						playlists: current.playlists.map(
+							(playlist) => updatedPlaylistsById.get(playlist.id) ?? playlist,
+						),
+						blobsByAudioId,
+						settings: { ...current.settings, workspaceBySongId },
+					};
+				},
+				async (nextSnapshot) => {
+					await Promise.all(remoteAudioFileIds.map(deleteRemoteAudio));
+					await deleteSongCascade({
+						songId,
+						audioFileIds,
+						annotationIds,
+						playlists: updatedPlaylists,
+						settings: nextSnapshot.settings,
+					});
+					await Promise.all([
+						cloud?.permanentlyDeleteSong(songId),
+						cloud?.saveSettings(nextSnapshot.settings),
+						...updatedPlaylists.map((playlist) =>
+							cloud?.savePlaylist(playlist),
+						),
+					]);
+				},
+			);
+
+			removeRegisteredAudio(audioFileIds);
+			prunePlaybackState(audioFileIds);
 		},
 		[cloud, commitSnapshot, prunePlaybackState, removeRegisteredAudio],
 	);
@@ -219,9 +296,11 @@ export function useSongMutations({
 		() => ({
 			createSong,
 			deleteSong,
+			permanentlyDeleteSong,
+			restoreSong,
 			updateSong,
 		}),
-		[createSong, deleteSong, updateSong],
+		[createSong, deleteSong, permanentlyDeleteSong, restoreSong, updateSong],
 	);
 }
 
@@ -236,7 +315,17 @@ export function useAudioFileMutations({
 	const addAudioFile = useCallback(
 		async (songId: string, input: AddAudioFileInput) => {
 			setError(null);
-			const browserAudioBlob = await normalizeAudioBlobForBrowser(input.file);
+			// Capture bytes before decoding, uploading, or waiting on persistence.
+			// A disk-backed File can become invalid if the source changes meanwhile.
+			const importedFile = new File(
+				[await input.file.arrayBuffer()],
+				input.file.name,
+				{
+					type: input.file.type,
+					lastModified: input.file.lastModified,
+				},
+			);
+			const browserAudioBlob = await normalizeAudioBlobForBrowser(importedFile);
 			const { loudness, waveform } = await withDecodedAudio(
 				browserAudioBlob,
 				(audioBuffer) => ({
@@ -248,7 +337,7 @@ export function useAudioFileMutations({
 			const sessionDate = input.sessionDate.trim() || isoDateInLocalCalendar();
 			const audioFileId = crypto.randomUUID();
 			const remoteMedia = cloudUserId
-				? await uploadRemoteAudio(cloudUserId, audioFileId, input.file)
+				? await uploadRemoteAudio(cloudUserId, audioFileId, importedFile)
 				: undefined;
 			const audioFile: AudioFileRecord = {
 				id: audioFileId,
@@ -287,7 +376,7 @@ export function useAudioFileMutations({
 					const song = nextSnapshot.songs.find((entry) => entry.id === songId);
 					await Promise.all([
 						saveAudioFile(audioFile),
-						saveAudioBlob(audioFile.id, input.file),
+						saveAudioBlob(audioFile.id, importedFile),
 						song ? saveSong(song) : Promise.resolve(),
 						cloud?.saveAudioFile(audioFile),
 						song ? cloud?.saveSong(song) : undefined,
@@ -343,6 +432,7 @@ export function useAudioFileMutations({
 			let hadRemoteMedia = false;
 			let deletedAnnotationIds: string[] = [];
 			let updatedSongId: string | undefined;
+			let updatedPlaylists: Playlist[] = [];
 
 			await commitSnapshot(
 				(current) => {
@@ -372,6 +462,19 @@ export function useAudioFileMutations({
 					}
 					const blobsByAudioId = { ...current.blobsByAudioId };
 					delete blobsByAudioId[audioFileId];
+					const playlistUpdatedAt = new Date().toISOString();
+					updatedPlaylists = current.playlists
+						.filter((playlist) => playlist.audioFileIds.includes(audioFileId))
+						.map((playlist) => ({
+							...playlist,
+							audioFileIds: playlist.audioFileIds.filter(
+								(id) => id !== audioFileId,
+							),
+							updatedAt: playlistUpdatedAt,
+						}));
+					const updatedPlaylistsById = new Map(
+						updatedPlaylists.map((playlist) => [playlist.id, playlist]),
+					);
 
 					return {
 						...current,
@@ -393,6 +496,9 @@ export function useAudioFileMutations({
 							(annotation) => annotation.audioFileId !== audioFileId,
 						),
 						blobsByAudioId,
+						playlists: current.playlists.map(
+							(playlist) => updatedPlaylistsById.get(playlist.id) ?? playlist,
+						),
 						settings: {
 							...current.settings,
 							workspaceBySongId,
@@ -410,6 +516,7 @@ export function useAudioFileMutations({
 					await deleteAudioFileCascade({
 						audioFileId,
 						annotationIds: deletedAnnotationIds,
+						playlists: updatedPlaylists,
 						settings: nextSnapshot.settings,
 						song: updatedSong,
 					});
@@ -420,6 +527,9 @@ export function useAudioFileMutations({
 						cloud?.deleteAudioFile(audioFileId),
 						cloud?.saveSettings(nextSnapshot.settings),
 						updatedSong ? cloud?.saveSong(updatedSong) : undefined,
+						...updatedPlaylists.map((playlist) =>
+							cloud?.savePlaylist(playlist),
+						),
 					]);
 				},
 			);

@@ -48,6 +48,8 @@ export interface Song {
 	audioFileOrder: string[];
 	createdAt: string;
 	updatedAt: string;
+	/** Set while the song is in Trash. Its media remains recoverable until purge. */
+	deletedAt?: string;
 }
 
 export interface AudioFileRecord {
@@ -80,6 +82,15 @@ export interface Annotation {
 	endMs?: number;
 	detail: RichTextDoc;
 	color?: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface Playlist {
+	id: string;
+	name: string;
+	audioFileIds: string[];
+	sortOrder: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -117,8 +128,14 @@ export interface AudioVersionsSnapshot {
 	songs: Song[];
 	audioFiles: AudioFileRecord[];
 	annotations: Annotation[];
+	playlists: Playlist[];
 	blobsByAudioId: Record<string, Blob>;
 	settings: AudioVersionsSettings;
+}
+
+export interface CreatePlaylistInput {
+	name: string;
+	audioFileIds?: string[];
 }
 
 export interface SongLinkTarget {

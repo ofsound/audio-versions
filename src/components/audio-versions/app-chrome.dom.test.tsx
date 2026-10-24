@@ -15,9 +15,12 @@ let cloudAvailable = true;
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({
 		children,
+		to,
 		...props
-	}: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-		<a {...props}>{children}</a>
+	}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) => (
+		<a href={to} {...props}>
+			{children}
+		</a>
 	),
 	useMatchRoute: () => () => false,
 	useNavigate: () => navigateMock,
@@ -89,6 +92,7 @@ describe("AudioVersionsChrome", () => {
 		fireEvent.click(settingsButton);
 
 		expect(screen.getByRole("dialog", { name: /settings/i })).toBeTruthy();
+		expect(screen.getByRole("link", { name: /open trash/i })).toBeTruthy();
 		fireEvent.click(screen.getByRole("switch", { name: /color theme/i }));
 		expect(toggleThemeMock).toHaveBeenCalledTimes(1);
 

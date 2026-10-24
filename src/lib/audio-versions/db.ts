@@ -10,6 +10,7 @@ import {
 	type AudioVersionsSettings,
 	type AudioVersionsSnapshot,
 	createEmptySettings,
+	type Playlist,
 	type RichTextDoc,
 	type Song,
 } from "./types";
@@ -32,6 +33,10 @@ interface AudioVersionsDB extends DBSchema {
 			audioFileId: string;
 		};
 	};
+	playlists: {
+		key: string;
+		value: Playlist;
+	};
 	blobs: {
 		key: string;
 		value: Blob;
@@ -47,7 +52,7 @@ interface AudioVersionsDB extends DBSchema {
 }
 
 const DB_NAME = "audio-versions";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const SETTINGS_KEY = "app-settings";
 const LOCAL_OWNER_KEY = "cloud-owner-id";
 const IDENTITY_MIGRATION_KEY = "identity-migration-complete";
@@ -89,6 +94,10 @@ function openAudioVersionsDb(
 				});
 				annotationsStore.createIndex("songId", "songId");
 				annotationsStore.createIndex("audioFileId", "audioFileId");
+			}
+
+			if (!database.objectStoreNames.contains("playlists")) {
+				database.createObjectStore("playlists", { keyPath: "id" });
 			}
 
 			if (!database.objectStoreNames.contains("blobs")) {
@@ -218,6 +227,7 @@ async function migratePreviousDatabase(
 			songs,
 			audioFiles,
 			annotations,
+			playlists,
 			blobKeys,
 			blobs,
 			settingsKeys,
@@ -228,6 +238,9 @@ async function migratePreviousDatabase(
 			previousDatabase.getAll("songs"),
 			previousDatabase.getAll("audioFiles"),
 			previousDatabase.getAll("annotations"),
+			previousDatabase.objectStoreNames.contains("playlists")
+				? previousDatabase.getAll("playlists")
+				: Promise.resolve([]),
 			previousDatabase.getAllKeys("blobs"),
 			previousDatabase.getAll("blobs"),
 			previousDatabase.getAllKeys("settings"),
@@ -237,7 +250,15 @@ async function migratePreviousDatabase(
 		]);
 
 		const transaction = database.transaction(
-			["songs", "audioFiles", "annotations", "blobs", "settings", "sync"],
+			[
+				"songs",
+				"audioFiles",
+				"annotations",
+				"playlists",
+				"blobs",
+				"settings",
+				"sync",
+			],
 			"readwrite",
 		);
 
@@ -249,6 +270,9 @@ async function migratePreviousDatabase(
 		}
 		for (const annotation of annotations) {
 			await transaction.objectStore("annotations").put(annotation);
+		}
+		for (const playlist of playlists) {
+			await transaction.objectStore("playlists").put(playlist);
 		}
 		for (const [index, key] of blobKeys.entries()) {
 			const blob = blobs[index];
@@ -301,11 +325,12 @@ export async function closeAudioVersionsDbForTests(): Promise<void> {
 
 export async function loadSnapshot(): Promise<AudioVersionsSnapshot> {
 	const db = await getDb();
-	const [songs, audioFiles, annotations, blobKeys, settings] =
+	const [songs, audioFiles, annotations, playlists, blobKeys, settings] =
 		await Promise.all([
 			db.getAll("songs"),
 			db.getAll("audioFiles"),
 			db.getAll("annotations"),
+			db.getAll("playlists"),
 			db.getAllKeys("blobs"),
 			db.get("settings", SETTINGS_KEY),
 		]);
@@ -320,6 +345,7 @@ export async function loadSnapshot(): Promise<AudioVersionsSnapshot> {
 		songs,
 		audioFiles,
 		annotations,
+		playlists,
 		blobsByAudioId: Object.fromEntries(
 			blobEntries.filter(
 				(entry): entry is [string, Blob] => entry[1] instanceof Blob,
@@ -359,9 +385,20 @@ export async function saveAnnotation(annotation: Annotation): Promise<void> {
 	await db.put("annotations", annotation);
 }
 
+export async function savePlaylist(playlist: Playlist): Promise<void> {
+	const db = await getDb();
+	await db.put("playlists", playlist);
+}
+
+export async function deletePlaylist(playlistId: string): Promise<void> {
+	const db = await getDb();
+	await db.delete("playlists", playlistId);
+}
+
 interface DeleteAudioFileCascadeInput {
 	audioFileId: string;
 	annotationIds: string[];
+	playlists?: Playlist[];
 	settings: AudioVersionsSettings;
 	song?: Song;
 }
@@ -370,6 +407,7 @@ interface DeleteSongCascadeInput {
 	songId: string;
 	audioFileIds: string[];
 	annotationIds: string[];
+	playlists?: Playlist[];
 	settings: AudioVersionsSettings;
 }
 
@@ -396,15 +434,45 @@ export async function replaceLocalSnapshot(
 ): Promise<void> {
 	const db = await getDb();
 	const transaction = db.transaction(
-		["songs", "audioFiles", "annotations", "blobs", "settings", "sync"],
+		[
+			"songs",
+			"audioFiles",
+			"annotations",
+			"playlists",
+			"blobs",
+			"settings",
+			"sync",
+		],
 		"readwrite",
 	);
+
+	// Audio IDs identify immutable media. Keep existing blobs for this owner:
+	// rewriting cached Blob handles on every realtime refresh can fail in Chromium.
+	const blobsStore = transaction.objectStore("blobs");
+	const [previousOwnerId, existingBlobKeys] = await Promise.all([
+		transaction.objectStore("sync").get(LOCAL_OWNER_KEY),
+		blobsStore.getAllKeys(),
+	]);
+	const retainedBlobIds = new Set(
+		snapshot.audioFiles
+			.filter(
+				(audioFile) => snapshot.blobsByAudioId[audioFile.id] instanceof Blob,
+			)
+			.map((audioFile) => audioFile.id),
+	);
+	const cachedBlobIds = new Set(existingBlobKeys);
+	const sameOwner = previousOwnerId === ownerId;
+	for (const key of existingBlobKeys) {
+		if (!sameOwner || !retainedBlobIds.has(key)) {
+			await blobsStore.delete(key);
+		}
+	}
 
 	await Promise.all([
 		transaction.objectStore("songs").clear(),
 		transaction.objectStore("audioFiles").clear(),
 		transaction.objectStore("annotations").clear(),
-		transaction.objectStore("blobs").clear(),
+		transaction.objectStore("playlists").clear(),
 	]);
 
 	for (const song of snapshot.songs) {
@@ -413,12 +481,18 @@ export async function replaceLocalSnapshot(
 	for (const audioFile of snapshot.audioFiles) {
 		await transaction.objectStore("audioFiles").put(audioFile);
 		const blob = snapshot.blobsByAudioId[audioFile.id];
-		if (blob instanceof Blob) {
-			await transaction.objectStore("blobs").put(blob, audioFile.id);
+		if (
+			blob instanceof Blob &&
+			(!sameOwner || !cachedBlobIds.has(audioFile.id))
+		) {
+			await blobsStore.put(blob, audioFile.id);
 		}
 	}
 	for (const annotation of snapshot.annotations) {
 		await transaction.objectStore("annotations").put(annotation);
+	}
+	for (const playlist of snapshot.playlists) {
+		await transaction.objectStore("playlists").put(playlist);
 	}
 
 	await transaction
@@ -431,12 +505,13 @@ export async function replaceLocalSnapshot(
 export async function deleteAudioFileCascade({
 	audioFileId,
 	annotationIds,
+	playlists = [],
 	settings,
 	song,
 }: DeleteAudioFileCascadeInput): Promise<void> {
 	const db = await getDb();
 	const transaction = db.transaction(
-		["audioFiles", "annotations", "blobs", "settings", "songs"],
+		["audioFiles", "annotations", "blobs", "playlists", "settings", "songs"],
 		"readwrite",
 	);
 
@@ -445,6 +520,9 @@ export async function deleteAudioFileCascade({
 
 	for (const annotationId of annotationIds) {
 		await transaction.objectStore("annotations").delete(annotationId);
+	}
+	for (const playlist of playlists) {
+		await transaction.objectStore("playlists").put(playlist);
 	}
 
 	if (song) {
@@ -459,11 +537,12 @@ export async function deleteSongCascade({
 	songId,
 	audioFileIds,
 	annotationIds,
+	playlists = [],
 	settings,
 }: DeleteSongCascadeInput): Promise<void> {
 	const db = await getDb();
 	const transaction = db.transaction(
-		["songs", "audioFiles", "annotations", "blobs", "settings"],
+		["songs", "audioFiles", "annotations", "playlists", "blobs", "settings"],
 		"readwrite",
 	);
 
@@ -476,6 +555,9 @@ export async function deleteSongCascade({
 
 	for (const annotationId of annotationIds) {
 		await transaction.objectStore("annotations").delete(annotationId);
+	}
+	for (const playlist of playlists) {
+		await transaction.objectStore("playlists").put(playlist);
 	}
 
 	await transaction.objectStore("settings").put(settings, SETTINGS_KEY);
