@@ -3,6 +3,33 @@
 	backdrop-filter: blur(20px);
 }
 
+.audio-versions-header-layout {
+	display: grid;
+	grid-template-areas: "primary center actions";
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 1rem;
+}
+
+.audio-versions-header-primary {
+	grid-area: primary;
+}
+.audio-versions-header-center {
+	grid-area: center;
+	height: 3rem;
+}
+.audio-versions-header-actions {
+	grid-area: actions;
+}
+
+@media (max-width: 767px) {
+	.audio-versions-header-layout {
+		grid-template-areas: "primary actions" "center center";
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem;
+	}
+}
+
 .app-safe-area-header {
 	padding-top: env(safe-area-inset-top);
 }
@@ -190,7 +217,7 @@
 		display: grid;
 		grid-template-areas:
 			"primary actions"
-			"song song";
+			"center center";
 		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
 		gap: 0.5rem;
@@ -202,7 +229,7 @@
 	}
 
 	.audio-versions-header-song {
-		grid-area: song;
+		grid-area: center;
 	}
 
 	.audio-versions-header-actions {

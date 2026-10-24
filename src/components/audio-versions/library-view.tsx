@@ -4,6 +4,8 @@ import {
 	Calendar,
 	File,
 	FolderOpenDot,
+	LayoutGrid,
+	List,
 	Plus,
 	Settings,
 	Sparkles,
@@ -13,6 +15,7 @@ import { createPortal } from "react-dom";
 import { formatAudioFileSessionDateRange } from "#/lib/audio-versions/dates";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useLibraryHeaderActionSlot } from "./app-chrome";
+import { LibrarySongList } from "./library-song-list";
 import { SongModal } from "./song-modal";
 import { SongSettingsDialog } from "./song-settings-dialog";
 import { useCloseOnEscape } from "./use-close-on-escape";
@@ -30,6 +33,7 @@ export function LibraryView() {
 		updateSong,
 		deleteSong,
 		resetSongPlayheads,
+		updateUiSettings,
 	} = useAudioVersions();
 	const [title, setTitle] = useState("");
 	const [artist, setArtist] = useState("");
@@ -41,7 +45,7 @@ export function LibraryView() {
 	const createSongTitleInputRef = useRef<HTMLInputElement | null>(null);
 
 	const recentSongIds = settings.recents;
-	const { showArtist, showProject } = settings.ui;
+	const { showArtist, showProject, libraryView = "list" } = settings.ui;
 	const orderedSongs = useMemo(() => {
 		const recencyMap = new Map(recentSongIds.map((id, index) => [id, index]));
 
@@ -98,6 +102,14 @@ export function LibraryView() {
 		}
 
 		return ranges;
+	}, [audioFiles]);
+	const sessionSortKeys = useMemo(() => {
+		const keys = new Map<string, string>();
+		for (const file of audioFiles) {
+			const date = file.sessionDate || file.createdAt.slice(0, 10);
+			if (date > (keys.get(file.songId) ?? "")) keys.set(file.songId, date);
+		}
+		return keys;
 	}, [audioFiles]);
 	const annotationCountBySongId = useMemo(() => {
 		const counts = new Map<string, number>();
@@ -174,14 +186,42 @@ export function LibraryView() {
 	}
 
 	const createSongTrigger = (
-		<button
-			type="button"
-			onClick={() => setIsCreateSongOpen(true)}
-			className="action-primary inline-flex h-12 shrink-0 items-center justify-center gap-2 px-4 text-sm font-semibold leading-none"
-		>
-			<Plus size={18} />
-			Create song
-		</button>
+		<div className="flex items-center gap-3">
+			<fieldset
+				aria-label="Library view"
+				className="flex border border-[var(--color-border-plain)]"
+			>
+				{(
+					[
+						{ view: "list", label: "List view", Icon: List },
+						{ view: "grid", label: "Grid view", Icon: LayoutGrid },
+					] as const
+				).map(({ view, label, Icon }) => (
+					<button
+						key={view}
+						type="button"
+						aria-label={label}
+						title={label}
+						aria-pressed={libraryView === view}
+						onClick={() => {
+							if (libraryView !== view)
+								void updateUiSettings({ libraryView: view });
+						}}
+						className={`inline-flex h-12 w-12 items-center justify-center ${libraryView === view ? "bg-[var(--color-accent-surface)] text-[var(--color-accent)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}
+					>
+						<Icon size={19} />
+					</button>
+				))}
+			</fieldset>
+			<button
+				type="button"
+				onClick={() => setIsCreateSongOpen(true)}
+				className="action-primary inline-flex h-12 shrink-0 items-center justify-center gap-2 px-4 text-sm font-semibold leading-none"
+			>
+				<Plus size={18} />
+				Create song
+			</button>
+		</div>
 	);
 	const renderedCreateSongTrigger = libraryHeaderActionSlot?.slot
 		? createPortal(createSongTrigger, libraryHeaderActionSlot.slot)
@@ -234,8 +274,25 @@ export function LibraryView() {
 									</div>
 								</div>
 							</section>
+						) : libraryView === "list" ? (
+							<LibrarySongList
+								songs={orderedSongs}
+								showArtist={showArtist}
+								showProject={showProject}
+								fileCounts={audioFileCountBySongId}
+								markerCounts={annotationCountBySongId}
+								sessionDates={sessionDateRangeBySongId}
+								sessionSortKeys={sessionSortKeys}
+								onOpen={(id) => {
+									void resetSongPlayheads(id);
+								}}
+								onEdit={setEditingSongId}
+							/>
 						) : (
-							<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+							<section
+								aria-label="Song grid"
+								className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+							>
 								{orderedSongs.map((song) => {
 									const sessionDateRange = sessionDateRangeBySongId.get(
 										song.id,

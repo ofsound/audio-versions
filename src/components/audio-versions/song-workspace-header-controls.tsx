@@ -8,8 +8,11 @@ export function SongWorkspaceHeaderControls({
 	song,
 }: SongWorkspaceHeaderControlsProps) {
 	return (
-		<div className="song-workspace-header-controls flex min-w-0 flex-wrap items-end gap-x-8 gap-y-2">
-			<h1 className="font-title song-workspace-title min-w-0 break-words text-4xl font-black leading-none tracking-[-0.04em] text-[var(--color-text)] sm:text-5xl [text-shadow:0_4px_18px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]">
+		<div className="song-workspace-header-controls flex h-12 min-w-0 items-center gap-x-8 gap-y-2">
+			<h1
+				title={song.title}
+				className="font-title song-workspace-title min-w-0 truncate text-4xl font-black leading-none tracking-[-0.04em] text-[var(--color-text)] sm:text-5xl [text-shadow:0_4px_18px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]"
+			>
 				{song.title}
 			</h1>
 		</div>

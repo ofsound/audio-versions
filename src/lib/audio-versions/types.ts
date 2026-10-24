@@ -106,6 +106,7 @@ const WAVEFORM_HEIGHT_PRESETS = ["large", "medium", "small"] as const;
 export type WaveformHeightPreset = (typeof WAVEFORM_HEIGHT_PRESETS)[number];
 
 export interface AudioVersionsUiSettings {
+	libraryView: "list" | "grid";
 	accentLightPrimary: string;
 	accentLightStrong: string;
 	accentDarkPrimary: string;
@@ -200,6 +201,7 @@ export function createDefaultWorkspaceState(): WorkspaceState {
 
 export function createDefaultUiSettings(): AudioVersionsUiSettings {
 	return {
+		libraryView: "list",
 		accentLightPrimary: "#059669",
 		accentLightStrong: "#047857",
 		accentDarkPrimary: "#6ee7b7",
@@ -238,6 +240,7 @@ export function normalizeUiSettings(
 	const defaults = createDefaultUiSettings();
 
 	return {
+		libraryView: value?.libraryView === "grid" ? "grid" : "list",
 		accentLightPrimary: normalizeHexColor(
 			value?.accentLightPrimary,
 			defaults.accentLightPrimary,

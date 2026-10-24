@@ -27,6 +27,7 @@ const createSongMock = vi.fn();
 const updateSongMock = vi.fn();
 const deleteSongMock = vi.fn();
 const resetSongPlayheadsMock = vi.fn();
+const updateUiSettingsMock = vi.fn();
 let songs: Song[] = [];
 let audioFiles: AudioFileRecord[] = [];
 let annotations: Annotation[] = [];
@@ -80,6 +81,7 @@ vi.mock("#/providers/audio-versions-provider", () => ({
 		updateSong: updateSongMock,
 		deleteSong: deleteSongMock,
 		resetSongPlayheads: resetSongPlayheadsMock,
+		updateUiSettings: updateUiSettingsMock,
 	}),
 }));
 
@@ -116,6 +118,7 @@ describe("LibraryView", () => {
 		updateSongMock.mockReset();
 		deleteSongMock.mockReset();
 		resetSongPlayheadsMock.mockReset();
+		updateUiSettingsMock.mockReset();
 		resetSongPlayheadsMock.mockResolvedValue(undefined);
 		createSongMock.mockResolvedValue(makeSong("song-2"));
 		songs = [];
@@ -126,6 +129,38 @@ describe("LibraryView", () => {
 
 	afterEach(() => {
 		document.body.innerHTML = "";
+	});
+
+	it("defaults to a dense list with sortable columns and saved grid preference", () => {
+		songs = [
+			{ ...makeSong("song-1"), title: "Zebra" },
+			{ ...makeSong("song-2"), title: "Alpha" },
+		];
+		const { rerender } = render(<LibraryView />);
+		expect(screen.getByRole("table")).toBeTruthy();
+		expect(
+			screen
+				.getByRole("button", { name: "List view" })
+				.getAttribute("aria-pressed"),
+		).toBe("true");
+		fireEvent.click(screen.getByRole("button", { name: "Name" }));
+		expect(
+			screen.getAllByRole("link").map((link) => link.textContent?.trim()),
+		).toEqual(["Alpha", "Zebra"]);
+		fireEvent.click(screen.getByRole("button", { name: "Name" }));
+		expect(
+			screen.getAllByRole("link").map((link) => link.textContent?.trim()),
+		).toEqual(["Zebra", "Alpha"]);
+		fireEvent.click(screen.getByRole("button", { name: "Grid view" }));
+		expect(updateUiSettingsMock).toHaveBeenCalledWith({ libraryView: "grid" });
+		uiSettings = { ...uiSettings, libraryView: "grid" };
+		rerender(<LibraryView />);
+		expect(screen.queryByRole("table")).toBeNull();
+		expect(screen.getByRole("region", { name: "Song grid" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "List view" }));
+		expect(updateUiSettingsMock).toHaveBeenLastCalledWith({
+			libraryView: "list",
+		});
 	});
 
 	it("renders create song as a header action and opens the modal on click", () => {
@@ -294,6 +329,7 @@ describe("LibraryView", () => {
 	});
 
 	it("uses shared classes for the song card shell and inline settings button", () => {
+		uiSettings.libraryView = "grid";
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
 		songs = [makeSong("song-1")];
@@ -333,6 +369,7 @@ describe("LibraryView", () => {
 	});
 
 	it("shows the session date range next to files and markers on song cards", () => {
+		uiSettings.libraryView = "grid";
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
 		songs = [makeSong("song-1")];

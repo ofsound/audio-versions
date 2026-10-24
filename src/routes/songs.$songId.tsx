@@ -11,5 +11,5 @@ function SongRouteComponent() {
 	const { songId } = Route.useParams();
 	const search = Route.useSearch();
 
-	return <SongWorkspace songId={songId} search={search} />;
+	return <SongWorkspace key={songId} songId={songId} search={search} />;
 }

@@ -89,64 +89,42 @@ export function AudioVersionsChrome({
 			<div className={shellClassName}>
 				<header className={`${headerClassName} app-safe-area-header`}>
 					<div className="audio-versions-header-content flex w-full flex-col gap-4 px-6 py-4">
-						<div className="audio-versions-header-layout flex flex-col gap-4 xl:flex-row xl:items-end">
-							<div
-								className={
-									isSongRoute
-										? "audio-versions-header-primary flex min-w-0 items-center gap-4 xl:shrink-0"
-										: "audio-versions-header-primary flex min-w-0 flex-1 items-center gap-4"
-								}
+						<div className="audio-versions-header-layout">
+							<nav
+								aria-label="Major sections"
+								className="audio-versions-header-primary flex shrink-0 items-center gap-1"
 							>
-								{isSongRoute ? (
+								<Link
+									to="/"
+									aria-label={isSongRoute ? "Go to library" : "Songs"}
+									title="Songs"
+									className="audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0 no-underline"
+								>
+									<Library size={19} />
+								</Link>
+								{!isSongRoute ? (
 									<Link
-										to="/"
-										aria-label="Go to library"
-										className="audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0 no-underline"
+										to="/playlists"
+										aria-label="Playlists"
+										title="Playlists"
+										className={`audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0 no-underline ${isPlaylistsRoute ? "text-[var(--color-accent)]" : ""}`}
 									>
-										<Library size={22} />
+										<ListMusic size={19} />
 									</Link>
 								) : null}
-
-								{!isSongRoute ? (
-									<div className="flex min-w-0 flex-1 items-center gap-3">
-										<nav
-											aria-label="Major sections"
-											className="flex shrink-0 items-center gap-1"
-										>
-											<Link
-												to="/"
-												className={`audio-versions-header-control theme-toggle-button h-12 px-3 no-underline ${!isPlaylistsRoute && !isTrashRoute ? "text-[var(--color-accent)]" : ""}`}
-												aria-label="Songs"
-												title="Songs"
-											>
-												<Library size={19} />
-											</Link>
-											<Link
-												to="/playlists"
-												className={`audio-versions-header-control theme-toggle-button h-12 px-3 no-underline ${isPlaylistsRoute ? "text-[var(--color-accent)]" : ""}`}
-												aria-label="Playlists"
-												title="Playlists"
-											>
-												<ListMusic size={19} />
-											</Link>
-										</nav>
-										<GlobalSearch />
-										<div
-											ref={setLibraryHeaderActionSlot}
-											className="shrink-0"
-										/>
-									</div>
-								) : null}
-							</div>
-
-							{showSongHeaderSlot ? (
+							</nav>
+							{isSongRoute ? (
 								<div
-									ref={setSongHeaderSlot}
-									className="audio-versions-header-song min-w-0 flex-1 xl:px-2"
+									ref={showSongHeaderSlot ? setSongHeaderSlot : undefined}
+									className="audio-versions-header-center audio-versions-header-song min-w-0"
 								/>
-							) : null}
-
-							<div className="audio-versions-header-actions flex w-full min-w-0 items-center justify-end gap-3 xl:ml-auto xl:w-auto xl:shrink-0">
+							) : (
+								<div className="audio-versions-header-center flex min-w-0 items-center gap-3">
+									<GlobalSearch />
+									<div ref={setLibraryHeaderActionSlot} className="shrink-0" />
+								</div>
+							)}
+							<div className="audio-versions-header-actions flex shrink-0 items-center justify-end gap-3">
 								<button
 									type="button"
 									onClick={() => setIsSettingsOpen(true)}

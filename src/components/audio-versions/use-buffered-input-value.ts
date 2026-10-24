@@ -22,7 +22,6 @@ export function useBufferedInputValue({
 
 	const commitValue = useCallback(
 		async (nextValue: string) => {
-			pendingValueRef.current = nextValue;
 			try {
 				await onCommit(nextValue);
 			} catch (error) {
@@ -59,6 +58,7 @@ export function useBufferedInputValue({
 		(nextValue: string) => {
 			draftRef.current = nextValue;
 			setDraftState(nextValue);
+			pendingValueRef.current = nextValue === value ? null : nextValue;
 			if (nextValue === value) {
 				cancel();
 				return;

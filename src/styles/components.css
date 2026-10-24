@@ -324,6 +324,7 @@
 
 .journal-editor {
 	width: 100%;
+	overflow-anchor: none;
 	overscroll-behavior: contain;
 	scrollbar-gutter: stable;
 	scrollbar-width: thin;
@@ -334,6 +335,15 @@
 	color: var(--color-text-muted);
 	content: attr(data-placeholder);
 	pointer-events: none;
+}
+
+.journal-editor strong,
+.journal-editor b {
+	border-radius: 0.2em;
+	background: var(--color-accent-surface);
+	padding-inline: 0.15em;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
 }
 
 .journal-link-chip {
@@ -380,11 +390,23 @@
 }
 
 .journal-timestamp-chip {
-	cursor: grab;
+	cursor: pointer;
 }
 
-.journal-timestamp-chip:active {
-	cursor: grabbing;
+.journal-timestamp-chip[data-journal-selected="true"] {
+	outline: 2px solid var(--color-accent-strong);
+	outline-offset: 2px;
+	background: var(--color-selection);
+}
+
+.journal-link-icon {
+	width: 0.875rem;
+	height: 0.875rem;
+	flex: none;
+	background-color: var(--color-accent-strong);
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8'/%3E%3C/svg%3E")
+		center / contain no-repeat;
 }
 
 .journal-timestamp-icon {

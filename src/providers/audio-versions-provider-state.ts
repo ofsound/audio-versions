@@ -220,9 +220,7 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 	const snapshotRef = useRef(snapshot);
 	const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
 
-	useEffect(() => {
-		snapshotRef.current = snapshot;
-	}, [snapshot]);
+	const mutationRevisionRef = useRef(0);
 
 	useEffect(() => {
 		if (typeof window === "undefined") {
@@ -330,30 +328,37 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 		const refreshFromCloud = () => {
 			clearTimeout(refreshTimer);
 			refreshTimer = setTimeout(() => {
-				void loadCloudSnapshot(cloudUserId)
-					.then(async ({ snapshot: cloudSnapshot }) => {
-						if (cancelled) {
-							return;
-						}
-
-						const next = attachCachedBlobs(cloudSnapshot, snapshotRef.current);
-						await replaceLocalSnapshot(next, cloudUserId);
-						if (cancelled) {
-							return;
-						}
-
-						snapshotRef.current = next;
-						startTransition(() => setSnapshot(next));
-					})
-					.catch((syncError) => {
-						if (!cancelled) {
-							setError(
-								syncError instanceof Error
-									? syncError.message
-									: "Audio Versions could not receive cloud changes.",
-							);
-						}
-					});
+				// Refreshes share the persistence queue: a realtime notification can
+				// describe an earlier write while newer settings are still saving.
+				const refreshTask = persistQueueRef.current.then(async () => {
+					if (cancelled) return;
+					const revision = mutationRevisionRef.current;
+					const { snapshot: cloudSnapshot } =
+						await loadCloudSnapshot(cloudUserId);
+					if (cancelled) return;
+					if (revision !== mutationRevisionRef.current) {
+						refreshFromCloud();
+						return;
+					}
+					const next = attachCachedBlobs(cloudSnapshot, snapshotRef.current);
+					await replaceLocalSnapshot(next, cloudUserId);
+					if (cancelled) return;
+					if (revision !== mutationRevisionRef.current) {
+						refreshFromCloud();
+						return;
+					}
+					snapshotRef.current = next;
+					setSnapshot(next);
+				});
+				persistQueueRef.current = refreshTask.catch((syncError) => {
+					if (!cancelled) {
+						setError(
+							syncError instanceof Error
+								? syncError.message
+								: "Audio Versions could not receive cloud changes.",
+						);
+					}
+				});
 			}, 80);
 		};
 
@@ -369,6 +374,7 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 		async (updater, persist) => {
 			const current = snapshotRef.current;
 			const next = updater(current);
+			mutationRevisionRef.current += 1;
 			snapshotRef.current = next;
 			setSnapshot(next);
 

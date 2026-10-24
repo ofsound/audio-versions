@@ -28,7 +28,7 @@ export function AudioVersionsSettingsDialog({
 	onUpdateUiSettings,
 }: AudioVersionsSettingsDialogProps) {
 	const firstColorInputRef = useRef<HTMLInputElement | null>(null);
-	const { theme, toggleTheme } = useTheme();
+	const { theme, setTheme } = useTheme();
 
 	return (
 		<SongModal
@@ -74,59 +74,48 @@ export function AudioVersionsSettingsDialog({
 									Color theme
 								</div>
 							</div>
-							<button
-								type="button"
-								role="switch"
-								aria-checked={theme === "dark"}
-								onClick={toggleTheme}
+							<fieldset
 								aria-label="Color theme"
-								className="relative grid h-14 w-64 grid-cols-2 overflow-hidden border border-[var(--color-border-plain)] bg-[var(--color-surface)] text-base font-semibold"
+								className="grid h-14 w-64 grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-1"
 							>
-								<span
-									aria-hidden="true"
-									className={`absolute inset-y-1 left-1 w-[calc(50%-0.5rem)] bg-[var(--color-accent)] transition-transform ${
-										theme === "dark" ? "translate-x-[calc(100%+0.5rem)]" : ""
-									}`}
-								/>
-								<span
-									className={`relative z-10 inline-flex items-center justify-center gap-2 ${
-										theme === "light"
-											? "text-[var(--color-on-accent)]"
-											: "text-[var(--color-text-muted)]"
-									}`}
-								>
-									<Sun size={18} />
-									Light
-								</span>
-								<span
-									className={`relative z-10 inline-flex items-center justify-center gap-2 ${
-										theme === "dark"
-											? "text-[var(--color-on-accent)]"
-											: "text-[var(--color-text-muted)]"
-									}`}
-								>
-									<Moon size={18} />
-									Dark
-								</span>
-							</button>
+								{(
+									[
+										{ value: "light", label: "Light", Icon: Sun },
+										{ value: "dark", label: "Dark", Icon: Moon },
+									] as const
+								).map(({ value, label, Icon }) => (
+									<button
+										key={value}
+										type="button"
+										aria-pressed={theme === value}
+										onClick={() => setTheme(value)}
+										className={`inline-flex items-center justify-center gap-2 text-base font-semibold ${theme === value ? "bg-[var(--color-accent)] text-[var(--color-on-accent)]" : "text-[var(--color-text-muted)]"}`}
+									>
+										<Icon size={18} />
+										{label}
+									</button>
+								))}
+							</fieldset>
 						</div>
 					</div>
 					<div className="grid gap-4 md:grid-cols-2">
 						{theme === "light" ? (
 							<ColorSettingField
+								key="light"
 								label="Light accent"
 								value={uiSettings.accentLightPrimary}
 								onChange={(value) =>
-									void onUpdateUiSettings({ accentLightPrimary: value })
+									onUpdateUiSettings({ accentLightPrimary: value })
 								}
 								inputRef={firstColorInputRef}
 							/>
 						) : (
 							<ColorSettingField
+								key="dark"
 								label="Dark accent"
 								value={uiSettings.accentDarkPrimary}
 								onChange={(value) =>
-									void onUpdateUiSettings({ accentDarkPrimary: value })
+									onUpdateUiSettings({ accentDarkPrimary: value })
 								}
 								inputRef={firstColorInputRef}
 							/>
@@ -138,31 +127,22 @@ export function AudioVersionsSettingsDialog({
 					<ToggleSettingCard
 						label="Artist"
 						enabled={uiSettings.showArtist}
-						onToggle={() =>
-							void onUpdateUiSettings((current) => ({
-								...current,
-								showArtist: !current.showArtist,
-							}))
+						onChange={(enabled) =>
+							void onUpdateUiSettings({ showArtist: enabled })
 						}
 					/>
 					<ToggleSettingCard
 						label="Project"
 						enabled={uiSettings.showProject}
-						onToggle={() =>
-							void onUpdateUiSettings((current) => ({
-								...current,
-								showProject: !current.showProject,
-							}))
+						onChange={(enabled) =>
+							void onUpdateUiSettings({ showProject: enabled })
 						}
 					/>
 					<ToggleSettingCard
 						label="Focus Rings"
 						enabled={uiSettings.keyboardFocusHighlights}
-						onToggle={() =>
-							void onUpdateUiSettings((current) => ({
-								...current,
-								keyboardFocusHighlights: !current.keyboardFocusHighlights,
-							}))
+						onChange={(enabled) =>
+							void onUpdateUiSettings({ keyboardFocusHighlights: enabled })
 						}
 					/>
 				</section>
@@ -190,7 +170,7 @@ function ColorSettingField({
 }: {
 	label: string;
 	value: string;
-	onChange: (value: string) => void;
+	onChange: (value: string) => Promise<void> | void;
 	inputRef?: RefObject<HTMLInputElement | null>;
 }) {
 	const bufferedValue = useBufferedInputValue({
@@ -225,50 +205,40 @@ function ColorSettingField({
 function ToggleSettingCard({
 	label,
 	enabled,
-	onToggle,
+	onChange,
 }: {
 	label: string;
 	enabled: boolean;
-	onToggle: () => void;
+	onChange: (enabled: boolean) => void;
 }) {
 	return (
 		<div className="grid justify-items-start gap-2 py-2">
 			<div className="text-sm font-semibold text-[var(--color-text)]">
 				{label}
 			</div>
-			<button
-				type="button"
-				role="switch"
-				aria-checked={enabled}
+			<fieldset
 				aria-label={label}
-				onClick={onToggle}
-				className="relative grid h-8 w-[9.25rem] grid-cols-2 overflow-hidden border border-[var(--color-border-plain)] bg-[var(--color-surface)] text-xs font-semibold"
+				className="grid h-8 w-[9.25rem] grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-0.5 text-xs font-semibold"
 			>
-				<span
-					aria-hidden="true"
-					className={`absolute inset-y-0.5 left-0.5 w-[calc(50%-0.25rem)] bg-[var(--color-accent)] transition-transform ${
-						enabled ? "" : "translate-x-[calc(100%+0.25rem)]"
-					}`}
-				/>
-				<span
-					className={`relative z-10 inline-flex items-center justify-center ${
-						enabled
-							? "text-[var(--color-on-accent)]"
-							: "text-[var(--color-text-muted)]"
-					}`}
-				>
-					Show
-				</span>
-				<span
-					className={`relative z-10 inline-flex items-center justify-center ${
-						enabled
-							? "text-[var(--color-text-muted)]"
-							: "text-[var(--color-on-accent)]"
-					}`}
-				>
-					Hide
-				</span>
-			</button>
+				{[
+					{ value: true, label: "Show" },
+					{ value: false, label: "Hide" },
+				].map((option) => (
+					<button
+						key={option.label}
+						type="button"
+						aria-pressed={enabled === option.value}
+						onClick={() => onChange(option.value)}
+						className={
+							enabled === option.value
+								? "bg-[var(--color-accent)] text-[var(--color-on-accent)]"
+								: "text-[var(--color-text-muted)]"
+						}
+					>
+						{option.label}
+					</button>
+				))}
+			</fieldset>
 		</div>
 	);
 }
