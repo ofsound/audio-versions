@@ -3,6 +3,7 @@ import Foundation
 enum PlaybackFileLoadingError: Error, LocalizedError {
     case invalidResponse
     case requestFailed(statusCode: Int)
+    case incompleteDownload
 
     var errorDescription: String? {
         switch self {
@@ -10,6 +11,8 @@ enum PlaybackFileLoadingError: Error, LocalizedError {
             "The audio server returned an invalid response."
         case let .requestFailed(statusCode):
             "The audio download failed (HTTP \(statusCode))."
+        case .incompleteDownload:
+            "The audio download was incomplete. Please try again."
         }
     }
 }
@@ -32,8 +35,13 @@ actor PlaybackFileLoader {
             guard let response = response as? HTTPURLResponse else {
                 throw PlaybackFileLoadingError.invalidResponse
             }
-            guard (200..<300).contains(response.statusCode) else {
+            guard response.statusCode == 200 else {
                 throw PlaybackFileLoadingError.requestFailed(statusCode: response.statusCode)
+            }
+            let size = try temporaryURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            guard size > 0,
+                  response.expectedContentLength < 0 || Int64(size) == response.expectedContentLength else {
+                throw PlaybackFileLoadingError.incompleteDownload
             }
             try Task.checkCancellation()
 

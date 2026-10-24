@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audio Versions — Feature Recommendations</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #1c1917;
+    --muted: #57534e;
+    --border: #e7e5e4;
+    --accent: #059669;
+    --accent-soft: #ecfdf5;
+    --code-bg: #f5f5f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c0b;
+      --surface: #161615;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --border: #292524;
+      --accent: #6ee7b7;
+      --accent-soft: #10241c;
+      --code-bg: #1f1f1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  header { display: flex; flex-direction: column; gap: 12px; }
+  h1 { margin: 0; font-size: 2rem; line-height: 1.2; letter-spacing: -0.02em; }
+  h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+  h3 { margin: 0; font-size: 1.125rem; line-height: 1.35; }
+  p { margin: 0; }
+  .lede { color: var(--muted); font-size: 1.0625rem; }
+  section { display: flex; flex-direction: column; gap: 16px; }
+  ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .num {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .card-body { display: flex; flex-direction: column; gap: 10px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 0.8125rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  code {
+    font: 0.875em ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+  kbd {
+    font: 0.8125em ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 0 6px;
+    background: var(--surface);
+  }
+  .note {
+    padding: 16px 20px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 10px 10px 0;
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Audio Versions: highest-value features</h1>
+    <p class="lede">These are ranked by how much each improves the main job of the web, desktop, and iPhone apps, which is comparing mixes of a song and tracking feedback on them. Each one is weighed against what the code already does.</p>
+  </header>
+
+  <section>
+    <h2>Top five</h2>
+    <ol>
+      <li class="card">
+        <div class="num">1</div>
+        <div class="card-body">
+          <h3>Instant A/B switching between versions at the same position</h3>
+          <p>Right now each version keeps its own playhead (<code>playheadMsByFileId</code>), so comparing “the same chorus in v3 and v4” means seeking by hand on each card. Add a shared play position for the song, so pressing <kbd>1</kbd>–<kbd>9</kbd> or clicking another version switches at the same timestamp without a gap. Add an optional per-version time offset for bounces that start at different points.</p>
+          <p>Of the five, this matters most for an app built around versions.</p>
+          <div class="meta"><span class="chip">Web + Electron</span><span class="chip">Song workspace playback</span></div>
+        </div>
+      </li>
+
+      <li class="card">
+        <div class="num">2</div>
+        <div class="card-body">
+          <h3>Loudness-matched comparison</h3>
+          <p>You already measure integrated LUFS (overall loudness) for every file, but the app only displays it. Playback gain is still the manual <code>volumeDb</code> stepper. A “Match loudness” toggle could set each version’s gain from its LUFS reading so they play at equal loudness.</p>
+          <p>Louder mixes tend to sound better, which skews comparisons, so this makes A/B judgments more honest. The data is already there, so it’s cheap to build, and it pairs naturally with the first feature.</p>
+          <div class="meta"><span class="chip">Web + Electron</span><span class="chip">Low effort</span></div>
+        </div>
+      </li>
+
+      <li class="card">
+        <div class="num">3</div>
+        <div class="card-body">
+          <h3>Loop a range</h3>
+          <p>Range annotations exist, but only playlists can loop. Looping the selected range (with a shortcut like <kbd>L</kbd>) is basic to mix review, especially combined with A/B switching: you could loop the bridge and flip between versions.</p>
+          <p>It’s small to build because the range data and drag handling already exist.</p>
+          <div class="meta"><span class="chip">Web + Electron</span><span class="chip">Low effort</span></div>
+        </div>
+      </li>
+
+      <li class="card">
+        <div class="num">4</div>
+        <div class="card-body">
+          <h3>Mark feedback as resolved and carry it to the next version</h3>
+          <p>Markers are notes with no status. Adding open/resolved status, plus a “carry open notes into the new version” step when you import a bounce, would turn the inspector into a revision checklist (“3 open notes from v4”).</p>
+          <p>This needs a Supabase migration and iOS support (resolving notes on the phone fits the iPhone app’s purpose well), but it changes the app from an annotator into a revision tracker.</p>
+          <div class="meta"><span class="chip">Web + Electron + iOS</span><span class="chip">Supabase migration</span></div>
+        </div>
+      </li>
+
+      <li class="card">
+        <div class="num">5</div>
+        <div class="card-body">
+          <h3>Offline listening on iPhone</h3>
+          <p>Checking mixes in the car or on earbuds is the main reason to have a phone companion. The iOS README and plan doc already list encrypted persistent downloads and queued annotation writes as the next planned work.</p>
+          <p>Without them, the app fails in exactly the places people do those listening checks.</p>
+          <div class="meta"><span class="chip">iOS</span><span class="chip">Already on the roadmap</span></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Runners-up</h2>
+    <ol>
+      <li class="card">
+        <div class="num">6</div>
+        <div class="card-body">
+          <h3>Secret-link sharing</h3>
+          <p>Let artists or clients listen and leave timestamped comments through a private link. The schema already reserves <code>share_token_hash</code> on songs.</p>
+          <p>It could bring in the most new users, but it’s also the biggest job and the most security-sensitive, since it needs a public read path alongside the current row-level security.</p>
+          <div class="meta"><span class="chip">Web + server</span><span class="chip">Supabase policies</span><span class="chip">High effort</span></div>
+        </div>
+      </li>
+
+      <li class="card">
+        <div class="num">7</div>
+        <div class="card-body">
+          <h3>Electron watch folder</h3>
+          <p>Watch the export folder of your audio editing software and automatically import new bounces into the matching song.</p>
+          <p>It removes the most repetitive step in desktop use: exporting a mix, then dragging it into the app by hand.</p>
+          <div class="meta"><span class="chip">Electron</span><span class="chip">Medium effort</span></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <p class="note">The first three share the song page’s playback code and would work well as one piece of work.</p>
+</main>
+</body>
+</html>

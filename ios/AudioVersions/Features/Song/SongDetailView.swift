@@ -183,6 +183,8 @@ private struct ScrollableVersionList: View {
                         }
                         .buttonStyle(.plain)
 
+                        OfflineDownloadControl(version: version, compact: true)
+
                         AddVersionToPlaylistMenu(version: version)
                             .frame(width: 36, height: 36)
 

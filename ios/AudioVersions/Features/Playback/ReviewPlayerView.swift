@@ -35,6 +35,7 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
+                        OfflineDownloadControl(version: version)
                         audioRouteControls
                         annotationActions(version: version)
                         AnnotationListView(

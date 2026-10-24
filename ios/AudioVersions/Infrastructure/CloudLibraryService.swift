@@ -1,10 +1,10 @@
 import Foundation
 @preconcurrency import Supabase
 
-struct CloudLibrarySnapshot {
-    let songs: [Song]
-    let trashedSongs: [Song]
-    let playlists: [Playlist]
+struct CloudLibrarySnapshot: Codable {
+    var songs: [Song]
+    var trashedSongs: [Song]
+    var playlists: [Playlist]
 }
 
 final class ReviewCloudEnvironment: @unchecked Sendable {
@@ -301,14 +301,14 @@ final class CloudLibraryService: @unchecked Sendable {
     @discardableResult
     func tombstoneAnnotation(
         id: String,
-        expectedUpdatedAtToken: String
+        expectedUpdatedAtToken: String,
+        updatedAt: Date = .now
     ) async throws -> String {
         guard let annotationID = UUID(uuidString: id) else {
             throw CloudDataError.invalidIdentifier(id)
         }
 
-        let now = Date.now
-        let timestamp = CloudTimestamp.format(now)
+        let timestamp = CloudTimestamp.format(updatedAt)
         let rows: [MutationResultRow] = try await client
             .from("annotations")
             .update(
@@ -325,6 +325,40 @@ final class CloudLibraryService: @unchecked Sendable {
             throw CloudDataError.conflict
         }
         return row.updatedAt
+    }
+
+    /// Read before replay: a lost HTTP response may mean this exact write already
+    /// succeeded. Preserve other-device changes instead of blindly upserting.
+    func synchronize(_ write: PendingAnnotationWrite) async throws -> String {
+        let rows: [AnnotationSyncRow] = try await client
+            .from("annotations")
+            .select("id,audio_file_id,type,start_ms,end_ms,detail,color,updated_at,deleted_at")
+            .eq("id", value: write.annotation.id)
+            .execute().value
+        if let remote = rows.first, try remote.matches(write) {
+            return remote.annotation.updatedAt
+        }
+        switch write.operation {
+        case .insert:
+            guard rows.isEmpty else { throw CloudDataError.conflict }
+            return try await insertAnnotation(
+                write.annotation, songID: write.songID,
+                audioFileID: write.versionID, createdAt: write.annotation.updatedAt
+            )
+        case .update:
+            guard let token = write.expectedUpdatedAtToken else { throw CloudDataError.conflict }
+            return try await updateAnnotation(write.annotation, expectedUpdatedAtToken: token)
+        case .delete:
+            // Deletion is already satisfied if the record was deleted elsewhere.
+            if rows.isEmpty || rows.first?.deletedAt != nil {
+                return rows.first?.annotation.updatedAt ?? CloudTimestamp.format(write.annotation.updatedAt)
+            }
+            guard let token = write.expectedUpdatedAtToken else { throw CloudDataError.conflict }
+            return try await tombstoneAnnotation(
+                id: write.annotation.id, expectedUpdatedAtToken: token,
+                updatedAt: write.annotation.updatedAt
+            )
+        }
     }
 
     static func mapSnapshot(

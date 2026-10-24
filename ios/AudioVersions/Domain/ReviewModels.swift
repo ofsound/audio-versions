@@ -1,6 +1,6 @@
 import Foundation
 
-struct Song: Identifiable, Hashable {
+struct Song: Identifiable, Hashable, Codable {
     let id: String
     var title: String
     var artist: String
@@ -14,7 +14,7 @@ struct Song: Identifiable, Hashable {
     }
 }
 
-struct AudioVersion: Identifiable, Hashable {
+struct AudioVersion: Identifiable, Hashable, Codable {
     let id: String
     var name: String
     var notes: String = ""
@@ -32,7 +32,7 @@ struct AudioVersion: Identifiable, Hashable {
     }
 }
 
-struct Playlist: Identifiable, Hashable {
+struct Playlist: Identifiable, Hashable, Codable {
     let id: String
     var name: String
     var audioFileIDs: [String]
@@ -54,7 +54,7 @@ enum PlaylistLoopMode: String, CaseIterable, Identifiable {
 }
 
 /// Whole-file loudness measurements (ITU-R BS.1770-4 / EBU Tech 3342).
-struct LoudnessMetrics: Hashable, Sendable {
+struct LoudnessMetrics: Hashable, Sendable, Codable {
     var integratedLufs: Double
     var loudnessRangeLu: Double
     var shortTermMaxLufs: Double
@@ -67,7 +67,7 @@ struct LoudnessMetrics: Hashable, Sendable {
     }
 }
 
-struct ReviewAnnotation: Identifiable, Hashable {
+struct ReviewAnnotation: Identifiable, Hashable, Codable {
     enum Kind: String, CaseIterable, Hashable {
         case point
         case range

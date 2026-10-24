@@ -5,6 +5,8 @@ struct LibraryView: View {
     @EnvironmentObject private var appearance: AppearanceStore
     @Environment(\.palette) private var palette
     @State private var searchText = ""
+    @State private var downloadedOnly = false
+    @State private var confirmsOfflineSignOut = false
     @State private var isShowingAppearanceSettings = false
     @State private var songPendingTrash: Song?
 
@@ -20,8 +22,11 @@ struct LibraryView: View {
     }
 
     private var filteredSongs: [Song] {
-        guard !searchText.isEmpty else { return store.songs }
-        return store.songs.filter {
+        let songs = downloadedOnly ? store.songs.filter { song in
+            song.versions.contains { store.downloadedVersionIDs.contains($0.id) }
+        } : store.songs
+        guard !searchText.isEmpty else { return songs }
+        return songs.filter {
             $0.title.localizedStandardContains(searchText)
                 || $0.artist.localizedStandardContains(searchText)
         }
@@ -40,9 +45,11 @@ struct LibraryView: View {
                 } else if filteredSongs.isEmpty {
                     if searchText.isEmpty {
                         ContentUnavailableView(
-                            "No songs yet",
+                            downloadedOnly ? "No downloads yet" : "No songs yet",
                             systemImage: "music.note.list",
-                            description: Text("Songs from your library will show up here.")
+                            description: Text(downloadedOnly
+                                ? "Download a version from its song or player to listen offline."
+                                : "Songs from your library will show up here.")
                         )
                     } else {
                         ContentUnavailableView.search(text: searchText)
@@ -84,6 +91,7 @@ struct LibraryView: View {
                             )
                                 .foregroundStyle(.secondary)
                             if store.isCloudConfigured {
+                                Toggle("Downloaded songs only", isOn: $downloadedOnly)
                                 Button("Refresh library", systemImage: "arrow.clockwise") {
                                     Task {
                                         await store.refreshCloudLibrary()
@@ -97,7 +105,11 @@ struct LibraryView: View {
                             if let onSignOut {
                                 Divider()
                                 Button("Sign Out", systemImage: "rectangle.portrait.and.arrow.right") {
-                                    onSignOut()
+                                    if store.pendingAnnotationWrites.isEmpty {
+                                        onSignOut()
+                                    } else {
+                                        confirmsOfflineSignOut = true
+                                    }
                                 }
                             }
                         } label: {
@@ -134,8 +146,17 @@ struct LibraryView: View {
                     Label("Trash", systemImage: "trash")
                 }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            OfflineSyncStatusView()
+        }
         .sheet(isPresented: $isShowingAppearanceSettings) {
             AppearanceSettingsView(appearance: appearance)
+        }
+        .confirmationDialog("Sign out and remove unsynced changes?", isPresented: $confirmsOfflineSignOut,
+                            titleVisibility: .visible) {
+            Button("Sign out and remove local data", role: .destructive) { onSignOut?() }
+        } message: {
+            Text("Some marker or range changes are only saved on this iPhone. Sync them before signing out to keep them. Downloads will also be removed.")
         }
         .confirmationDialog(
             "Move this song to Trash?",

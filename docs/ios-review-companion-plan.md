@@ -128,3 +128,8 @@ roadmap.
   tests, the full npm verification gate (138 web tests plus Biome, TypeScript,
   and Knip), and `npm run electron:pack`. The current packaged desktop app is at
   `dist/electron/mac-arm64/Audio Versions.app`.
+
+- 2026-10-24: Added account-scoped persistent offline audio and library caching
+  with native iOS Data Protection, version download/remove controls, and a durable
+  annotation outbox with reconnect retries and explicit conflict review. See the
+  current iOS README for scope, storage behavior, and physical-device acceptance.

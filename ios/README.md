@@ -77,10 +77,46 @@ a second production identity.
   mint waveform gradient.
 - Fixture fallback whenever cloud values are absent
 
-Persistent offline downloads, offline mutation queues, Google OAuth, full
-rich-text editing, and TestFlight are deliberately deferred. The download
-button is hidden until it can represent an encrypted-at-rest file that remains
-available offline rather than the temporary playback preload.
+## Offline listening and annotation sync
+
+Use the download control beside a version or under its player to save the entire
+file for offline listening. A checkmark appears only after the complete download
+and its metadata have been saved. The download menu removes the local copy;
+it does not delete cloud audio. In **Account**, enable **Downloaded songs only**
+to find songs with saved versions. Other versions still require a connection.
+Downloads can be cancelled and retried. Keep the app open until the download
+finishes; background transfer scheduling is not implemented.
+
+The library, playlists, waveforms, notes, and downloaded audio survive relaunch.
+The app restores the last saved library for the signed-in account before trying
+the cloud. Playback checks local media before requesting any signed URL, so
+expired media links do not prevent downloaded tracks from playing. Refresh the
+library online to pick up changes made on other devices.
+
+Audio and metadata live in account-specific Application Support directories,
+excluded from backups. iOS Data Protection encrypts them on disk using
+`completeUntilFirstUserAuthentication`, allowing background and Lock Screen
+playback after the first device unlock following a restart. This uses native
+iOS encryption, not an application-managed encryption key. Signed media links
+and authentication tokens are never stored in this library cache.
+
+Marker and range creates, edits, and deletions are durably queued before they
+appear as saved. They survive relaunch and sync serially on reconnect, app
+foreground, or **Sync now**, with periodic retries while the app is running.
+Retries recognize already-applied writes and retain optimistic-concurrency
+checks. Refresh overlays pending edits rather than replacing them. Queues do not
+run while iOS suspends the app; they resume when it runs again. Song journals,
+file notes, playlist edits, and trash actions still require an online connection.
+
+Tap the status strip above the library to inspect pending changes or retry sync.
+Changes that conflict with another device remain on this iPhone and block later
+writes to that annotation while unrelated annotations can sync. The details
+screen lets you select/copy the local text before choosing **Use cloud version**,
+which explicitly discards that annotation's queued edits only after a successful
+cloud refresh. Signing out stops playback and removes local downloads, the cached
+library, and queued changes; unsynced changes require confirmation before sign-out.
+
+Google OAuth, full rich-text editing, and TestFlight remain deferred.
 
 ## Physical-device audio acceptance
 
@@ -110,6 +146,31 @@ Run these checks after installing a new build from Xcode:
 10. Play a multi-file playlist through a track boundary. Verify automatic next,
     previous/next from Lock Screen and a headset, repeat-all wrapping, repeat-one,
     interruption behavior, and that Now Playing metadata changes to the new file.
+
+## Physical-device offline acceptance
+
+These checks require a signed build on an iPhone; simulator tests cannot verify
+hardware encryption, Bluetooth routing, or locked-device audio behavior.
+
+1. Download two versions and a playlist's tracks. Cancel another download and
+   confirm it is not marked downloaded. Remove a local copy and confirm the cloud
+   file remains available.
+2. Enable Airplane Mode, force-quit, and relaunch. Open a downloaded song, play,
+   seek, change speed, lock the phone, and cross a downloaded playlist boundary.
+   Confirm undownloaded versions fail without losing downloaded audio.
+3. Restart the phone, unlock it once, then repeat locked-screen playback. Verify
+   earbuds, Bluetooth disconnect, Siri interruption, and Lock Screen next/previous.
+4. Offline, create/edit/delete point and range annotations, including editing a
+   newly created marker. Force-quit and relaunch; confirm every local edit remains.
+5. Restore connectivity. Confirm the queue drains and desktop shows each edit
+   once. Interrupt connectivity during sync and retry to check duplicate prevention.
+6. Edit the same marker on desktop before reconnecting the phone. Confirm the
+   phone retains the local text, shows a conflict, and syncs unrelated markers.
+   Copy the local text and use the cloud version; confirm only those local edits
+   are discarded.
+7. Sign out with a pending edit and verify the explicit warning. After sign-out,
+   confirm playback stops and another account cannot see the previous account's
+   downloads or queued edits.
 
 ## Verification
 

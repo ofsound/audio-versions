@@ -11,6 +11,7 @@ struct AudioVersionsApp: App {
 
 @MainActor
 private struct AudioVersionsRootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var store: ReviewCompanionStore
     @StateObject private var appearance = AppearanceStore()
@@ -55,6 +56,12 @@ private struct AudioVersionsRootView: View {
         .environment(\.palette, palette)
         .tint(palette.accent)
         .preferredColorScheme(appearance.preference.colorScheme)
+        .onChange(of: authentication?.user?.id) { oldID, newID in
+            if oldID != nil, newID == nil { store.useFixtureLibrary() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { store.synchronizeAnnotations() }
+        }
         .onOpenURL { url in
             store.openSongLink(url)
         }
@@ -75,15 +82,16 @@ private struct AudioVersionsRootView: View {
                 onSignOut: {
                     Task {
                         await authentication.signOut()
-                        store.useFixtureLibrary()
                     }
                 }
             )
             .environmentObject(store)
             .task(id: authentication.user?.id) {
+                guard let userID = authentication.user?.id else { return }
                 store.configureCloud(
                     library: environment.library,
-                    signedMedia: environment.signedMedia
+                    signedMedia: environment.signedMedia,
+                    userID: userID
                 )
                 await store.refreshCloudLibrary()
             }

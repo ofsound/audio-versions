@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import Network
 
 @MainActor
 final class ReviewCompanionStore: ObservableObject {
@@ -21,6 +22,20 @@ final class ReviewCompanionStore: ObservableObject {
     @Published private var fixtureIsPlaying = false
     @Published var playlistLoopMode: PlaylistLoopMode = .off
 
+    @Published private(set) var downloadedVersionIDs: Set<String> = []
+    @Published private(set) var downloadingVersionIDs: Set<String> = []
+    @Published private(set) var pendingAnnotationWrites: [PendingAnnotationWrite] = []
+    @Published private(set) var isSynchronizingAnnotations = false
+    @Published private(set) var isOffline = false
+    @Published private(set) var isUsingCachedLibrary = false
+    @Published private(set) var annotationSyncError: String?
+
+    private var offlineStorage: OfflineLibraryStorage?
+    private var accountID: UUID?
+    private var downloadTasks: [String: Task<Void, Never>] = [:]
+    private var annotationSyncTask: Task<Void, Never>?
+    private var retrySyncTask: Task<Void, Never>?
+    private var networkMonitor: NWPathMonitor?
     private var cloudLibrary: CloudLibraryService?
     private var signedMedia: SignedMediaURLProvider?
     private let audioEngine = NativeAudioEngine()
@@ -105,24 +120,55 @@ final class ReviewCompanionStore: ObservableObject {
 
     func configureCloud(
         library: CloudLibraryService,
-        signedMedia: SignedMediaURLProvider
+        signedMedia: SignedMediaURLProvider,
+        userID: UUID,
+        storageRoot: URL? = nil
     ) {
-        let isNewCloudSession = cloudLibrary !== library
+        let isNewCloudSession = cloudLibrary !== library || accountID != userID
+        if isNewCloudSession { clearOfflineSession(erase: false) }
+        accountID = userID
         cloudLibrary = library
         self.signedMedia = signedMedia
         if isNewCloudSession {
             replaceLibrary(with: [], playlists: [])
+            do {
+                let storage = try OfflineLibraryStorage(userID: userID, root: storageRoot)
+                offlineStorage = storage
+                let snapshot = storage.state.snapshot
+                replaceLibrary(with: snapshot.songs, trashedSongs: snapshot.trashedSongs, playlists: snapshot.playlists)
+                isUsingCachedLibrary = !snapshot.songs.isEmpty
+                updateOfflineStatus()
+            } catch {
+                cloudErrorMessage = "Offline storage could not be opened: \(error.localizedDescription)"
+            }
+            startOfflineMonitoring()
         }
     }
 
     func refreshCloudLibrary() async {
-        guard let cloudLibrary else { return }
+        guard let cloudLibrary, !isCloudLoading else { return }
+        let sessionID = accountID
         isCloudLoading = true
         cloudErrorMessage = nil
-        defer { isCloudLoading = false }
+        defer {
+            if accountID == sessionID, self.cloudLibrary === cloudLibrary {
+                isCloudLoading = false
+                synchronizeAnnotations()
+            }
+        }
 
+        await annotationSyncTask?.value
+        guard accountID == sessionID, self.cloudLibrary === cloudLibrary else { return }
         do {
-            let snapshot = try await cloudLibrary.fetchActiveSnapshot()
+            var snapshot = try await cloudLibrary.fetchActiveSnapshot()
+            guard accountID == sessionID, self.cloudLibrary === cloudLibrary else { return }
+            if let storage = offlineStorage {
+                var next = storage.state
+                next.merge(snapshot)
+                try storage.save(next)
+                snapshot = next.snapshot
+            }
+            isUsingCachedLibrary = false
             replaceLibrary(
                 with: snapshot.songs,
                 trashedSongs: snapshot.trashedSongs,
@@ -133,11 +179,14 @@ final class ReviewCompanionStore: ObservableObject {
                 permanentlyDeleteSong(song)
             }
         } catch {
-            cloudErrorMessage = error.localizedDescription
+            guard accountID == sessionID, self.cloudLibrary === cloudLibrary else { return }
+            isUsingCachedLibrary = !songs.isEmpty
+            if songs.isEmpty { cloudErrorMessage = error.localizedDescription }
         }
     }
 
     func useFixtureLibrary() {
+        clearOfflineSession(erase: true)
         let previousSignedMedia = signedMedia
         playbackPreparationTask?.cancel()
         Task { await previousSignedMedia?.invalidateAll() }
@@ -448,91 +497,27 @@ final class ReviewCompanionStore: ObservableObject {
     }
 
     func save(_ annotation: ReviewAnnotation, in versionID: String) {
-        let previous = version(id: versionID)?.annotations.first {
-            $0.id == annotation.id
+        let previous = version(id: versionID)?.annotations.first { $0.id == annotation.id }
+        if cloudLibrary != nil {
+            enqueueAnnotation(annotation, versionID: versionID, operation: previous == nil ? .insert : .update,
+                              expectedToken: previous?.cloudUpdatedAtToken)
+            return
         }
         updateVersion(id: versionID) { version in
-            if let index = version.annotations.firstIndex(where: { $0.id == annotation.id }) {
-                version.annotations[index] = annotation
-            } else {
-                version.annotations.append(annotation)
-            }
+            version.annotations.removeAll { $0.id == annotation.id }
+            version.annotations.append(annotation)
             version.annotations.sort { $0.startTime < $1.startTime }
-        }
-
-        guard
-            let cloudLibrary,
-            let songID = songID(containingVersion: versionID)
-        else { return }
-
-        Task {
-            do {
-                if let previous {
-                    guard let expectedUpdatedAtToken = previous.cloudUpdatedAtToken else {
-                        throw CloudDataError.conflict
-                    }
-                    let updatedAtToken = try await cloudLibrary.updateAnnotation(
-                        annotation,
-                        expectedUpdatedAtToken: expectedUpdatedAtToken
-                    )
-                    setCloudUpdatedAtToken(
-                        updatedAtToken,
-                        annotationID: annotation.id,
-                        versionID: versionID
-                    )
-                } else {
-                    let updatedAtToken = try await cloudLibrary.insertAnnotation(
-                        annotation,
-                        songID: songID,
-                        audioFileID: versionID
-                    )
-                    setCloudUpdatedAtToken(
-                        updatedAtToken,
-                        annotationID: annotation.id,
-                        versionID: versionID
-                    )
-                }
-            } catch {
-                if let previous {
-                    updateVersion(id: versionID) { version in
-                        if let index = version.annotations.firstIndex(where: {
-                            $0.id == previous.id
-                        }) {
-                            version.annotations[index] = previous
-                        }
-                    }
-                } else {
-                    updateVersion(id: versionID) { version in
-                        version.annotations.removeAll { $0.id == annotation.id }
-                    }
-                }
-                cloudErrorMessage = error.localizedDescription
-            }
         }
     }
 
     func delete(_ annotation: ReviewAnnotation, from versionID: String) {
+        if cloudLibrary != nil {
+            enqueueAnnotation(annotation, versionID: versionID, operation: .delete,
+                              expectedToken: annotation.cloudUpdatedAtToken)
+            return
+        }
         updateVersion(id: versionID) { version in
             version.annotations.removeAll { $0.id == annotation.id }
-        }
-
-        guard let cloudLibrary else { return }
-        Task {
-            do {
-                guard let expectedUpdatedAtToken = annotation.cloudUpdatedAtToken else {
-                    throw CloudDataError.conflict
-                }
-                _ = try await cloudLibrary.tombstoneAnnotation(
-                    id: annotation.id,
-                    expectedUpdatedAtToken: expectedUpdatedAtToken
-                )
-            } catch {
-                updateVersion(id: versionID) { version in
-                    version.annotations.append(annotation)
-                    version.annotations.sort { $0.startTime < $1.startTime }
-                }
-                cloudErrorMessage = error.localizedDescription
-            }
         }
     }
 
@@ -789,9 +774,15 @@ final class ReviewCompanionStore: ObservableObject {
                 if invalidateLease {
                     await signedMedia.invalidate(audioFileID: version.id)
                 }
-                let lease = try await signedMedia.signedLease(for: version.id)
-                let fileURL = try await self?.playbackFileLoader.download(from: lease.url)
-                downloadedFileURL = fileURL
+                let savedURL = self?.offlineStorage?.mediaURL(for: version.id)
+                let fileURL: URL?
+                if let savedURL {
+                    fileURL = savedURL
+                } else {
+                    let lease = try await signedMedia.signedLease(for: version.id)
+                    fileURL = try await self?.playbackFileLoader.download(from: lease.url)
+                    downloadedFileURL = fileURL
+                }
                 try Task.checkCancellation()
                 guard
                     let self,
@@ -808,7 +799,7 @@ final class ReviewCompanionStore: ObservableObject {
                 self.audioEngine.load(
                     track: self.playbackTrack(for: version),
                     url: fileURL,
-                    deleteFileWhenStopped: true,
+                    deleteFileWhenStopped: savedURL == nil,
                     autoplay: autoplay,
                     startTime: startTime
                 )
@@ -926,6 +917,233 @@ final class ReviewCompanionStore: ObservableObject {
             mutation(&songs[songIndex].versions[versionIndex])
             songs[songIndex].updatedAt = .now
             return
+        }
+    }
+}
+
+extension ReviewCompanionStore {
+    private var currentSnapshot: CloudLibrarySnapshot {
+        CloudLibrarySnapshot(songs: songs, trashedSongs: trashedSongs, playlists: playlists)
+    }
+
+    private func updateOfflineStatus() {
+        downloadedVersionIDs = Set(offlineStorage?.state.downloads.keys.filter {
+            offlineStorage?.mediaURL(for: $0) != nil
+        } ?? [])
+        pendingAnnotationWrites = offlineStorage?.state.pendingWrites ?? []
+    }
+
+    private func clearOfflineSession(erase: Bool) {
+        downloadTasks.values.forEach { $0.cancel() }
+        downloadTasks = [:]
+        downloadingVersionIDs = []
+        annotationSyncTask?.cancel()
+        annotationSyncTask = nil
+        retrySyncTask?.cancel()
+        retrySyncTask = nil
+        networkMonitor?.cancel()
+        networkMonitor?.pathUpdateHandler = nil
+        networkMonitor = nil
+        stopPlayback()
+        if erase {
+            do { try offlineStorage?.erase() }
+            catch { cloudErrorMessage = "Local downloads could not be removed: \(error.localizedDescription)" }
+        }
+        offlineStorage = nil
+        accountID = nil
+        downloadedVersionIDs = []
+        pendingAnnotationWrites = []
+        isSynchronizingAnnotations = false
+        isCloudLoading = false
+        isUsingCachedLibrary = false
+        isOffline = false
+        annotationSyncError = nil
+    }
+
+    private func startOfflineMonitoring() {
+        let monitor = NWPathMonitor()
+        networkMonitor = monitor
+        monitor.pathUpdateHandler = { [weak self] path in
+            let offline = path.status != .satisfied
+            Task { @MainActor [weak self] in
+                guard let self, self.networkMonitor === monitor else { return }
+                self.isOffline = offline
+                if !offline { self.synchronizeAnnotations() }
+            }
+        }
+        monitor.start(queue: DispatchQueue(label: "AudioVersions.Connectivity"))
+        retrySyncTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30)) } catch { return }
+                self?.synchronizeAnnotations()
+            }
+        }
+    }
+
+    func downloadVersion(_ version: AudioVersion) {
+        guard let storage = offlineStorage, let signedMedia,
+              downloadTasks[version.id] == nil else { return }
+        downloadingVersionIDs.insert(version.id)
+        // Save the current browsing metadata alongside the audio, so it can be
+        // opened after a cold launch without contacting either cloud service.
+        do {
+            var next = storage.state
+            next.snapshot = currentSnapshot
+            try storage.save(next)
+        } catch {
+            downloadingVersionIDs.remove(version.id)
+            cloudErrorMessage = error.localizedDescription
+            return
+        }
+        downloadTasks[version.id] = Task { [weak self] in
+            var temporaryURL: URL?
+            defer {
+                if let temporaryURL { try? FileManager.default.removeItem(at: temporaryURL) }
+                if self?.offlineStorage === storage {
+                    self?.downloadTasks.removeValue(forKey: version.id)
+                    self?.downloadingVersionIDs.remove(version.id)
+                }
+            }
+            do {
+                let lease = try await signedMedia.signedLease(for: version.id)
+                guard let self else { return }
+                let url = try await playbackFileLoader.download(from: lease.url)
+                temporaryURL = url
+                try Task.checkCancellation()
+                guard offlineStorage === storage else { return }
+                try storage.storeDownload(from: url, versionID: version.id)
+                updateOfflineStatus()
+            } catch {
+                guard self?.offlineStorage === storage, !Task.isCancelled else { return }
+                self?.cloudErrorMessage = "Download failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func cancelDownload(versionID: String) {
+        downloadTasks[versionID]?.cancel()
+    }
+
+    func removeDownload(versionID: String) {
+        guard let storage = offlineStorage else { return }
+        if activeVersionID == versionID { stopPlayback() }
+        do {
+            try storage.removeDownload(versionID: versionID)
+            updateOfflineStatus()
+        } catch { cloudErrorMessage = error.localizedDescription }
+    }
+
+    private func enqueueAnnotation(
+        _ annotation: ReviewAnnotation, versionID: String,
+        operation: PendingAnnotationWrite.Operation, expectedToken: String?
+    ) {
+        guard let storage = offlineStorage, let songID = songID(containingVersion: versionID) else {
+            cloudErrorMessage = "Offline storage is unavailable. Your changes have not been saved."
+            return
+        }
+        var annotation = annotation
+        // Ensure each mutation has a distinct, millisecond-precision idempotency timestamp.
+        let previousDate = storage.state.pendingWrites.last?.annotation.updatedAt ?? .distantPast
+        annotation.updatedAt = max(.now, previousDate.addingTimeInterval(0.002))
+        let write = PendingAnnotationWrite(
+            id: UUID(), operation: operation, songID: songID, versionID: versionID,
+            annotation: annotation, expectedUpdatedAtToken: expectedToken
+        )
+        do {
+            var next = storage.state
+            next.snapshot = currentSnapshot
+            next.pendingWrites.append(write)
+            next.apply(write)
+            // Persist before changing the UI or sending any network request.
+            try storage.save(next)
+            songs = next.snapshot.songs
+            updateOfflineStatus()
+            synchronizeAnnotations()
+        } catch {
+            cloudErrorMessage = "Your changes could not be saved on this iPhone: \(error.localizedDescription)"
+        }
+    }
+
+    func synchronizeAnnotations() {
+        guard !isOffline, !isCloudLoading, annotationSyncTask == nil,
+              let storage = offlineStorage, let cloudLibrary,
+              !storage.state.pendingWrites.isEmpty else { return }
+        isSynchronizingAnnotations = true
+        annotationSyncTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if offlineStorage === storage {
+                    isSynchronizingAnnotations = false
+                    annotationSyncTask = nil
+                }
+            }
+            var blockedAnnotations: Set<String> = []
+            for write in storage.state.pendingWrites where write.conflictMessage != nil {
+                blockedAnnotations.insert(write.annotation.id)
+            }
+            while !Task.isCancelled, offlineStorage === storage,
+                  let write = storage.state.pendingWrites.first(where: {
+                      !blockedAnnotations.contains($0.annotation.id)
+                  }) {
+                do {
+                    let token = try await cloudLibrary.synchronize(write)
+                    try Task.checkCancellation()
+                    guard offlineStorage === storage else { return }
+                    var next = storage.state
+                    next.snapshot = currentSnapshot
+                    next.acknowledge(write, token: token)
+                    try storage.save(next)
+                    setCloudUpdatedAtToken(token, annotationID: write.annotation.id, versionID: write.versionID)
+                    annotationSyncError = nil
+                    updateOfflineStatus()
+                } catch is CancellationError {
+                    return
+                } catch {
+                    guard offlineStorage === storage else { return }
+                    if case CloudDataError.conflict = error {
+                        var next = storage.state
+                        if let index = next.pendingWrites.firstIndex(where: { $0.id == write.id }) {
+                            next.pendingWrites[index].conflictMessage = error.localizedDescription
+                        }
+                        do { try storage.save(next) }
+                        catch { annotationSyncError = error.localizedDescription; return }
+                        blockedAnnotations.insert(write.annotation.id)
+                        updateOfflineStatus()
+                    } else {
+                        annotationSyncError = error.localizedDescription
+                        return // Retain every write; retry on reconnect, foreground, or manual sync.
+                    }
+                }
+            }
+        }
+    }
+
+    /// Fetch successfully before discarding anything, including when currently offline.
+    func useCloudAnnotation(annotationID: String) async {
+        guard let storage = offlineStorage, let cloudLibrary, !isCloudLoading else { return }
+        isCloudLoading = true
+        defer {
+            if offlineStorage === storage {
+                isCloudLoading = false
+                synchronizeAnnotations()
+            }
+        }
+        await annotationSyncTask?.value
+        guard offlineStorage === storage else { return }
+        do {
+            let remote = try await cloudLibrary.fetchActiveSnapshot()
+            guard offlineStorage === storage else { return }
+            var next = storage.state
+            next.pendingWrites.removeAll { $0.annotation.id == annotationID }
+            next.merge(remote)
+            try storage.save(next)
+            songs = next.snapshot.songs
+            trashedSongs = next.snapshot.trashedSongs
+            playlists = next.snapshot.playlists
+            updateOfflineStatus()
+            synchronizeAnnotations()
+        } catch {
+            if offlineStorage === storage { cloudErrorMessage = error.localizedDescription }
         }
     }
 }
