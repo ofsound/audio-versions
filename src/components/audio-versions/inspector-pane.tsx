@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { copySongTargetLink } from "#/lib/audio-versions/clipboard";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
@@ -11,10 +11,12 @@ import { InspectorMarkerCard } from "./inspector-marker-card";
 import { RichTextEditor } from "./rich-text-editor";
 
 interface InspectorPaneProps {
+	galleryFooter?: ReactNode;
 	song: Song;
 	selectedFile?: AudioFileRecord;
 	annotations: Annotation[];
 	activeAnnotation?: Annotation;
+	hoveredAnnotationId?: string | null;
 	onOpenTarget: (target: SongLinkTarget) => void;
 	onUpdateFile: (patch: Partial<AudioFileRecord>) => Promise<void>;
 	onUpdateAnnotation: (
@@ -28,10 +30,12 @@ interface InspectorPaneProps {
 }
 
 export function InspectorPane({
+	galleryFooter,
 	song,
 	selectedFile,
 	annotations,
 	activeAnnotation,
+	hoveredAnnotationId,
 	onOpenTarget,
 	onUpdateFile,
 	onUpdateAnnotation,
@@ -54,8 +58,11 @@ export function InspectorPane({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-			<section className="relative flex h-full min-h-0 flex-col px-6 py-4 xl:py-0">
-				<div className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]">
+			<section className="relative flex min-h-0 flex-1 flex-col px-6 py-4 xl:py-0">
+				<div
+					data-marker-scroll-region
+					className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 xl:pt-0 xl:pb-5 [mask-image:linear-gradient(to_bottom,transparent_0,black_20px,black_calc(100%-20px),transparent_100%)]"
+				>
 					{selectedFile ? (
 						<div className="inspector-file-notes shrink-0 xl:-mt-2">
 							{/*
@@ -104,6 +111,7 @@ export function InspectorPane({
 									key={annotation.id}
 									annotation={annotation}
 									isActive={activeAnnotation?.id === annotation.id}
+									isPreviewed={hoveredAnnotationId === annotation.id}
 									selectedFile={selectedFile}
 									songId={song.id}
 									requestDetailFocus={annotationDetailFocusId === annotation.id}
@@ -132,6 +140,7 @@ export function InspectorPane({
 					</p>
 				) : null}
 			</section>
+			{galleryFooter}
 		</div>
 	);
 }

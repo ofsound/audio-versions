@@ -6,11 +6,17 @@ import { createPortal } from "react-dom";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import type {
 	Annotation,
+	GalleryScope,
 	SongLinkTarget,
 	SongRouteSearch,
 } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useSongRouteHeaderSlot } from "./app-chrome";
+import {
+	type GalleryGroup,
+	GalleryStrip,
+	GalleryViewer,
+} from "./image-gallery";
 import { InspectorPane } from "./inspector-pane";
 import { JournalEditor } from "./journal-editor";
 import { PanelResizeHandle } from "./panel-resize-handle";
@@ -37,6 +43,7 @@ export function SongWorkspace({
 	const songRouteHeaderSlot = useSongRouteHeaderSlot();
 	const {
 		ready,
+		settings,
 		getSongById,
 		getSongAudioFiles,
 		getAnnotationsForFile,
@@ -46,6 +53,8 @@ export function SongWorkspace({
 		rememberSongOpened,
 		updateSong,
 		addAudioFile,
+		addGalleryImages,
+		removeGalleryImage,
 		updateAudioFile,
 		deleteAudioFile,
 		reorderAudioFiles,
@@ -62,6 +71,7 @@ export function SongWorkspace({
 		jumpBetweenAnnotations,
 	} = useAudioVersions();
 
+	const songNotesFirst = settings.ui.songNotesFirst;
 	const song = getSongById(songId);
 	const audioFiles = getSongAudioFiles(songId);
 	const annotationsRef = useRef<Annotation[]>([]);
@@ -110,9 +120,50 @@ export function SongWorkspace({
 		patchRouteSelection,
 		songId,
 	});
-	const { isFileDragActive } = useSongWorkspaceFileDrop({
-		enabled: ready && Boolean(song) && !isUploadOpen,
+	const [galleryImageId, setGalleryImageId] = useState<string | null>(null);
+	const [galleryBusy, setGalleryBusy] = useState(false);
+	const [galleryError, setGalleryError] = useState<string | null>(null);
+	const galleryBusyRef = useRef(false);
+	const addImages = async (scope: GalleryScope, files: File[]) => {
+		if (!files.length || galleryBusyRef.current) return;
+		galleryBusyRef.current = true;
+		setGalleryBusy(true);
+		setGalleryError(null);
+		try {
+			await addGalleryImages(scope, files);
+		} catch (error) {
+			setGalleryError(
+				error instanceof Error ? error.message : "Images could not be added.",
+			);
+		} finally {
+			galleryBusyRef.current = false;
+			setGalleryBusy(false);
+		}
+	};
+	const { isFileDragActive, dropTarget } = useSongWorkspaceFileDrop({
+		enabled:
+			ready &&
+			Boolean(song) &&
+			!isUploadOpen &&
+			!galleryImageId &&
+			!galleryBusy,
 		onAudioFileDrop: beginUploadWithFile,
+		onImageFilesDrop: (target, files) => {
+			if (target === "file" && !selectedFileId) {
+				setGalleryError(
+					"Select an audio file before adding images to its gallery.",
+				);
+				return;
+			}
+			void addImages(
+				{
+					songId,
+					...(target === "file" ? { audioFileId: selectedFileId } : {}),
+				},
+				files,
+			);
+		},
+		onDropError: setGalleryError,
 	});
 
 	const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
@@ -125,6 +176,9 @@ export function SongWorkspace({
 	const [annotationDetailFocusId, setAnnotationDetailFocusId] = useState<
 		string | null
 	>(null);
+	const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(
+		null,
+	);
 	const [journalHistoryValue, setJournalHistoryValue] = useState<{
 		revision: number;
 		value: string;
@@ -145,11 +199,15 @@ export function SongWorkspace({
 
 			setPanelWidths((current) => {
 				const panels = (() => {
-					const [left, center, right] = [
-						...grid.querySelectorAll<HTMLElement>(
-							"[data-song-workspace-panel]",
-						),
-					];
+					const left = grid.querySelector<HTMLElement>(
+						'[data-song-workspace-panel="left"]',
+					);
+					const center = grid.querySelector<HTMLElement>(
+						'[data-song-workspace-panel="center"]',
+					);
+					const right = grid.querySelector<HTMLElement>(
+						'[data-song-workspace-panel="right"]',
+					);
 					if (!left || !center || !right) {
 						return null;
 					}
@@ -164,35 +222,32 @@ export function SongWorkspace({
 				}
 
 				const minimumWidth = 240;
-				if (boundary === "left") {
-					const nextLeft = Math.min(
-						Math.max(panels.left + deltaX, minimumWidth),
-						panels.left + panels.center - minimumWidth,
-					);
-					return {
-						...panels,
-						left: nextLeft,
-						center: panels.left + panels.center - nextLeft,
-					};
-				}
-
-				const nextCenter = Math.min(
-					Math.max(panels.center + deltaX, minimumWidth),
-					panels.center + panels.right - minimumWidth,
+				const [first, second]: [keyof typeof panels, keyof typeof panels] =
+					songNotesFirst
+						? boundary === "left"
+							? ["right", "left"]
+							: ["left", "center"]
+						: boundary === "left"
+							? ["left", "center"]
+							: ["center", "right"];
+				const nextFirst = Math.min(
+					Math.max(panels[first] + deltaX, minimumWidth),
+					panels[first] + panels[second] - minimumWidth,
 				);
 				return {
 					...panels,
-					center: nextCenter,
-					right: panels.center + panels.right - nextCenter,
+					[first]: nextFirst,
+					[second]: panels[first] + panels[second] - nextFirst,
 				};
 			});
 		},
-		[],
+		[songNotesFirst],
 	);
 
-	const isModalOpen = isUploadOpen;
+	const isModalOpen = isUploadOpen || Boolean(galleryImageId);
 
 	useCloseOnEscape(isModalOpen, () => {
+		setGalleryImageId(null);
 		setIsUploadOpen(false);
 	});
 
@@ -465,6 +520,142 @@ export function SongWorkspace({
 		<section className="panel-shell px-6 py-6">{songHeaderControls}</section>
 	);
 
+	const songGallery: GalleryGroup = {
+		label: "Song gallery",
+		scope: { songId },
+		images: song.galleryImages ?? [],
+	};
+	const fileGallery: GalleryGroup | undefined = selectedFile
+		? {
+				label: `File gallery · ${selectedFile.title}`,
+				scope: { songId, audioFileId: selectedFile.id },
+				images: selectedFile.galleryImages ?? [],
+			}
+		: undefined;
+	const galleryGroups = fileGallery
+		? [songGallery, fileGallery]
+		: [songGallery];
+	const strip = (group: GalleryGroup) => (
+		<GalleryStrip
+			group={group}
+			busy={galleryBusy}
+			onOpen={setGalleryImageId}
+			onAdd={(files) => void addImages(group.scope, files)}
+		/>
+	);
+	const playerPanel = (
+		<div
+			key="player"
+			className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pt-2 xl:pr-1"
+			data-song-workspace-panel="left"
+			data-gallery-drop-target="audio"
+			data-drop-active={isFileDragActive && dropTarget === "audio"}
+		>
+			<SongWorkspaceWaveformList
+				onHoverAnnotation={setHoveredAnnotationId}
+				activeAnnotationId={activeAnnotationId}
+				audioFiles={audioFiles}
+				blobsByAudioId={blobsByAudioId}
+				getAnnotationsForFile={getAnnotationsForFile}
+				handleCreateAnnotation={(fileId, annotationInput) =>
+					handleCreateAnnotation(fileId, {
+						...annotationInput,
+						songId,
+						audioFileId: fileId,
+					})
+				}
+				playback={playback}
+				registerAudioElement={registerAudioElement}
+				reorderAudioFiles={reorderAudioFiles}
+				reportPlaybackState={reportPlaybackState}
+				seekFile={seekFile}
+				selectedFileId={selectedFileId}
+				songId={songId}
+				togglePlayback={togglePlayback}
+				updateAnnotation={updateAnnotation}
+				deleteAnnotation={deleteAnnotation}
+				deletingFileId={deletingFileId}
+				onDeleteFile={(fileId) => {
+					void handleDeleteFile(fileId);
+				}}
+				updateAudioFile={updateAudioFile}
+				workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
+				onSelectFile={(fileId) =>
+					patchRouteSelection({
+						fileId,
+						clearPlaybackParams: true,
+					})
+				}
+				onSelectAnnotation={(fileId, annotationId) =>
+					patchRouteSelection({
+						fileId,
+						annotationId,
+						clearPlaybackParams: true,
+					})
+				}
+				onOpenUpload={() => setIsUploadOpen(true)}
+			/>
+		</div>
+	);
+	const detailsPanel = (
+		<div
+			key="details"
+			className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:pt-2"
+			data-song-workspace-panel="center"
+			data-gallery-drop-target="file"
+			data-drop-active={isFileDragActive && dropTarget === "file"}
+		>
+			<div className="song-workspace-primary-surface flex min-h-0 flex-1 flex-col pr-1">
+				<InspectorPane
+					galleryFooter={fileGallery ? strip(fileGallery) : undefined}
+					hoveredAnnotationId={hoveredAnnotationId}
+					song={song}
+					selectedFile={selectedFile}
+					annotations={selectedAnnotations}
+					activeAnnotation={activeAnnotation}
+					annotationDetailFocusId={annotationDetailFocusId}
+					onAnnotationDetailFocusHandled={handleAnnotationDetailFocusHandled}
+					onOpenTarget={(target: SongLinkTarget) => openTarget(target)}
+					onUpdateFile={handleSelectedFilePatch}
+					onUpdateAnnotation={updateAnnotation}
+					onDeleteAnnotation={deleteAnnotation}
+					onSelectAnnotation={(annotationId) => {
+						if (!selectedFileId) {
+							return;
+						}
+
+						patchRouteSelection({
+							fileId: selectedFileId,
+							annotationId,
+							clearPlaybackParams: true,
+						});
+					}}
+				/>
+			</div>
+		</div>
+	);
+	const journalPanel = (
+		<div
+			key="journal"
+			className="song-workspace-journal-column flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden"
+			data-song-workspace-panel="right"
+			data-gallery-drop-target="song"
+			data-drop-active={isFileDragActive && dropTarget === "song"}
+		>
+			<div className="flex min-h-0 flex-1 flex-col">
+				<JournalEditor
+					historyValue={journalHistoryValue}
+					value={song.generalNotes}
+					onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
+					onHistoryChange={recordJournalChange}
+					onLocalHistoryAction={history.acceptLocalHistoryAction}
+					onInternalLink={(target) => openTarget(target)}
+				/>
+				{strip(songGallery)}
+			</div>
+		</div>
+	);
+
 	return (
 		<>
 			{renderedSongHeaderControls}
@@ -474,8 +665,24 @@ export function SongWorkspace({
 				}`}
 				aria-hidden={isModalOpen}
 			>
+				{galleryError && (
+					<div
+						role="alert"
+						className="flex items-center justify-between gap-3 border border-[var(--color-border-plain)] p-3 text-sm"
+					>
+						<span>{galleryError}</span>
+						<button
+							type="button"
+							className="action-secondary px-2 py-1"
+							onClick={() => setGalleryError(null)}
+						>
+							Dismiss
+						</button>
+					</div>
+				)}
 				<section
 					ref={workspaceGridRef}
+					data-song-notes-first={songNotesFirst}
 					className="song-workspace-scroll-region song-workspace-panel-grid grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch"
 					style={
 						panelWidths
@@ -487,113 +694,37 @@ export function SongWorkspace({
 							: undefined
 					}
 				>
-					<div
-						className="flex min-w-0 flex-col gap-4 xl:h-full xl:min-h-0 xl:overflow-x-hidden xl:overflow-y-auto xl:pt-2 xl:pr-1"
-						data-song-workspace-panel="left"
-					>
-						<SongWorkspaceWaveformList
-							activeAnnotationId={activeAnnotationId}
-							audioFiles={audioFiles}
-							blobsByAudioId={blobsByAudioId}
-							getAnnotationsForFile={getAnnotationsForFile}
-							handleCreateAnnotation={(fileId, annotationInput) =>
-								handleCreateAnnotation(fileId, {
-									...annotationInput,
-									songId,
-									audioFileId: fileId,
-								})
-							}
-							playback={playback}
-							registerAudioElement={registerAudioElement}
-							reorderAudioFiles={reorderAudioFiles}
-							reportPlaybackState={reportPlaybackState}
-							seekFile={seekFile}
-							selectedFileId={selectedFileId}
-							songId={songId}
-							togglePlayback={togglePlayback}
-							updateAnnotation={updateAnnotation}
-							deleteAnnotation={deleteAnnotation}
-							deletingFileId={deletingFileId}
-							onDeleteFile={(fileId) => {
-								void handleDeleteFile(fileId);
-							}}
-							updateAudioFile={updateAudioFile}
-							workspacePlayheadMsByFileId={workspace.playheadMsByFileId}
-							onSelectFile={(fileId) =>
-								patchRouteSelection({
-									fileId,
-									clearPlaybackParams: true,
-								})
-							}
-							onSelectAnnotation={(fileId, annotationId) =>
-								patchRouteSelection({
-									fileId,
-									annotationId,
-									clearPlaybackParams: true,
-								})
-							}
-							onOpenUpload={() => setIsUploadOpen(true)}
-						/>
-					</div>
-
-					<PanelResizeHandle
-						label="Resize thumbnails and details panels"
-						onResize={(deltaX) => resizePanels("left", deltaX)}
-					/>
-
-					<div
-						className="flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden xl:pt-2"
-						data-song-workspace-panel="center"
-					>
-						<div className="song-workspace-primary-surface flex min-h-0 flex-1 flex-col pr-1">
-							<InspectorPane
-								song={song}
-								selectedFile={selectedFile}
-								annotations={selectedAnnotations}
-								activeAnnotation={activeAnnotation}
-								annotationDetailFocusId={annotationDetailFocusId}
-								onAnnotationDetailFocusHandled={
-									handleAnnotationDetailFocusHandled
-								}
-								onOpenTarget={(target: SongLinkTarget) => openTarget(target)}
-								onUpdateFile={handleSelectedFilePatch}
-								onUpdateAnnotation={updateAnnotation}
-								onDeleteAnnotation={deleteAnnotation}
-								onSelectAnnotation={(annotationId) => {
-									if (!selectedFileId) {
-										return;
-									}
-
-									patchRouteSelection({
-										fileId: selectedFileId,
-										annotationId,
-										clearPlaybackParams: true,
-									});
-								}}
-							/>
-						</div>
-					</div>
-
-					<PanelResizeHandle
-						label="Resize details and song notes panels"
-						onResize={(deltaX) => resizePanels("right", deltaX)}
-					/>
-
-					<div
-						className="song-workspace-journal-column flex min-w-0 flex-col xl:min-h-0 xl:overflow-hidden"
-						data-song-workspace-panel="right"
-					>
-						<div className="flex min-h-0 flex-1 flex-col">
-							<JournalEditor
-								historyValue={journalHistoryValue}
-								value={song.generalNotes}
-								onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
-								onHistoryChange={recordJournalChange}
-								onLocalHistoryAction={history.acceptLocalHistoryAction}
-								onInternalLink={(target) => openTarget(target)}
-							/>
-						</div>
-					</div>
+					{songNotesFirst
+						? [
+								journalPanel,
+								<PanelResizeHandle
+									key="notes-player"
+									label="Resize song notes and player panels"
+									onResize={(deltaX) => resizePanels("left", deltaX)}
+								/>,
+								playerPanel,
+								<PanelResizeHandle
+									key="player-details"
+									label="Resize player and file notes panels"
+									onResize={(deltaX) => resizePanels("right", deltaX)}
+								/>,
+								detailsPanel,
+							]
+						: [
+								playerPanel,
+								<PanelResizeHandle
+									key="player-details"
+									label="Resize thumbnails and details panels"
+									onResize={(deltaX) => resizePanels("left", deltaX)}
+								/>,
+								detailsPanel,
+								<PanelResizeHandle
+									key="details-notes"
+									label="Resize details and song notes panels"
+									onResize={(deltaX) => resizePanels("right", deltaX)}
+								/>,
+								journalPanel,
+							]}
 				</section>
 			</main>
 
@@ -619,7 +750,22 @@ export function SongWorkspace({
 				/>
 			)}
 
-			<SongWorkspaceFileDropzone active={isFileDragActive} />
+			{galleryImageId && (
+				<GalleryViewer
+					groups={galleryGroups}
+					imageId={galleryImageId}
+					onSelect={setGalleryImageId}
+					onClose={() => setGalleryImageId(null)}
+					busy={galleryBusy}
+					onRemove={async (scope, imageId) => {
+						await removeGalleryImage(scope, imageId);
+					}}
+				/>
+			)}
+			<SongWorkspaceFileDropzone
+				active={isFileDragActive}
+				target={dropTarget}
+			/>
 		</>
 	);
 }

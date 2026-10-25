@@ -273,6 +273,7 @@ final class ReviewCompanionStore: ObservableObject {
         Task {
             do {
                 if let signedMedia {
+                    try await signedMedia.deleteSongGallery(songID: song.id)
                     for version in song.versions {
                         try await signedMedia.deleteMedia(audioFileID: version.id)
                     }

@@ -14,6 +14,7 @@ Supabase provides authentication and realtime metadata sync, private media lives
 - Import multiple audio files per song and cache generated waveform data locally
 - Review waveforms, create point/range annotations, and deep-link back to exact moments
 - Keep file-level notes alongside persistent song notes
+- Attach screenshots to songs or individual audio files, with a combined image explorer
 - Search across songs, song notes, file notes, and annotations
 
 ## Development
@@ -30,7 +31,7 @@ Without cloud environment variables, development stays in local-only mode. Copy 
 ## Cloud Setup
 
 1. Create a Supabase project through the Vercel Marketplace integration.
-2. Run `supabase/migrations/20260715000000_audio_versions_cloud.sql` in the Supabase SQL editor, or apply it with the Supabase CLI after linking the project.
+2. Apply all SQL files in `supabase/migrations/` in timestamp order, using the Supabase SQL editor or the Supabase CLI after linking the project. Gallery support requires `20261024000000_image_galleries.sql`.
 3. Enable Email/Password and Google in Supabase Auth. Add these redirect URLs:
    - `http://localhost:3000/auth/callback`
    - `audio-versions://auth/callback`
@@ -114,3 +115,27 @@ Audio Versions persists and syncs the following records:
 - per-song workspace settings and recents
 
 Every cloud row is scoped by `user_id` and protected by Supabase row-level security. Deletions use tombstones so another connected device receives them as realtime updates. The schema reserves a disabled, hashed song share token for a future secret-link sharing feature; there is currently no public read policy.
+
+## Image Galleries
+
+In web and Electron, drop images over **Song Notes** to attach them to the song,
+or over **File Notes / Markers and Ranges** to attach them to the selected audio
+file. Drop audio over the player and track thumbnails to import it. Each gallery
+also has an **Add images** button for selecting multiple files.
+
+The thumbnail strips sit at the bottom of the notes columns. Click a thumbnail
+to open the combined Song and selected File galleries. Use the arrows or left/right
+keys to browse, click any overview thumbnail to jump to it, choose **100%** to read
+an original-size screenshot, and press Escape to close. Removing an image asks for
+confirmation; images stay with songs in Trash until permanently deleted.
+
+PNG, JPEG, WebP, GIF, and AVIF are supported (25 MB and 50 megapixels per image).
+Original files retain their quality; previews are generated separately. Local-only
+libraries keep both in IndexedDB. Cloud libraries upload to private Vercel Blob
+storage with parent-owned metadata in Supabase and authenticated, expiring media
+links. Local galleries migrate with the library on first cloud sign-in.
+
+Deploy the gallery migration before using cloud image uploads, and deploy the new
+media routes before distributing the updated Electron/iOS clients. The native iOS
+client preserves gallery metadata and cleans gallery media during permanent song
+deletion; it does not yet expose the gallery UI.

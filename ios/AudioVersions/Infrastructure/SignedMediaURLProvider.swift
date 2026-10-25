@@ -173,6 +173,25 @@ actor SignedMediaURLProvider {
         invalidate(audioFileID: audioFileID)
     }
 
+    func deleteSongGallery(songID: String) async throws {
+        struct GalleryRequest: Encodable {
+            let action = "delete-song"
+            let songId: String
+        }
+        let session = try await client.auth.session
+        let galleryEndpoint = endpointURL.deletingLastPathComponent().appending(path: "gallery")
+        var request = URLRequest(url: galleryEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(GalleryRequest(songId: songID))
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw SignedMediaError.invalidResponse }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw SignedMediaError.requestFailed(statusCode: httpResponse.statusCode, message: String(data: data, encoding: .utf8) ?? "")
+        }
+    }
+
     private func request(
         audioFileID: String,
         accessToken: String

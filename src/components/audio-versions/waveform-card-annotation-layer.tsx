@@ -442,7 +442,7 @@ export function WaveformCardAnnotationLayer({
 				);
 			})}
 
-			{hoveredAnnotationRecord && hoveredTooltipPosition ? (
+			{hoveredAnnotationRecord?.type === "range" && hoveredTooltipPosition ? (
 				<div
 					className="waveform-annotation-tooltip pointer-events-none absolute z-20"
 					style={hoveredTooltipPosition}

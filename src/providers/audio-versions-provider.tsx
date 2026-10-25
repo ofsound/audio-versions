@@ -17,12 +17,15 @@ import type {
 	CreateAnnotationInput,
 	CreatePlaylistInput,
 	CreateSongInput,
+	GalleryImage,
+	GalleryScope,
 	Playlist,
 	SearchResult,
 	Song,
 	WorkspaceState,
 } from "#/lib/audio-versions/types";
 import { createCloudPersistence } from "#/lib/cloud/persistence";
+import { useGalleryMutations } from "./audio-versions-provider-gallery-mutations";
 import {
 	useAnnotationMutations,
 	useAudioFileMutations,
@@ -39,6 +42,11 @@ import {
 } from "./use-audio-versions-playback";
 
 interface AudioVersionsContextValue extends AudioVersionsSnapshot {
+	addGalleryImages: (
+		scope: GalleryScope,
+		files: File[],
+	) => Promise<GalleryImage[]>;
+	removeGalleryImage: (scope: GalleryScope, imageId: string) => Promise<void>;
 	trashedSongs: Song[];
 	ready: boolean;
 	error: string | null;
@@ -274,6 +282,11 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		commitSnapshot,
 	});
 	const playlistMutations = usePlaylistMutations({ cloud, commitSnapshot });
+	const galleryMutations = useGalleryMutations({
+		cloud,
+		cloudUserId,
+		commitSnapshot,
+	});
 	const resetSongPlayheads = useCallback(
 		async (songId: string) => {
 			const fileIds = snapshotRef.current.audioFiles
@@ -320,6 +333,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			...annotationMutations,
 			...workspaceMutations,
 			...playlistMutations,
+			...galleryMutations,
 			registerAudioElement,
 			reportPlaybackState,
 			togglePlayback,
@@ -335,6 +349,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			jumpBetweenAnnotations,
 			playback,
 			playlistMutations,
+			galleryMutations,
 			ready,
 			registerAudioElement,
 			reportPlaybackState,

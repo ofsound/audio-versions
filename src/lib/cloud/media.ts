@@ -1,6 +1,10 @@
 import { upload } from "@vercel/blob/client";
 
-import type { AudioFileRecord } from "#/lib/audio-versions/types";
+import type {
+	AudioFileRecord,
+	GalleryImage,
+	GalleryScope,
+} from "#/lib/audio-versions/types";
 
 import { getSupabaseBrowserClient } from "./supabase";
 
@@ -116,4 +120,82 @@ export async function deleteRemoteAudio(audioFileId: string): Promise<void> {
 	}
 
 	signedUrlCache.delete(audioFileId);
+}
+
+export async function uploadRemoteGalleryImage(
+	userId: string,
+	image: GalleryImage,
+	original: Blob,
+	thumbnail: Blob,
+): Promise<GalleryImage> {
+	const accessToken = await getAccessToken();
+	const send = async (body: Blob, name: string) => {
+		const result = await upload(
+			`users/${userId}/images/${image.id}/${safeFilename(name).replace(/^\.+/, "image-")}`,
+			body,
+			{
+				access: "private",
+				contentType: body.type,
+				handleUploadUrl: cloudApiUrl("/api/blob/upload"),
+				headers: { Authorization: `Bearer ${accessToken}` },
+			},
+		);
+		return {
+			pathname: result.pathname,
+			contentType: result.contentType,
+			size: body.size,
+			originalName: name,
+		};
+	};
+	const remoteMedia = await send(original, image.name);
+	try {
+		const thumbnailMedia = await send(thumbnail, "thumbnail.webp");
+		return { ...image, remoteMedia, thumbnailMedia };
+	} catch (error) {
+		await deleteRemoteGalleryPath(remoteMedia.pathname).catch(() => undefined);
+		throw error;
+	}
+}
+
+async function galleryMediaRequest(body: object): Promise<Response> {
+	const accessToken = await getAccessToken();
+	const response = await fetch(cloudApiUrl("/api/blob/gallery"), {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${accessToken}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(body),
+	});
+	if (!response.ok) throw new Error(await response.text());
+	return response;
+}
+
+export async function getRemoteGalleryUrl(
+	scope: GalleryScope,
+	imageId: string,
+	thumbnail: boolean,
+	refresh = false,
+): Promise<string> {
+	const key = `gallery:${imageId}:${thumbnail}`;
+	const cached = signedUrlCache.get(key);
+	if (!refresh && cached && cached.expiresAt > Date.now() + 60_000)
+		return cached.url;
+	const response = await galleryMediaRequest({
+		action: "url",
+		...scope,
+		imageId,
+		thumbnail,
+	});
+	const result = (await response.json()) as { expiresAt: number; url: string };
+	signedUrlCache.set(key, result);
+	return result.url;
+}
+
+export async function deleteRemoteGalleryPath(pathname: string): Promise<void> {
+	await galleryMediaRequest({ action: "delete", pathname });
+}
+
+export async function deleteRemoteSongGallery(songId: string): Promise<void> {
+	await galleryMediaRequest({ action: "delete-song", songId });
 }

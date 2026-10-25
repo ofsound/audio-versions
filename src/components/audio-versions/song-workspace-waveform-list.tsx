@@ -21,6 +21,7 @@ const VERSION_TRAY_ACTION_HEIGHT_PX = 48;
 
 interface SongWorkspaceWaveformListProps {
 	activeAnnotationId?: string;
+	onHoverAnnotation?: (annotationId: string | null) => void;
 	audioFiles: AudioFileRecord[];
 	blobsByAudioId: Record<string, Blob>;
 	getAnnotationsForFile: (audioFileId: string) => Annotation[];
@@ -68,6 +69,7 @@ interface SongWorkspaceWaveformListProps {
 
 export function SongWorkspaceWaveformList({
 	activeAnnotationId,
+	onHoverAnnotation,
 	audioFiles,
 	blobsByAudioId,
 	getAnnotationsForFile,
@@ -90,6 +92,13 @@ export function SongWorkspaceWaveformList({
 	onSelectFile,
 	onOpenUpload,
 }: SongWorkspaceWaveformListProps) {
+	const [playRequest, setPlayRequest] = useState<{
+		fileId: string;
+		timeMs: number;
+		id: number;
+	} | null>(null);
+	const playRequestIdRef = useRef(0);
+
 	const hasAudioFiles = audioFiles.length > 0;
 	const [draggingFileId, setDraggingFileId] = useState<string | null>(null);
 	const [isPhoneViewport, setIsPhoneViewport] = useState(false);
@@ -218,6 +227,10 @@ export function SongWorkspaceWaveformList({
 		<div className="min-w-0" key={audioFile.id}>
 			<WaveformCard
 				audioFile={audioFile}
+				playRequest={
+					playRequest?.fileId === audioFile.id ? playRequest : undefined
+				}
+				onPlayRequestHandled={() => setPlayRequest(null)}
 				annotations={getAnnotationsForFile(audioFile.id)}
 				blob={blobsByAudioId[audioFile.id]}
 				currentTimeMs={
@@ -228,6 +241,7 @@ export function SongWorkspaceWaveformList({
 				isPlaying={playback.activeFileId === audioFile.id && playback.isPlaying}
 				isSelected={selectedFileId === audioFile.id}
 				activeAnnotationId={activeAnnotationId}
+				onHoverAnnotation={onHoverAnnotation}
 				onSelectFile={onSelectFile}
 				onSelectAnnotation={(annotationId) =>
 					onSelectAnnotation(audioFile.id, annotationId)
@@ -324,7 +338,21 @@ export function SongWorkspaceWaveformList({
 										isSelected={selectedFileId === audioFile.id}
 										deletingFile={deletingFileId === audioFile.id}
 										onDeleteFile={onDeleteFile}
-										onSelectFile={onSelectFile}
+										onSelectFile={(fileId) => {
+											setPlayRequest(null);
+											onSelectFile(fileId);
+										}}
+										onPlayFile={(fileId) => {
+											onSelectFile(fileId);
+											setPlayRequest({
+												fileId,
+												timeMs:
+													playback.currentTimeByFileId[fileId] ??
+													workspacePlayheadMsByFileId[fileId] ??
+													0,
+												id: ++playRequestIdRef.current,
+											});
+										}}
 									/>
 								</div>
 							))}

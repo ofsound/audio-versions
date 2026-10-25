@@ -39,7 +39,25 @@ export interface LoudnessMetrics {
 	truePeakDb: number;
 }
 
+export interface GalleryImage {
+	id: string;
+	name: string;
+	contentType: string;
+	size: number;
+	width: number;
+	height: number;
+	createdAt: string;
+	remoteMedia?: NonNullable<AudioFileRecord["remoteMedia"]>;
+	thumbnailMedia?: NonNullable<AudioFileRecord["remoteMedia"]>;
+}
+
+export interface GalleryScope {
+	songId: string;
+	audioFileId?: string;
+}
+
 export interface Song {
+	galleryImages?: GalleryImage[];
 	id: string;
 	title: string;
 	artist: string;
@@ -53,6 +71,7 @@ export interface Song {
 }
 
 export interface AudioFileRecord {
+	galleryImages?: GalleryImage[];
 	id: string;
 	songId: string;
 	title: string;
@@ -106,6 +125,7 @@ const WAVEFORM_HEIGHT_PRESETS = ["large", "medium", "small"] as const;
 export type WaveformHeightPreset = (typeof WAVEFORM_HEIGHT_PRESETS)[number];
 
 export interface AudioVersionsUiSettings {
+	songNotesFirst: boolean;
 	libraryView: "list" | "grid";
 	accentLightPrimary: string;
 	accentLightStrong: string;
@@ -201,6 +221,7 @@ export function createDefaultWorkspaceState(): WorkspaceState {
 
 export function createDefaultUiSettings(): AudioVersionsUiSettings {
 	return {
+		songNotesFirst: false,
 		libraryView: "list",
 		accentLightPrimary: "#059669",
 		accentLightStrong: "#047857",
@@ -240,6 +261,7 @@ export function normalizeUiSettings(
 	const defaults = createDefaultUiSettings();
 
 	return {
+		songNotesFirst: value?.songNotesFirst ?? defaults.songNotesFirst,
 		libraryView: value?.libraryView === "grid" ? "grid" : "list",
 		accentLightPrimary: normalizeHexColor(
 			value?.accentLightPrimary,

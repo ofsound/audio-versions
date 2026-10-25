@@ -459,4 +459,75 @@ describe("audio-versions db cascade helpers", () => {
 			"second owner",
 		);
 	});
+	it("upgrades version 7 and isolates gallery originals by account", async () => {
+		const legacy = await openLegacyAudioVersionsDatabase(7);
+		const tx = legacy.transaction("songs", "readwrite");
+		tx.objectStore("songs").put(createSong());
+		await waitForTransaction(tx);
+		legacy.close();
+		const db = await loadDbModule();
+		expect((await db.loadSnapshot()).songs[0]?.title).toBe("Song");
+		const image = {
+			id: "image",
+			name: "screenshot.png",
+			contentType: "image/png",
+			size: 8,
+			width: 800,
+			height: 600,
+			createdAt: "today",
+		};
+		const snapshot = {
+			...(await db.loadSnapshot()),
+			songs: [createSong({ galleryImages: [image] })],
+		};
+		await db.replaceLocalSnapshot(snapshot, "owner");
+		await db.saveGalleryBlob(image.id, {
+			original: new Blob(["original"]),
+			thumbnail: new Blob(["thumb"]),
+		});
+		await db.replaceLocalSnapshot(snapshot, "owner");
+		expect(await (await db.getGalleryBlob(image.id))?.original.text()).toBe(
+			"original",
+		);
+		await db.replaceLocalSnapshot(snapshot, "another-owner");
+		expect(await db.getGalleryBlob(image.id)).toBeUndefined();
+	});
+
+	it("deletes file and song gallery caches with their parents", async () => {
+		const db = await loadDbModule();
+		const image = {
+			id: "song-image",
+			name: "screenshot.png",
+			contentType: "image/png",
+			size: 8,
+			width: 800,
+			height: 600,
+			createdAt: "today",
+		};
+		const song = createSong({ galleryImages: [image] });
+		const file = createAudioFile({
+			galleryImages: [{ ...image, id: "file-image" }],
+		});
+		await db.saveSong(song);
+		await db.saveAudioFile(file);
+		for (const id of ["song-image", "file-image"])
+			await db.saveGalleryBlob(id, {
+				original: new Blob([id]),
+				thumbnail: new Blob([id]),
+			});
+		await db.deleteAudioFileCascade({
+			audioFileId: file.id,
+			annotationIds: [],
+			settings: baseSettings,
+		});
+		expect(await db.getGalleryBlob("file-image")).toBeUndefined();
+		expect(await db.getGalleryBlob("song-image")).toBeDefined();
+		await db.deleteSongCascade({
+			songId: song.id,
+			audioFileIds: [],
+			annotationIds: [],
+			settings: baseSettings,
+		});
+		expect(await db.getGalleryBlob("song-image")).toBeUndefined();
+	});
 });

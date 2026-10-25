@@ -114,11 +114,16 @@ function renderWaveformCard({
 	onUpdateFile = vi.fn().mockResolvedValue(undefined),
 	onSelectFile = vi.fn(),
 	onSelectAnnotation = vi.fn(),
+	onHoverAnnotation = vi.fn(),
 	onDragStart = vi.fn(),
 	onStepVolume = vi.fn().mockResolvedValue(undefined),
 	onReportPlayback = vi.fn(),
+	playRequest,
+	onPlayRequestHandled = vi.fn(),
 }: {
 	audioFile?: AudioFileRecord;
+	playRequest?: { id: number; timeMs: number };
+	onPlayRequestHandled?: () => void;
 	annotations?: Annotation[];
 	currentTimeMs?: number;
 	isPlaying?: boolean;
@@ -134,6 +139,7 @@ function renderWaveformCard({
 	onUpdateFile?: (patch: Partial<AudioFileRecord>) => Promise<void>;
 	onSelectFile?: (fileId: string) => void;
 	onSelectAnnotation?: (annotationId: string) => void;
+	onHoverAnnotation?: (annotationId: string | null) => void;
 	onDragStart?: () => void;
 	onStepVolume?: (deltaDb: number) => Promise<void>;
 	onReportPlayback?: (patch: {
@@ -144,6 +150,8 @@ function renderWaveformCard({
 	return render(
 		<WaveformCard
 			audioFile={audioFile}
+			playRequest={playRequest}
+			onPlayRequestHandled={onPlayRequestHandled}
 			annotations={annotations}
 			blob={new Blob(["tone"], { type: "audio/wav" })}
 			currentTimeMs={currentTimeMs}
@@ -151,6 +159,7 @@ function renderWaveformCard({
 			isSelected
 			onSelectFile={onSelectFile}
 			onSelectAnnotation={onSelectAnnotation}
+			onHoverAnnotation={onHoverAnnotation}
 			onCreateAnnotation={onCreateAnnotation}
 			onUpdateAnnotation={onUpdateAnnotation}
 			onDeleteAnnotation={onDeleteAnnotation}
@@ -870,8 +879,23 @@ describe("WaveformCard", () => {
 		});
 	});
 
-	it("shows a custom tooltip when hovering a marker handle", () => {
+	it("starts a requested thumbnail playback once the media source is ready", async () => {
+		const onSeek = vi.fn().mockResolvedValue(undefined);
+		const onPlayRequestHandled = vi.fn();
 		renderWaveformCard({
+			playRequest: { id: 1, timeMs: 12000 },
+			onPlayRequestHandled,
+			onSeek,
+		});
+		await waitFor(() => expect(onSeek).toHaveBeenCalledWith(12000, true));
+		expect(onSeek).toHaveBeenCalledTimes(1);
+		expect(onPlayRequestHandled).toHaveBeenCalledTimes(1);
+	});
+
+	it("previews the inspector card instead of a tooltip when hovering a marker handle", () => {
+		const onHoverAnnotation = vi.fn();
+		renderWaveformCard({
+			onHoverAnnotation,
 			annotations: [
 				{
 					id: "annotation-1",
@@ -903,14 +927,17 @@ describe("WaveformCard", () => {
 			clientY: 30,
 		});
 
-		const markerDetail = screen.getByText("Lead vocal starts");
-		const markerTooltip = markerDetail.closest(".waveform-annotation-tooltip");
-		expect(markerTooltip).toBeTruthy();
-		expect(within(markerTooltip as HTMLElement).getByText("0:30")).toBeTruthy();
-		expect(markerDetail).toBeTruthy();
-
-		fireEvent.pointerLeave(markerHandle as Element);
 		expect(screen.queryByText("Lead vocal starts")).toBeNull();
+		expect(onHoverAnnotation).toHaveBeenLastCalledWith("annotation-1");
+		fireEvent.pointerMove(markerHandle as Element, {
+			clientX: 42,
+			clientY: 31,
+		});
+		expect(
+			onHoverAnnotation.mock.calls.filter(([id]) => id === "annotation-1"),
+		).toHaveLength(1);
+		fireEvent.pointerLeave(markerHandle as Element);
+		expect(onHoverAnnotation).toHaveBeenLastCalledWith(null);
 	});
 
 	it("shows a custom tooltip when hovering a range in the bottom gutter", () => {
@@ -1230,7 +1257,7 @@ describe("WaveformCard", () => {
 		});
 	});
 
-	it("still drags a point marker after its tooltip hover is shown", async () => {
+	it("still drags a point marker after its inspector preview is shown", async () => {
 		const onUpdateAnnotation = vi.fn().mockResolvedValue(undefined);
 
 		renderWaveformCard({
@@ -1267,7 +1294,7 @@ describe("WaveformCard", () => {
 			clientX: 40,
 			clientY: 30,
 		});
-		expect(screen.getByText("Lead vocal starts")).toBeTruthy();
+		expect(screen.queryByText("Lead vocal starts")).toBeNull();
 
 		fireEvent.pointerDown(markerHandleSvg as Element, {
 			button: 0,

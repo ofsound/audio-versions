@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { del } from "@vercel/blob";
 
 import { cloudCorsHeaders, cloudCorsPreflight } from "#/lib/cloud/cors-server";
+import { ownedGalleryPaths } from "#/lib/cloud/gallery-server";
 import { authenticateRequest } from "#/lib/cloud/supabase-server";
 
 export const Route = createFileRoute("/api/blob/delete")({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/api/blob/delete")({
 
 				const { data, error } = await client
 					.from("audio_files")
-					.select("blob_pathname")
+					.select("*")
 					.eq("user_id", user.id)
 					.eq("id", audioFileId)
 					.is("deleted_at", null)
@@ -31,6 +32,12 @@ export const Route = createFileRoute("/api/blob/delete")({
 				if (typeof pathname === "string" && pathname) {
 					await del(pathname);
 				}
+
+				for (const imagePath of ownedGalleryPaths(
+					data?.gallery_images,
+					user.id,
+				))
+					await del(imagePath);
 
 				return Response.json(
 					{ deleted: true },

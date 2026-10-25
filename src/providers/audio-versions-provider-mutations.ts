@@ -34,7 +34,11 @@ import {
 	normalizeVolumeDb,
 	withDecodedAudio,
 } from "#/lib/audio-versions/waveform";
-import { deleteRemoteAudio, uploadRemoteAudio } from "#/lib/cloud/media";
+import {
+	deleteRemoteAudio,
+	deleteRemoteSongGallery,
+	uploadRemoteAudio,
+} from "#/lib/cloud/media";
 import type { CloudPersistence } from "#/lib/cloud/persistence";
 import {
 	findEntityById,
@@ -268,6 +272,7 @@ export function useSongMutations({
 					};
 				},
 				async (nextSnapshot) => {
+					if (cloud) await deleteRemoteSongGallery(songId);
 					await Promise.all(remoteAudioFileIds.map(deleteRemoteAudio));
 					await deleteSongCascade({
 						songId,
@@ -444,7 +449,10 @@ export function useAudioFileMutations({
 					}
 
 					didDeleteFile = true;
-					hadRemoteMedia = Boolean(targetFile.remoteMedia);
+					hadRemoteMedia = Boolean(
+						targetFile.remoteMedia ||
+							targetFile.galleryImages?.some((image) => image.remoteMedia),
+					);
 					updatedSongId = targetFile.songId;
 					deletedAnnotationIds = current.annotations
 						.filter((annotation) => annotation.audioFileId === audioFileId)

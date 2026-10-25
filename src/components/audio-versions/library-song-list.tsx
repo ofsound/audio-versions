@@ -3,18 +3,11 @@ import { ArrowDown, ArrowUp, FolderClosed, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Song } from "#/lib/audio-versions/types";
 
-type SortColumn =
-	| "title"
-	| "artist"
-	| "project"
-	| "sessions"
-	| "files"
-	| "markers";
+type SortColumn = "title" | "artist" | "sessions" | "files" | "markers";
 
 interface LibrarySongListProps {
 	songs: Song[];
 	showArtist: boolean;
-	showProject: boolean;
 	fileCounts: Map<string, number>;
 	markerCounts: Map<string, number>;
 	sessionDates: Map<string, string>;
@@ -26,7 +19,6 @@ interface LibrarySongListProps {
 export function LibrarySongList({
 	songs,
 	showArtist,
-	showProject,
 	fileCounts,
 	markerCounts,
 	sessionDates,
@@ -69,7 +61,6 @@ export function LibrarySongList({
 	const columns: { key: SortColumn; label: string; numeric?: boolean }[] = [
 		{ key: "title", label: "Name" },
 		...(showArtist ? [{ key: "artist" as const, label: "Artist" }] : []),
-		...(showProject ? [{ key: "project" as const, label: "Project" }] : []),
 		{ key: "sessions", label: "Session dates" },
 		{ key: "files", label: "Files", numeric: true },
 		{ key: "markers", label: "Markers", numeric: true },
@@ -130,7 +121,7 @@ export function LibrarySongList({
 					{sortedSongs.map((song) => (
 						<tr
 							key={song.id}
-							className="group cursor-pointer border-b border-[var(--color-border-plain)] bg-[var(--color-surface)] text-[var(--color-text)] last:border-b-0 even:bg-[var(--color-surface-elevated)] hover:bg-[var(--color-accent-surface)] focus-within:bg-[var(--color-accent-surface)]"
+							className="group cursor-pointer border-b border-[var(--color-border-plain)] bg-[var(--color-surface)] text-[var(--color-text)] last:border-b-0"
 							onClick={(event) => {
 								if ((event.target as HTMLElement).closest("a,button")) return;
 								onOpen(song.id);
@@ -163,14 +154,6 @@ export function LibrarySongList({
 									title={song.artist}
 								>
 									{song.artist || "—"}
-								</td>
-							) : null}
-							{showProject ? (
-								<td
-									className="max-w-56 truncate px-4 py-3 text-[var(--color-text-muted)]"
-									title={song.project}
-								>
-									{song.project || "—"}
 								</td>
 							) : null}
 							<td className="whitespace-nowrap px-4 py-3 text-[var(--color-text-muted)]">

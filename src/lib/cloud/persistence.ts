@@ -11,6 +11,7 @@ import type {
 import { getSupabaseBrowserClient } from "./supabase";
 
 interface SongRow {
+	gallery_images?: Song["galleryImages"];
 	id: string;
 	user_id: string;
 	title: string;
@@ -24,6 +25,7 @@ interface SongRow {
 }
 
 interface AudioFileRow {
+	gallery_images?: AudioFileRecord["galleryImages"];
 	id: string;
 	user_id: string;
 	song_id: string;
@@ -100,6 +102,7 @@ function requireClient() {
 
 function songToRow(userId: string, song: Song) {
 	return {
+		...(song.galleryImages ? { gallery_images: song.galleryImages } : {}),
 		id: song.id,
 		user_id: userId,
 		title: song.title,
@@ -115,6 +118,9 @@ function songToRow(userId: string, song: Song) {
 
 function audioFileToRow(userId: string, audioFile: AudioFileRecord) {
 	return {
+		...(audioFile.galleryImages
+			? { gallery_images: audioFile.galleryImages }
+			: {}),
 		id: audioFile.id,
 		user_id: userId,
 		song_id: audioFile.songId,
@@ -167,6 +173,7 @@ function playlistToRow(userId: string, playlist: Playlist) {
 
 function songFromRow(row: SongRow): Song {
 	return {
+		...(row.gallery_images ? { galleryImages: row.gallery_images } : {}),
 		id: row.id,
 		title: row.title,
 		artist: row.artist,
@@ -189,6 +196,7 @@ function audioFileFromRow(row: AudioFileRow): AudioFileRecord {
 	const loudness = normalizeLoudnessMetrics(row.loudness);
 
 	return {
+		...(row.gallery_images ? { galleryImages: row.gallery_images } : {}),
 		id: row.id,
 		songId: row.song_id,
 		title: row.title,
@@ -408,6 +416,7 @@ export async function loadCloudSnapshot(
 				recents: [],
 				workspaceBySongId: {},
 				ui: {
+					songNotesFirst: false,
 					libraryView: "list",
 					accentLightPrimary: "#059669",
 					accentLightStrong: "#047857",

@@ -36,12 +36,15 @@ const PLAYHEAD_SNAP_DISTANCE_PX = 20;
 
 interface WaveformCardProps {
 	audioFile: AudioFileRecord;
+	playRequest?: { id: number; timeMs: number };
+	onPlayRequestHandled?: () => void;
 	annotations: Annotation[];
 	blob?: Blob;
 	currentTimeMs: number;
 	isPlaying: boolean;
 	isSelected: boolean;
 	activeAnnotationId?: string;
+	onHoverAnnotation?: (annotationId: string | null) => void;
 	onSelectFile: (fileId: string) => void;
 	onSelectAnnotation: (annotationId: string) => void;
 	onCreateAnnotation: (
@@ -68,12 +71,15 @@ interface WaveformCardProps {
 
 export function WaveformCard({
 	audioFile,
+	playRequest,
+	onPlayRequestHandled,
 	annotations,
 	blob,
 	currentTimeMs,
 	isPlaying,
 	isSelected,
 	activeAnnotationId,
+	onHoverAnnotation,
 	onSelectFile,
 	onSelectAnnotation,
 	onCreateAnnotation,
@@ -90,6 +96,19 @@ export function WaveformCard({
 	onDrop,
 }: WaveformCardProps) {
 	const objectUrl = useAudioSource(audioFile.id, blob, audioFile.remoteMedia);
+	const appliedPlayRequestRef = useRef<number | null>(null);
+	useEffect(() => {
+		if (
+			!objectUrl ||
+			!playRequest ||
+			appliedPlayRequestRef.current === playRequest.id
+		)
+			return;
+		appliedPlayRequestRef.current = playRequest.id;
+		void onSeek(playRequest.timeMs, true);
+		onPlayRequestHandled?.();
+	}, [objectUrl, playRequest, onSeek, onPlayRequestHandled]);
+
 	const articleRef = useRef<HTMLElement | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +134,15 @@ export function WaveformCard({
 		annotations,
 		onUpdateAnnotation,
 	});
+	const hoveredPointId =
+		hoveredAnnotationRecord?.type === "point"
+			? hoveredAnnotationRecord.id
+			: null;
+	useEffect(() => {
+		onHoverAnnotation?.(hoveredPointId);
+		return () => onHoverAnnotation?.(null);
+	}, [hoveredPointId, onHoverAnnotation]);
+
 	const {
 		createPointAnnotationAtTime,
 		createRangeAnnotationAtTime,

@@ -16,6 +16,10 @@ import {
 } from "./types";
 
 interface AudioVersionsDB extends DBSchema {
+	galleryBlobs: {
+		key: string;
+		value: { original: Blob; thumbnail: Blob };
+	};
 	songs: {
 		key: string;
 		value: Song;
@@ -52,7 +56,7 @@ interface AudioVersionsDB extends DBSchema {
 }
 
 const DB_NAME = "audio-versions";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const SETTINGS_KEY = "app-settings";
 const LOCAL_OWNER_KEY = "cloud-owner-id";
 const IDENTITY_MIGRATION_KEY = "identity-migration-complete";
@@ -77,6 +81,9 @@ function openAudioVersionsDb(
 ): Promise<IDBPDatabase<AudioVersionsDB>> {
 	return openDB<AudioVersionsDB>(name, DB_VERSION, {
 		async upgrade(database, oldVersion, _newVersion, transaction) {
+			if (!database.objectStoreNames.contains("galleryBlobs")) {
+				database.createObjectStore("galleryBlobs");
+			}
 			if (!database.objectStoreNames.contains("songs")) {
 				database.createObjectStore("songs", { keyPath: "id" });
 			}
@@ -380,6 +387,24 @@ export async function getAudioBlob(
 	return db.get("blobs", audioFileId);
 }
 
+export async function saveGalleryBlob(
+	id: string,
+	data: { original: Blob; thumbnail: Blob },
+): Promise<void> {
+	const db = await getDb();
+	await db.put("galleryBlobs", data, id);
+}
+
+export async function getGalleryBlob(id: string) {
+	const db = await getDb();
+	return db.get("galleryBlobs", id);
+}
+
+export async function deleteGalleryBlob(id: string): Promise<void> {
+	const db = await getDb();
+	await db.delete("galleryBlobs", id);
+}
+
 export async function saveAnnotation(annotation: Annotation): Promise<void> {
 	const db = await getDb();
 	await db.put("annotations", annotation);
@@ -440,6 +465,7 @@ export async function replaceLocalSnapshot(
 			"annotations",
 			"playlists",
 			"blobs",
+			"galleryBlobs",
 			"settings",
 			"sync",
 		],
@@ -466,6 +492,16 @@ export async function replaceLocalSnapshot(
 		if (!sameOwner || !retainedBlobIds.has(key)) {
 			await blobsStore.delete(key);
 		}
+	}
+
+	const imageIds = new Set(
+		[...snapshot.songs, ...snapshot.audioFiles].flatMap((record) =>
+			(record.galleryImages ?? []).map((image) => image.id),
+		),
+	);
+	const galleryStore = transaction.objectStore("galleryBlobs");
+	for (const id of await galleryStore.getAllKeys()) {
+		if (!sameOwner || !imageIds.has(id)) await galleryStore.delete(id);
 	}
 
 	await Promise.all([
@@ -511,10 +547,23 @@ export async function deleteAudioFileCascade({
 }: DeleteAudioFileCascadeInput): Promise<void> {
 	const db = await getDb();
 	const transaction = db.transaction(
-		["audioFiles", "annotations", "blobs", "playlists", "settings", "songs"],
+		[
+			"audioFiles",
+			"annotations",
+			"blobs",
+			"galleryBlobs",
+			"playlists",
+			"settings",
+			"songs",
+		],
 		"readwrite",
 	);
 
+	const removedFile = await transaction
+		.objectStore("audioFiles")
+		.get(audioFileId);
+	for (const image of removedFile?.galleryImages ?? [])
+		await transaction.objectStore("galleryBlobs").delete(image.id);
 	await transaction.objectStore("audioFiles").delete(audioFileId);
 	await transaction.objectStore("blobs").delete(audioFileId);
 
@@ -542,13 +591,29 @@ export async function deleteSongCascade({
 }: DeleteSongCascadeInput): Promise<void> {
 	const db = await getDb();
 	const transaction = db.transaction(
-		["songs", "audioFiles", "annotations", "playlists", "blobs", "settings"],
+		[
+			"songs",
+			"audioFiles",
+			"annotations",
+			"playlists",
+			"blobs",
+			"galleryBlobs",
+			"settings",
+		],
 		"readwrite",
 	);
 
+	const removedSong = await transaction.objectStore("songs").get(songId);
+	for (const image of removedSong?.galleryImages ?? [])
+		await transaction.objectStore("galleryBlobs").delete(image.id);
 	await transaction.objectStore("songs").delete(songId);
 
 	for (const audioFileId of audioFileIds) {
+		const removedFile = await transaction
+			.objectStore("audioFiles")
+			.get(audioFileId);
+		for (const image of removedFile?.galleryImages ?? [])
+			await transaction.objectStore("galleryBlobs").delete(image.id);
 		await transaction.objectStore("audioFiles").delete(audioFileId);
 		await transaction.objectStore("blobs").delete(audioFileId);
 	}

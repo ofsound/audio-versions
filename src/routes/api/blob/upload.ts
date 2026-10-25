@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
 
+import {
+	GALLERY_IMAGE_TYPES,
+	MAX_GALLERY_IMAGE_SIZE,
+} from "#/lib/audio-versions/gallery-images";
 import { cloudCorsHeaders, cloudCorsPreflight } from "#/lib/cloud/cors-server";
+import { isOwnedGalleryPath } from "#/lib/cloud/gallery-path";
 import { authenticateRequest } from "#/lib/cloud/supabase-server";
 
 export const Route = createFileRoute("/api/blob/upload")({
@@ -16,13 +21,18 @@ export const Route = createFileRoute("/api/blob/upload")({
 					body,
 					onBeforeGenerateToken: async (pathname) => {
 						const allowedPrefix = `users/${user.id}/audio/`;
-						if (!pathname.startsWith(allowedPrefix)) {
+						const isGalleryImage = isOwnedGalleryPath(pathname, user.id);
+						if (!pathname.startsWith(allowedPrefix) && !isGalleryImage) {
 							throw new Error("The upload pathname is not owned by this user.");
 						}
 
 						return {
-							allowedContentTypes: ["audio/*", "application/octet-stream"],
-							maximumSizeInBytes: 5_000_000_000_000,
+							allowedContentTypes: isGalleryImage
+								? GALLERY_IMAGE_TYPES
+								: ["audio/*", "application/octet-stream"],
+							maximumSizeInBytes: isGalleryImage
+								? MAX_GALLERY_IMAGE_SIZE
+								: 5_000_000_000_000,
 							addRandomSuffix: true,
 						};
 					},

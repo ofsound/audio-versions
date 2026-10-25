@@ -1218,6 +1218,61 @@ describe("SongWorkspace", () => {
 		expect(journalColumn?.className).toContain("song-workspace-journal-column");
 	});
 
+	it("puts Song Notes first and resizes the adjacent player without changing file notes width", () => {
+		currentUiSettings = { ...currentUiSettings, songNotesFirst: true };
+		currentAudioFiles = [createAudioFile()];
+		const previousWidth = window.innerWidth;
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			value: 1600,
+		});
+		try {
+			const { container } = render(
+				<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />,
+			);
+			const panels = [
+				...container.querySelectorAll<HTMLElement>(
+					"[data-song-workspace-panel]",
+				),
+			];
+			expect(panels.map((panel) => panel.dataset.songWorkspacePanel)).toEqual([
+				"right",
+				"left",
+				"center",
+			]);
+			const widths = { right: 420, left: 600, center: 500 };
+			for (const panel of panels) {
+				const key = panel.dataset.songWorkspacePanel as keyof typeof widths;
+				vi.spyOn(panel, "getBoundingClientRect").mockReturnValue(
+					new DOMRect(0, 0, widths[key], 600),
+				);
+			}
+			fireEvent.keyDown(
+				screen.getByRole("button", {
+					name: "Resize song notes and player panels",
+				}),
+				{ key: "ArrowRight" },
+			);
+			const grid = container.querySelector<HTMLElement>(
+				".song-workspace-panel-grid",
+			);
+			expect(
+				grid?.style.getPropertyValue("--song-workspace-right-panel-width"),
+			).toBe("minmax(436px, 1fr)");
+			expect(
+				grid?.style.getPropertyValue("--song-workspace-left-panel-width"),
+			).toBe("584px");
+			expect(
+				grid?.style.getPropertyValue("--song-workspace-center-panel-width"),
+			).toBe("500px");
+		} finally {
+			Object.defineProperty(window, "innerWidth", {
+				configurable: true,
+				value: previousWidth,
+			});
+		}
+	});
+
 	it("lets the journal pane absorb extra width after panels are resized", () => {
 		currentAudioFiles = [createAudioFile()];
 		const originalInnerWidth = window.innerWidth;

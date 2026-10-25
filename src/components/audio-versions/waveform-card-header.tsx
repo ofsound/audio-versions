@@ -39,8 +39,9 @@ export function WaveformCardHeader({
 					<button
 						type="button"
 						aria-label={isPlaying ? "Pause" : "Play"}
+						aria-pressed={isPlaying}
 						onClick={onTogglePlayback}
-						className="action-primary inline-flex h-9 w-9 shrink-0 items-center justify-center p-0"
+						className="waveform-play-button inline-flex h-10 w-12 shrink-0 items-center justify-center p-0"
 					>
 						{isPlaying ? (
 							<Pause size={16} fill="currentColor" strokeWidth={0} />

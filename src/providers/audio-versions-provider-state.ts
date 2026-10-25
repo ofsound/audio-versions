@@ -6,13 +6,20 @@ import {
 	useState,
 } from "react";
 import {
+	getGalleryBlob,
 	getLocalOwnerId,
 	loadSnapshot,
 	replaceLocalSnapshot,
 	saveAudioFile,
 } from "#/lib/audio-versions/db";
-import type { AudioVersionsSnapshot } from "#/lib/audio-versions/types";
-import { uploadRemoteAudioBlob } from "#/lib/cloud/media";
+import type {
+	AudioVersionsSnapshot,
+	GalleryImage,
+} from "#/lib/audio-versions/types";
+import {
+	uploadRemoteAudioBlob,
+	uploadRemoteGalleryImage,
+} from "#/lib/cloud/media";
 import {
 	loadCloudSnapshot,
 	subscribeToCloudChanges,
@@ -101,10 +108,15 @@ function extensionForBlob(blob: Blob): string {
 }
 
 function needsMediaMigration(snapshot: AudioVersionsSnapshot): boolean {
-	return snapshot.audioFiles.some(
-		(audioFile) =>
-			!audioFile.remoteMedia &&
-			snapshot.blobsByAudioId[audioFile.id] instanceof Blob,
+	return (
+		[...snapshot.songs, ...snapshot.audioFiles].some((record) =>
+			record.galleryImages?.some((image) => !image.remoteMedia),
+		) ||
+		snapshot.audioFiles.some(
+			(audioFile) =>
+				!audioFile.remoteMedia &&
+				snapshot.blobsByAudioId[audioFile.id] instanceof Blob,
+		)
 	);
 }
 
@@ -161,7 +173,41 @@ async function migrateLocalAudio(
 		}),
 	);
 
-	return { ...snapshot, audioFiles };
+	const migrateGallery = async <
+		T extends {
+			galleryImages?: GalleryImage[];
+		},
+	>(
+		record: T,
+	): Promise<T> => {
+		if (!record.galleryImages?.length) return record;
+		const galleryImages = [];
+		for (const image of record.galleryImages) {
+			if (image.remoteMedia) {
+				galleryImages.push(image);
+				continue;
+			}
+			const blob = await getGalleryBlob(image.id);
+			if (!blob)
+				throw new Error(
+					`The local image “${image.name}” is missing. Restore it before syncing this gallery.`,
+				);
+			galleryImages.push(
+				await uploadRemoteGalleryImage(
+					userId,
+					image,
+					blob.original,
+					blob.thumbnail,
+				),
+			);
+		}
+		return { ...record, galleryImages };
+	};
+	return {
+		...snapshot,
+		songs: await Promise.all(snapshot.songs.map(migrateGallery)),
+		audioFiles: await Promise.all(audioFiles.map(migrateGallery)),
+	};
 }
 
 function attachCachedBlobs(

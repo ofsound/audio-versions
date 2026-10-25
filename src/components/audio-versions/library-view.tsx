@@ -278,7 +278,6 @@ export function LibraryView() {
 							<LibrarySongList
 								songs={orderedSongs}
 								showArtist={showArtist}
-								showProject={showProject}
 								fileCounts={audioFileCountBySongId}
 								markerCounts={annotationCountBySongId}
 								sessionDates={sessionDateRangeBySongId}

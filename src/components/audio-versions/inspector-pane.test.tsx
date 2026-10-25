@@ -141,6 +141,47 @@ describe("InspectorPane", () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
+	it("scrolls and highlights the hovered marker inside its own panel without selecting or focusing it", () => {
+		const props = {
+			song: baseSong,
+			annotations: [baseAnnotation],
+			onOpenTarget: vi.fn(),
+			onUpdateFile: vi.fn().mockResolvedValue(undefined),
+			onUpdateAnnotation: vi.fn().mockResolvedValue(undefined),
+			onDeleteAnnotation: vi.fn().mockResolvedValue(undefined),
+			onSelectAnnotation: vi.fn(),
+		};
+		const { rerender } = render(<InspectorPane {...props} />);
+		const card = screen.getByTestId("marker-card-annotation-1");
+		const region = card.closest<HTMLElement>(
+			"[data-marker-scroll-region]",
+		) as HTMLElement;
+		region.scrollTo = vi.fn();
+		Object.defineProperty(region, "clientHeight", { value: 400 });
+		vi.spyOn(region, "getBoundingClientRect").mockReturnValue(
+			new DOMRect(0, 100, 300, 400),
+		);
+		vi.spyOn(card, "getBoundingClientRect").mockReturnValue(
+			new DOMRect(0, 700, 300, 100),
+		);
+		const field = screen.getByRole("textbox", { name: "Detail" });
+		field.focus();
+		rerender(<InspectorPane {...props} hoveredAnnotationId="annotation-1" />);
+		expect(card.className).toContain("marker-card--previewed");
+		expect(card.getAttribute("aria-pressed")).toBe("false");
+		expect(region.scrollTo).toHaveBeenCalledWith({
+			top: 450,
+			behavior: "smooth",
+		});
+		expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+		expect(document.activeElement).toBe(field);
+		expect(props.onSelectAnnotation).not.toHaveBeenCalled();
+		expect(props.onOpenTarget).not.toHaveBeenCalled();
+		rerender(<InspectorPane {...props} hoveredAnnotationId={null} />);
+		expect(card.className).not.toContain("marker-card--previewed");
+		expect(region.scrollTo).toHaveBeenCalledTimes(1);
+	});
+
 	it("shows file notes without the file metadata footer", () => {
 		renderInspector({ selectedFile: baseAudioFile });
 

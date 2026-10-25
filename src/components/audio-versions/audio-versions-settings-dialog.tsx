@@ -125,6 +125,15 @@ export function AudioVersionsSettingsDialog({
 
 				<section className="grid gap-6">
 					<ToggleSettingCard
+						label="Song Notes First"
+						enabled={uiSettings.songNotesFirst}
+						enabledLabel="On"
+						disabledLabel="Off"
+						onChange={(enabled) =>
+							void onUpdateUiSettings({ songNotesFirst: enabled })
+						}
+					/>
+					<ToggleSettingCard
 						label="Artist"
 						enabled={uiSettings.showArtist}
 						onChange={(enabled) =>
@@ -206,10 +215,14 @@ function ToggleSettingCard({
 	label,
 	enabled,
 	onChange,
+	enabledLabel = "Show",
+	disabledLabel = "Hide",
 }: {
 	label: string;
 	enabled: boolean;
 	onChange: (enabled: boolean) => void;
+	enabledLabel?: string;
+	disabledLabel?: string;
 }) {
 	return (
 		<div className="grid justify-items-start gap-2 py-2">
@@ -221,8 +234,8 @@ function ToggleSettingCard({
 				className="grid h-8 w-[9.25rem] grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-0.5 text-xs font-semibold"
 			>
 				{[
-					{ value: true, label: "Show" },
-					{ value: false, label: "Hide" },
+					{ value: true, label: enabledLabel },
+					{ value: false, label: disabledLabel },
 				].map((option) => (
 					<button
 						key={option.label}

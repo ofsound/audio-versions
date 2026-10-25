@@ -84,6 +84,7 @@ export async function normalizeLoadedSnapshot(
 				artist: song.artist,
 				project: song.project,
 				generalNotes: normalizeJournalText(song.generalNotes),
+				...(song.galleryImages ? { galleryImages: song.galleryImages } : {}),
 				audioFileOrder: song.audioFileOrder,
 				createdAt: song.createdAt,
 				updatedAt: song.updatedAt,

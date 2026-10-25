@@ -1,8 +1,14 @@
 import { X } from "lucide-react";
-import { type MutableRefObject, useRef } from "react";
+import {
+	type KeyboardEventHandler,
+	type MutableRefObject,
+	useRef,
+} from "react";
 import { useModalFocusTrap } from "./use-modal-focus-trap";
 
 interface SongModalProps {
+	wide?: boolean;
+	onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 	children: React.ReactNode;
 	initialFocusRef?: MutableRefObject<HTMLElement | null>;
 	onClose: () => void;
@@ -12,6 +18,8 @@ interface SongModalProps {
 
 export function SongModal({
 	children,
+	wide = false,
+	onKeyDown,
 	initialFocusRef,
 	onClose,
 	title,
@@ -44,11 +52,12 @@ export function SongModal({
 			/>
 			<div
 				ref={panelRef}
+				onKeyDown={onKeyDown}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={titleId}
 				tabIndex={-1}
-				className="song-modal__panel w-[calc(100vw-2rem)] max-w-[72rem] sm:w-[65vw]"
+				className={`song-modal__panel w-[calc(100vw-2rem)] ${wide ? "max-w-[calc(100vw-2rem)] sm:w-[calc(100vw-5rem)]" : "max-w-[72rem] sm:w-[65vw]"}`}
 			>
 				<div className="flex items-start justify-between gap-4 border-b border-[var(--color-border-plain)] px-5 py-4 sm:px-6">
 					<div className="min-w-0">

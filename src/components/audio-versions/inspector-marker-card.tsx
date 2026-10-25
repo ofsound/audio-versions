@@ -19,6 +19,7 @@ import { useDebouncedAsyncCallback } from "./use-debounced-async-callback";
 interface InspectorMarkerCardProps {
 	annotation: Annotation;
 	isActive: boolean;
+	isPreviewed?: boolean;
 	selectedFile?: Pick<AudioFileRecord, "durationMs" | "title">;
 	songId: string;
 	onOpenTarget: (target: SongLinkTarget) => void;
@@ -36,6 +37,7 @@ interface InspectorMarkerCardProps {
 export function InspectorMarkerCard({
 	annotation,
 	isActive,
+	isPreviewed = false,
 	selectedFile,
 	songId,
 	onOpenTarget,
@@ -74,6 +76,26 @@ export function InspectorMarkerCard({
 			behavior: "smooth",
 		});
 	}, [isActive]);
+
+	useEffect(() => {
+		if (!isPreviewed) return;
+		const card = cardRef.current;
+		const region = card?.closest<HTMLElement>("[data-marker-scroll-region]");
+		if (!card || !region) return;
+		const cardBounds = card.getBoundingClientRect();
+		const regionBounds = region.getBoundingClientRect();
+		const top =
+			region.scrollTop +
+			cardBounds.top -
+			regionBounds.top -
+			Math.max(20, (region.clientHeight - cardBounds.height) / 2);
+		region.scrollTo({
+			top: Math.max(0, top),
+			behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+				? "auto"
+				: "smooth",
+		});
+	}, [isPreviewed]);
 
 	useEffect(
 		() => () => {
@@ -115,7 +137,7 @@ export function InspectorMarkerCard({
 			aria-pressed={isActive}
 			className={`marker-card text-left ${
 				isActive ? "marker-card--selected" : ""
-			}`}
+			} ${isPreviewed ? "marker-card--previewed" : ""}`}
 			onClick={handleMarkerCardClick}
 			onKeyDown={(event) => {
 				if (event.target !== event.currentTarget) {

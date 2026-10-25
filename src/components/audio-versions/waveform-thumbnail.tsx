@@ -18,6 +18,7 @@ interface WaveformThumbnailProps {
 	isSelected: boolean;
 	onDeleteFile: (fileId: string) => void;
 	onSelectFile: (fileId: string) => void;
+	onPlayFile: (fileId: string) => void;
 }
 
 export function WaveformThumbnail({
@@ -28,6 +29,7 @@ export function WaveformThumbnail({
 	isSelected,
 	onDeleteFile,
 	onSelectFile,
+	onPlayFile,
 }: WaveformThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
@@ -81,6 +83,8 @@ export function WaveformThumbnail({
 				aria-label={`Select ${audioFile.title}`}
 				aria-pressed={isSelected}
 				onClick={() => onSelectFile(audioFile.id)}
+				onDoubleClick={() => onPlayFile(audioFile.id)}
+				title="Double-click to open and play"
 				className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
 			/>
 			<div

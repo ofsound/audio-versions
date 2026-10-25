@@ -87,6 +87,24 @@ describe("AudioVersionsChrome", () => {
 		cleanup();
 	});
 
+	it("saves the Song Notes First column preference from settings", () => {
+		render(
+			<AudioVersionsChrome>
+				<main>Library</main>
+			</AudioVersionsChrome>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+		const setting = screen.getByRole("group", { name: "Song Notes First" });
+		fireEvent.click(within(setting).getByRole("button", { name: "On" }));
+		expect(updateUiSettingsMock).toHaveBeenLastCalledWith({
+			songNotesFirst: true,
+		});
+		fireEvent.click(within(setting).getByRole("button", { name: "Off" }));
+		expect(updateUiSettingsMock).toHaveBeenLastCalledWith({
+			songNotesFirst: false,
+		});
+	});
+
 	it("uses the same library icon element, size, and header grid on index and song routes", () => {
 		const { rerender } = render(
 			<AudioVersionsChrome>
