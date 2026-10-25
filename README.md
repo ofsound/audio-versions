@@ -139,3 +139,33 @@ Deploy the gallery migration before using cloud image uploads, and deploy the ne
 media routes before distributing the updated Electron/iOS clients. The native iOS
 client preserves gallery metadata and cleans gallery media during permanent song
 deletion; it does not yet expose the gallery UI.
+
+## Song Notes Tabs and Editing
+
+Song Notes uses CodeMirror on web/Electron. Hold **Option and drag** for column
+selection, **Option-click** for another cursor, or use **Command-D** to select the
+next matching word. Typing, pasting, deletion, and undo apply to the selections
+together. **Command-F** searches the active note; **Command-B/I** applies bold or
+italic. On Windows/Linux, use Alt for Option and Ctrl for Command.
+
+Use **+** to create named documents (including Mixing, Recording, and Mastering)
+or reopen a closed one. Double-click a tab to rename it, or use its actions menu.
+Closing a tab keeps its notes; permanent deletion is separate and asks for
+confirmation. The last note document can be closed or cleared, but not deleted.
+Switching open tabs retains cursor, selection, scroll position, and undo history.
+Search includes all note documents, including closed tabs, and opens the match.
+The song's image gallery is shared across its note tabs.
+
+The iPhone app shows the same named documents in a horizontally scrolling tab
+strip. Use **+** to create or reopen a tab; long-press a tab to rename, close, or
+delete it. Edit and Add to Song Notes target the selected tab. Tab changes are
+saved to protected local storage first, then queued for sync. Conflicting remote
+edits are retained for review under Offline & Sync instead of overwritten.
+
+Apply `supabase/migrations/20261024010000_song_note_tabs.sql` before cloud use.
+Documents use the shared `songs.note_tabs` JSON array (`id`, `name`, `content`);
+content stays plain text with the existing formatting/timestamp/link tokens.
+`general_notes` mirrors the first document and remains authoritative for that
+first document when an older client edits it. Existing songs get their original
+notes as the first tab automatically. Open/closed tabs and the active tab are
+workspace preferences, separate from the saved note documents.

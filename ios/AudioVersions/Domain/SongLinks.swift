@@ -2,6 +2,7 @@ import Foundation
 
 struct SongLinkTarget: Hashable {
     let songID: String
+    let noteTabID: String?
     let fileID: String?
     let annotationID: String?
     let time: TimeInterval?
@@ -12,9 +13,11 @@ struct SongLinkTarget: Hashable {
         fileID: String?,
         annotationID: String?,
         time: TimeInterval?,
-        autoplay: Bool
+        autoplay: Bool,
+        noteTabID: String? = nil
     ) {
         self.songID = songID
+        self.noteTabID = noteTabID
         self.fileID = fileID
         self.annotationID = annotationID
         self.time = time
@@ -42,6 +45,7 @@ struct SongLinkTarget: Hashable {
         let autoplayValue = queryValue("autoplay")
 
         songID = decodedSongID
+        noteTabID = queryValue("noteTabId")
         fileID = queryValue("fileId")
         annotationID = queryValue("annotationId")
         time = timeMilliseconds.map { max(0, $0 / 1_000) }

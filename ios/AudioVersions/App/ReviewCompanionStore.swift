@@ -24,6 +24,11 @@ final class ReviewCompanionStore: ObservableObject {
 
     @Published private(set) var downloadedVersionIDs: Set<String> = []
     @Published private(set) var downloadingVersionIDs: Set<String> = []
+    @Published private(set) var pendingNoteWrites: [PendingNoteWrite] = []
+    @Published private(set) var isSynchronizingNotes = false
+    @Published private(set) var noteSyncError: String?
+    @Published var requestedNoteTabs: [String: String] = [:]
+    @Published var requestedNoteTabRevisions: [String: Int] = [:]
     @Published private(set) var pendingAnnotationWrites: [PendingAnnotationWrite] = []
     @Published private(set) var isSynchronizingAnnotations = false
     @Published private(set) var isOffline = false
@@ -33,6 +38,7 @@ final class ReviewCompanionStore: ObservableObject {
     private var offlineStorage: OfflineLibraryStorage?
     private var accountID: UUID?
     private var downloadTasks: [String: Task<Void, Never>] = [:]
+    private var noteSyncTask: Task<Void, Never>?
     private var annotationSyncTask: Task<Void, Never>?
     private var retrySyncTask: Task<Void, Never>?
     private var networkMonitor: NWPathMonitor?
@@ -158,6 +164,7 @@ final class ReviewCompanionStore: ObservableObject {
         }
 
         await annotationSyncTask?.value
+        await noteSyncTask?.value
         guard accountID == sessionID, self.cloudLibrary === cloudLibrary else { return }
         do {
             var snapshot = try await cloudLibrary.fetchActiveSnapshot()
@@ -406,6 +413,7 @@ final class ReviewCompanionStore: ObservableObject {
     }
 
     func openSongLink(_ target: SongLinkTarget) {
+        if let noteTabID = target.noteTabID { requestedNoteTabs[target.songID] = noteTabID; requestedNoteTabRevisions[target.songID, default: 0] += 1 }
         var nextPath: [LibraryDestination] = [.song(id: target.songID)]
         let versionID = target.fileID ?? songs
             .first(where: { $0.id == target.songID })?
@@ -437,40 +445,44 @@ final class ReviewCompanionStore: ObservableObject {
         seek(to: currentTime + delta, in: version)
     }
 
-    func saveSongJournal(_ journal: String, songID: String) {
-        guard let songIndex = songs.firstIndex(where: { $0.id == songID }) else { return }
-        let previousJournal = songs[songIndex].generalNotes
-        let previousUpdatedAt = songs[songIndex].updatedAt
-        songs[songIndex].generalNotes = journal
-        songs[songIndex].updatedAt = .now
-
-        guard let cloudLibrary else { return }
-        Task {
-            do {
-                _ = try await cloudLibrary.updateSongJournal(journal, songID: songID)
-            } catch {
-                if let currentIndex = songs.firstIndex(where: { $0.id == songID }),
-                   songs[currentIndex].generalNotes == journal {
-                    songs[currentIndex].generalNotes = previousJournal
-                    songs[currentIndex].updatedAt = previousUpdatedAt
-                }
-                cloudErrorMessage = error.localizedDescription
-            }
-        }
+    @discardableResult
+    func saveSongJournal(_ journal: String, songID: String, tabID: String? = nil, expected: SongNoteTab? = nil) -> Bool {
+        let song = songs.first(where: { $0.id == songID })
+        let previous = expected ?? song?.resolvedNoteTabs.first(where: { $0.id == (tabID ?? song?.resolvedNoteTabs.first?.id) })
+        guard let previous else { return false }
+        guard previous.content != journal else { return true }
+        var tab = previous; tab.content = journal
+        return enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .update, tab: tab, expected: previous))
     }
 
-    func appendSongJournalEntry(_ entry: String, songID: String, at date: Date = .now) {
-        let trimmed = entry.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty,
-              let song = songs.first(where: { $0.id == songID })
-        else {
-            return
-        }
+    @discardableResult
+    func createNoteTab(songID: String, name: String) -> String? {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.utf16.count <= 80 else { cloudErrorMessage = NoteTabError.invalidName.localizedDescription; return nil }
+        let tab = SongNoteTab(id: UUID().uuidString.lowercased(), name: name, content: "")
+        return enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .create, tab: tab, expected: nil)) ? tab.id : nil
+    }
 
-        saveSongJournal(
-            SongJournalEntry.appending(trimmed, to: song.generalNotes, at: date),
-            songID: songID
-        )
+    func renameNoteTab(songID: String, tabID: String, name: String) {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.utf16.count <= 80 else { cloudErrorMessage = NoteTabError.invalidName.localizedDescription; return }
+        guard let previous = songs.first(where: { $0.id == songID })?.resolvedNoteTabs.first(where: { $0.id == tabID }) else { return }
+        var tab = previous; tab.name = name
+        enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .update, tab: tab, expected: previous))
+    }
+
+    func deleteNoteTab(songID: String, tabID: String) {
+        guard let previous = songs.first(where: { $0.id == songID })?.resolvedNoteTabs.first(where: { $0.id == tabID }) else { return }
+        enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .delete, tab: previous, expected: previous))
+    }
+
+    @discardableResult
+    func appendSongJournalEntry(_ entry: String, songID: String, tabID: String? = nil, expected: SongNoteTab? = nil, at date: Date = .now) -> Bool {
+        let trimmed = entry.trimmingCharacters(in: .whitespacesAndNewlines)
+        let song = songs.first(where: { $0.id == songID })
+        let tab = song?.resolvedNoteTabs.first(where: { $0.id == (tabID ?? song?.resolvedNoteTabs.first?.id) }) ?? expected
+        guard !trimmed.isEmpty, let tab else { return false }
+        return saveSongJournal(SongJournalEntry.appending(trimmed, to: tab.content, at: date), songID: songID, tabID: tab.id, expected: tab)
     }
 
     func saveAudioFileNotes(_ notes: String, audioFileID: String) {
@@ -932,12 +944,20 @@ extension ReviewCompanionStore {
             offlineStorage?.mediaURL(for: $0) != nil
         } ?? [])
         pendingAnnotationWrites = offlineStorage?.state.pendingWrites ?? []
+        pendingNoteWrites = offlineStorage?.state.pendingNoteWrites ?? []
     }
 
     private func clearOfflineSession(erase: Bool) {
         downloadTasks.values.forEach { $0.cancel() }
         downloadTasks = [:]
         downloadingVersionIDs = []
+        noteSyncTask?.cancel()
+        noteSyncTask = nil
+        pendingNoteWrites = []
+        isSynchronizingNotes = false
+        noteSyncError = nil
+        requestedNoteTabs = [:]
+        requestedNoteTabRevisions = [:]
         annotationSyncTask?.cancel()
         annotationSyncTask = nil
         retrySyncTask?.cancel()
@@ -1066,6 +1086,7 @@ extension ReviewCompanionStore {
     }
 
     func synchronizeAnnotations() {
+        synchronizeNotes()
         guard !isOffline, !isCloudLoading, annotationSyncTask == nil,
               let storage = offlineStorage, let cloudLibrary,
               !storage.state.pendingWrites.isEmpty else { return }
@@ -1130,6 +1151,8 @@ extension ReviewCompanionStore {
             }
         }
         await annotationSyncTask?.value
+        await noteSyncTask?.value
+        await annotationSyncTask?.value
         guard offlineStorage === storage else { return }
         do {
             let remote = try await cloudLibrary.fetchActiveSnapshot()
@@ -1146,5 +1169,91 @@ extension ReviewCompanionStore {
         } catch {
             if offlineStorage === storage { cloudErrorMessage = error.localizedDescription }
         }
+    }
+}
+
+extension ReviewCompanionStore {
+    @discardableResult
+    private func enqueueNote(_ write: PendingNoteWrite) -> Bool {
+        do {
+            let index = songs.firstIndex(where: { $0.id == write.songID })
+            let changed = try index.map { try write.applying(to: songs[$0], checkingConflicts: false) }
+            if let storage = offlineStorage {
+                // A deleted remote tab/song must not silently discard an open
+                // editor's draft. Keep the write for conflict review and copying.
+                guard changed != nil || write.operation == .update else { throw NoteTabError.conflict }
+                var next = storage.state
+                next.snapshot = currentSnapshot
+                next.pendingNoteWrites = (next.pendingNoteWrites ?? []) + [write]
+                if let index, let changed { next.snapshot.songs[index] = changed }
+                try storage.save(next)
+                songs = next.snapshot.songs
+                updateOfflineStatus()
+                synchronizeNotes()
+            } else if cloudLibrary == nil, let index, let changed { songs[index] = changed }
+            else { throw CocoaError(.fileWriteUnknown) }
+            return true
+        } catch {
+            cloudErrorMessage = "Notes could not be saved on this iPhone: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    func synchronizeNotes() {
+        guard !isOffline, !isCloudLoading, noteSyncTask == nil,
+              let storage = offlineStorage, let cloudLibrary,
+              !(storage.state.pendingNoteWrites ?? []).isEmpty else { return }
+        isSynchronizingNotes = true
+        noteSyncTask = Task { [weak self] in
+            guard let self else { return }
+            defer { if offlineStorage === storage { isSynchronizingNotes = false; noteSyncTask = nil } }
+            var blocked = Set((storage.state.pendingNoteWrites ?? []).filter { $0.conflictMessage != nil }.map(\.key))
+            while !Task.isCancelled, offlineStorage === storage,
+                  let write = storage.state.pendingNoteWrites?.first(where: { !blocked.contains($0.key) }) {
+                do {
+                    try await cloudLibrary.synchronize(write)
+                    try Task.checkCancellation()
+                    guard offlineStorage === storage else { return }
+                    var next = storage.state
+                    next.snapshot = currentSnapshot
+                    next.pendingNoteWrites?.removeAll { $0.id == write.id }
+                    try storage.save(next)
+                    noteSyncError = nil
+                    updateOfflineStatus()
+                } catch is CancellationError { return }
+                catch {
+                    guard offlineStorage === storage else { return }
+                    if error is NoteTabError {
+                        var next = storage.state
+                        if let index = next.pendingNoteWrites?.firstIndex(where: { $0.id == write.id }) {
+                            next.pendingNoteWrites?[index].conflictMessage = error.localizedDescription
+                        }
+                        do { try storage.save(next) } catch { noteSyncError = error.localizedDescription; return }
+                        blocked.insert(write.key)
+                        updateOfflineStatus()
+                    } else { noteSyncError = error.localizedDescription; return }
+                }
+            }
+        }
+    }
+
+    func useCloudNote(songID: String, tabID: String) async {
+        guard let storage = offlineStorage, let cloudLibrary, !isCloudLoading else { return }
+        isCloudLoading = true
+        defer { if offlineStorage === storage { isCloudLoading = false; synchronizeNotes() } }
+        await noteSyncTask?.value
+        guard offlineStorage === storage else { return }
+        do {
+            let remote = try await cloudLibrary.fetchActiveSnapshot()
+            guard offlineStorage === storage else { return }
+            var next = storage.state
+            next.pendingNoteWrites?.removeAll { $0.songID == songID && $0.tab.id == tabID }
+            next.merge(remote)
+            try storage.save(next)
+            songs = next.snapshot.songs
+            trashedSongs = next.snapshot.trashedSongs
+            playlists = next.snapshot.playlists
+            updateOfflineStatus()
+        } catch { if offlineStorage === storage { cloudErrorMessage = error.localizedDescription } }
     }
 }

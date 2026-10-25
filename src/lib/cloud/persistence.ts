@@ -11,6 +11,7 @@ import type {
 import { getSupabaseBrowserClient } from "./supabase";
 
 interface SongRow {
+	note_tabs?: Song["noteTabs"];
 	gallery_images?: Song["galleryImages"];
 	id: string;
 	user_id: string;
@@ -102,6 +103,7 @@ function requireClient() {
 
 function songToRow(userId: string, song: Song) {
 	return {
+		...(song.noteTabs ? { note_tabs: song.noteTabs } : {}),
 		...(song.galleryImages ? { gallery_images: song.galleryImages } : {}),
 		id: song.id,
 		user_id: userId,
@@ -173,6 +175,7 @@ function playlistToRow(userId: string, playlist: Playlist) {
 
 function songFromRow(row: SongRow): Song {
 	return {
+		...(row.note_tabs ? { noteTabs: row.note_tabs } : {}),
 		...(row.gallery_images ? { galleryImages: row.gallery_images } : {}),
 		id: row.id,
 		title: row.title,

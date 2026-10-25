@@ -32,6 +32,7 @@ import {
 	useSongMutations,
 	useWorkspaceMutations,
 } from "./audio-versions-provider-mutations";
+import { useNoteTabMutations } from "./audio-versions-provider-note-tabs";
 import { usePlaylistMutations } from "./audio-versions-provider-playlist-mutations";
 import { useAudioVersionsSelectors } from "./audio-versions-provider-selectors";
 import { useAudioVersionsSnapshotState } from "./audio-versions-provider-state";
@@ -42,6 +43,13 @@ import {
 } from "./use-audio-versions-playback";
 
 interface AudioVersionsContextValue extends AudioVersionsSnapshot {
+	createNoteTab: (songId: string, name: string) => Promise<string>;
+	updateNoteTab: (
+		songId: string,
+		tabId: string,
+		patch: { name?: string; content?: string },
+	) => Promise<void>;
+	deleteNoteTab: (songId: string, tabId: string) => Promise<void>;
 	addGalleryImages: (
 		scope: GalleryScope,
 		files: File[],
@@ -282,6 +290,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		commitSnapshot,
 	});
 	const playlistMutations = usePlaylistMutations({ cloud, commitSnapshot });
+	const noteTabMutations = useNoteTabMutations({ cloud, commitSnapshot });
 	const galleryMutations = useGalleryMutations({
 		cloud,
 		cloudUserId,
@@ -334,6 +343,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			...workspaceMutations,
 			...playlistMutations,
 			...galleryMutations,
+			...noteTabMutations,
 			registerAudioElement,
 			reportPlaybackState,
 			togglePlayback,
@@ -350,6 +360,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			playback,
 			playlistMutations,
 			galleryMutations,
+			noteTabMutations,
 			ready,
 			registerAudioElement,
 			reportPlaybackState,

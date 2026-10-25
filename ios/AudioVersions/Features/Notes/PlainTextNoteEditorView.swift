@@ -5,11 +5,12 @@ struct PlainTextNoteEditorView: View {
     @Environment(\.palette) private var palette
     @FocusState private var isEditorFocused: Bool
     @State private var draft: String
+    @State private var saveError: String?
 
     let title: String
     let accessibilityLabel: String
     let requiresNonEmptyDraft: Bool
-    let onSave: (String) -> Void
+    let onSave: (String) throws -> Void
 
     private var canSave: Bool {
         !requiresNonEmptyDraft
@@ -21,7 +22,7 @@ struct PlainTextNoteEditorView: View {
         accessibilityLabel: String,
         text: String,
         requiresNonEmptyDraft: Bool = false,
-        onSave: @escaping (String) -> Void
+        onSave: @escaping (String) throws -> Void
     ) {
         self.title = title
         self.accessibilityLabel = accessibilityLabel
@@ -54,12 +55,16 @@ struct PlainTextNoteEditorView: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
-                            onSave(draft)
-                            dismiss()
+                            do { try onSave(draft); dismiss() }
+                            catch { saveError = error.localizedDescription }
                         }
                         .disabled(!canSave)
                     }
                 }
+                .alert("Notes were not saved", isPresented: Binding(
+                    get: { saveError != nil }, set: { if !$0 { saveError = nil } }
+                )) { Button("Keep editing", role: .cancel) { saveError = nil } }
+                message: { Text(saveError ?? "Try saving again.") }
                 .onAppear {
                     isEditorFocused = true
                 }

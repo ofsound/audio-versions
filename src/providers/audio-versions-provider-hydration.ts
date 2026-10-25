@@ -80,6 +80,7 @@ export async function normalizeLoadedSnapshot(
 			})),
 			songs: loadedSnapshot.songs.map((song) => ({
 				id: song.id,
+				...(song.noteTabs ? { noteTabs: song.noteTabs } : {}),
 				title: song.title,
 				artist: song.artist,
 				project: song.project,

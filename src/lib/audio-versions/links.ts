@@ -2,6 +2,7 @@ import type { SongLinkTarget, SongRouteSearch } from "./types";
 
 export function buildSongTargetPath(target: SongLinkTarget): string {
 	const params = new URLSearchParams();
+	if (target.noteTabId) params.set("noteTabId", target.noteTabId);
 
 	if (target.fileId) {
 		params.set("fileId", target.fileId);
@@ -28,12 +29,22 @@ export function parseSongTarget(raw?: string | null): SongLinkTarget | null {
 		return null;
 	}
 
-	const url = new URL(raw, "https://audioversions.local");
+	let url: URL;
+	try {
+		url = new URL(raw, "https://audioversions.local");
+	} catch {
+		return null;
+	}
 	if (!url.pathname.startsWith("/songs/")) {
 		return null;
 	}
 
-	const songId = decodeURIComponent(url.pathname.replace("/songs/", ""));
+	let songId: string;
+	try {
+		songId = decodeURIComponent(url.pathname.replace("/songs/", ""));
+	} catch {
+		return null;
+	}
 	if (!songId) {
 		return null;
 	}
@@ -44,6 +55,9 @@ export function parseSongTarget(raw?: string | null): SongLinkTarget | null {
 
 	return {
 		songId,
+		...(url.searchParams.get("noteTabId")
+			? { noteTabId: url.searchParams.get("noteTabId") as string }
+			: {}),
 		fileId: url.searchParams.get("fileId") ?? undefined,
 		annotationId: url.searchParams.get("annotationId") ?? undefined,
 		timeMs,
@@ -53,6 +67,7 @@ export function parseSongTarget(raw?: string | null): SongLinkTarget | null {
 
 export function targetToRouteSearch(target: SongLinkTarget): SongRouteSearch {
 	return {
+		...(target.noteTabId ? { noteTabId: target.noteTabId } : {}),
 		fileId: target.fileId,
 		annotationId: target.annotationId,
 		timeMs: target.timeMs,
@@ -72,6 +87,9 @@ export function normalizeSongRouteSearch(
 				: undefined;
 
 	return {
+		...(typeof input.noteTabId === "string"
+			? { noteTabId: input.noteTabId }
+			: {}),
 		fileId: typeof input.fileId === "string" ? input.fileId : undefined,
 		annotationId:
 			typeof input.annotationId === "string" ? input.annotationId : undefined,

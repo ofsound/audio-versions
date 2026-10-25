@@ -142,7 +142,7 @@ export function useSongWorkspaceShortcuts({
 			if (event.shiftKey && event.key.toLowerCase() === "j") {
 				event.preventDefault();
 				const journalNode = document.querySelector(
-					'[data-audio-versions-editor="journal"] textarea',
+					'[data-song-notes-tabs] [role="tabpanel"]:not([hidden]) .cm-content',
 				);
 
 				if (journalNode instanceof HTMLElement) {

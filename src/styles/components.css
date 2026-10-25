@@ -373,8 +373,7 @@
 	pointer-events: none;
 }
 
-.journal-editor strong,
-.journal-editor b {
+.journal-codemirror strong {
 	border-radius: 0.2em;
 	background: var(--color-accent-surface);
 	padding-inline: 0.15em;
@@ -513,4 +512,55 @@
 	.song-workspace-journal-column .journal-editor-frame-wrap {
 		padding-left: 1.5rem;
 	}
+}
+
+.journal-codemirror .cm-editor {
+	height: 100%;
+	outline: none;
+}
+.journal-codemirror .cm-scroller {
+	overflow: auto;
+	overflow-anchor: none;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.journal-codemirror .cm-content {
+	padding: 0.75rem;
+	caret-color: var(--color-text);
+	line-height: 1.75;
+}
+.journal-codemirror .cm-line {
+	padding: 0;
+}
+.journal-codemirror .cm-cursor {
+	border-left: 2px solid var(--color-text);
+}
+.journal-codemirror .cm-selectionBackground,
+.journal-codemirror .cm-focused .cm-selectionBackground {
+	background: var(--color-selection);
+}
+.journal-codemirror .cm-placeholder {
+	color: var(--color-text-muted);
+}
+.journal-codemirror .cm-panels {
+	background: var(--color-surface-elevated);
+	color: var(--color-text);
+	border-color: var(--color-border-plain);
+}
+.journal-codemirror .cm-textfield {
+	background: var(--color-surface);
+	color: var(--color-text);
+	border: 1px solid var(--color-border-plain);
+}
+.journal-codemirror .cm-button {
+	background: var(--color-surface);
+	color: var(--color-text);
+	border-color: var(--color-border-plain);
+}
+.journal-codemirror:focus-within {
+	box-shadow: inset 0 0 0 2px var(--color-focus-ring);
+}
+[data-reduce-keyboard-focus] .journal-codemirror:focus-within {
+	box-shadow: none;
 }

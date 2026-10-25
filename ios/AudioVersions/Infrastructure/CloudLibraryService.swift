@@ -39,7 +39,7 @@ final class CloudLibraryService: @unchecked Sendable {
     func fetchActiveSnapshot() async throws -> CloudLibrarySnapshot {
         let songRows: [SongRow] = try await client
             .from("songs")
-            .select("id,title,artist,general_notes,audio_file_order,updated_at,deleted_at")
+            .select("*")
             .execute()
             .value
 
@@ -361,6 +361,30 @@ final class CloudLibraryService: @unchecked Sendable {
         }
     }
 
+    func synchronize(_ write: PendingNoteWrite) async throws {
+        for _ in 0..<3 {
+            let rows: [SongRow] = try await client.from("songs").select("*")
+                .eq("id", value: write.songID).is("deleted_at", value: nil).execute().value
+            guard let row = rows.first else { throw NoteTabError.conflict }
+            let current = Song(id: row.id.uuidString.lowercased(), title: row.title, artist: row.artist,
+                               generalNotes: row.generalNotes, noteTabs: row.noteTabs,
+                               updatedAt: try CloudTimestamp.parse(row.updatedAt), versions: [])
+            let next = try write.applying(to: current, checkingConflicts: true)
+            // Idempotent replay after a successful request whose response was lost.
+            if next.resolvedNoteTabs == current.resolvedNoteTabs { return }
+            let updated: [MutationResultRow] = try await client.from("songs")
+                .update(SongNoteTabsUpdate(generalNotes: next.generalNotes,
+                                          noteTabs: next.resolvedNoteTabs,
+                                          updatedAt: CloudTimestamp.format(.now)), returning: .representation)
+                .eq("id", value: write.songID).eq("updated_at", value: row.updatedAt)
+                .is("deleted_at", value: nil).execute().value
+            if !updated.isEmpty { return }
+            // Another field changed while reading. Re-read and merge, never
+            // overwrite the entire stale song or another tab's contents.
+        }
+        throw NoteTabError.conflict
+    }
+
     static func mapSnapshot(
         songRows: [SongRow],
         audioFileRows: [AudioFileRow],
@@ -432,6 +456,7 @@ final class CloudLibraryService: @unchecked Sendable {
                 title: row.title,
                 artist: row.artist,
                 generalNotes: row.generalNotes,
+                noteTabs: row.noteTabs,
                 updatedAt: try CloudTimestamp.parse(row.updatedAt),
                 deletedAt: try row.deletedAt.map(CloudTimestamp.parse),
                 versions: versions

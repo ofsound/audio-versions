@@ -119,6 +119,7 @@ struct SongRow: Decodable, Sendable {
     let title: String
     let artist: String
     let generalNotes: String
+    var noteTabs: [SongNoteTab]? = nil
     let audioFileOrder: [UUID]
     let updatedAt: String
     let deletedAt: String?
@@ -128,6 +129,7 @@ struct SongRow: Decodable, Sendable {
         case title
         case artist
         case generalNotes = "general_notes"
+        case noteTabs = "note_tabs"
         case audioFileOrder = "audio_file_order"
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
@@ -421,6 +423,17 @@ struct PlaylistTombstone: Encodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case deletedAt = "deleted_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SongNoteTabsUpdate: Encodable, Sendable {
+    let generalNotes: String
+    let noteTabs: [SongNoteTab]
+    let updatedAt: String
+    enum CodingKeys: String, CodingKey {
+        case generalNotes = "general_notes"
+        case noteTabs = "note_tabs"
         case updatedAt = "updated_at"
     }
 }

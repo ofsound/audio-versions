@@ -5,6 +5,7 @@ struct Song: Identifiable, Hashable, Codable {
     var title: String
     var artist: String
     var generalNotes: String = ""
+    var noteTabs: [SongNoteTab]? = nil
     var updatedAt: Date
     var deletedAt: Date? = nil
     var versions: [AudioVersion]

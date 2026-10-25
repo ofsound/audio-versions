@@ -21,13 +21,13 @@ struct OfflineLibraryState: Codable {
     var snapshot = CloudLibrarySnapshot(songs: [], trashedSongs: [], playlists: [])
     var downloads: [String: OfflineDownload] = [:]
     var pendingWrites: [PendingAnnotationWrite] = []
+    var pendingNoteWrites: [PendingNoteWrite]? = nil
 
     /// A refreshed cloud snapshot must never replace unsynced phone edits.
     mutating func merge(_ remote: CloudLibrarySnapshot) {
         snapshot = remote
-        for write in pendingWrites {
-            apply(write)
-        }
+        for write in pendingWrites { apply(write) }
+        for write in pendingNoteWrites ?? [] { apply(write) }
     }
 
     mutating func apply(_ write: PendingAnnotationWrite) {
@@ -43,6 +43,13 @@ struct OfflineLibraryState: Codable {
         snapshot.songs[songIndex].versions[versionIndex].annotations = annotations.sorted {
             $0.startTime < $1.startTime
         }
+    }
+
+    mutating func apply(_ write: PendingNoteWrite) {
+        guard let index = snapshot.songs.firstIndex(where: { $0.id == write.songID }),
+              let song = try? write.applying(to: snapshot.songs[index], checkingConflicts: false)
+        else { return }
+        snapshot.songs[index] = song
     }
 
     mutating func acknowledge(_ write: PendingAnnotationWrite, token: String) {

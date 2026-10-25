@@ -65,7 +65,7 @@ struct OfflineSyncStatusView: View {
 
     var body: some View {
         if store.isCloudConfigured,
-           store.isOffline || store.isUsingCachedLibrary || !store.pendingAnnotationWrites.isEmpty {
+           store.isOffline || store.isUsingCachedLibrary || (!store.pendingAnnotationWrites.isEmpty || !store.pendingNoteWrites.isEmpty) {
             Button { showsSyncDetails = true } label: {
                 HStack(spacing: 8) {
                     Image(systemName: store.isOffline ? "wifi.slash" : "arrow.triangle.2.circlepath")
@@ -86,12 +86,12 @@ struct OfflineSyncStatusView: View {
     }
 
     private var status: String {
-        let count = store.pendingAnnotationWrites.count
-        let prefix = store.isOffline ? "Offline" : store.isUsingCachedLibrary ? "Saved library" : "Annotation sync"
+        let count = store.pendingAnnotationWrites.count + store.pendingNoteWrites.count
+        let prefix = store.isOffline ? "Offline" : store.isUsingCachedLibrary ? "Saved library" : "Notes & marker sync"
         guard count > 0 else { return "\(prefix) · \(store.downloadedVersionIDs.count) downloads" }
-        let conflicts = store.pendingAnnotationWrites.contains { $0.conflictMessage != nil }
+        let conflicts = store.pendingAnnotationWrites.contains { $0.conflictMessage != nil } || store.pendingNoteWrites.contains { $0.conflictMessage != nil }
         if conflicts { return "\(prefix) · Changes need review" }
-        return "\(prefix) · \(count) \(count == 1 ? "change" : "changes") \(store.isSynchronizingAnnotations ? "syncing" : "waiting to sync")"
+        return "\(prefix) · \(count) \(count == 1 ? "change" : "changes") \((store.isSynchronizingAnnotations || store.isSynchronizingNotes) ? "syncing" : "waiting to sync")"
     }
 }
 
@@ -99,6 +99,7 @@ private struct OfflineSyncDetailsView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
     @Environment(\.dismiss) private var dismiss
     @State private var discardingAnnotationID: String?
+    @State private var discardingNote: PendingNoteWrite?
 
     private var writes: [PendingAnnotationWrite] {
         var seen: Set<String> = []
@@ -109,16 +110,30 @@ private struct OfflineSyncDetailsView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Downloaded audio and your saved library stay available after closing the app. Marker and range changes are saved on this iPhone first and sync when a connection is available.")
+                    Text("Downloaded audio and your saved library stay available after closing the app. Note tabs, markers, and range changes are saved on this iPhone first and sync when a connection is available.")
                     Text("Signing out removes downloads and any changes that have not synced.")
                         .foregroundStyle(.secondary)
                     Button("Sync now", systemImage: "arrow.clockwise") {
                         store.synchronizeAnnotations()
                     }
-                    .disabled(store.isOffline || store.isSynchronizingAnnotations)
-                    if let error = store.annotationSyncError {
+                    .disabled(store.isOffline || store.isSynchronizingAnnotations || store.isSynchronizingNotes)
+                    if let error = store.noteSyncError ?? store.annotationSyncError {
                         Text("Changes are saved on this iPhone. Sync will retry: \(error)")
                             .font(.footnote)
+                    }
+                }
+                Section("Pending note changes") {
+                    if store.pendingNoteWrites.isEmpty { Text("All note changes have synced.") }
+                    ForEach(store.pendingNoteWrites) { write in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(write.tab.name).font(.headline)
+                            Text(write.tab.content.isEmpty ? write.operation.rawValue.capitalized : write.tab.content)
+                            if let conflict = write.conflictMessage {
+                                Text(conflict).font(.footnote)
+                                Text("Copy any text you want to keep before using the cloud version.").font(.footnote)
+                                Button("Use cloud version", role: .destructive) { discardingNote = write }
+                            } else { Text("Saved on this iPhone, waiting to sync").font(.footnote) }
+                        }.textSelection(.enabled)
                     }
                 }
                 Section("Pending changes") {
@@ -150,6 +165,14 @@ private struct OfflineSyncDetailsView: View {
             .navigationTitle("Offline & Sync")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("Done") { dismiss() } }
+            .confirmationDialog("Discard local changes to this note tab?", isPresented: Binding(
+                get: { discardingNote != nil }, set: { if !$0 { discardingNote = nil } }
+            ), titleVisibility: .visible) {
+                Button("Use cloud version", role: .destructive) {
+                    if let write = discardingNote { Task { await store.useCloudNote(songID: write.songID, tabID: write.tab.id) } }
+                    discardingNote = nil
+                }
+            }
             .confirmationDialog("Discard local changes to this marker or range?", isPresented: Binding(
                 get: { discardingAnnotationID != nil },
                 set: { if !$0 { discardingAnnotationID = nil } }

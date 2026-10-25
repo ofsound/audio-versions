@@ -1209,9 +1209,11 @@ describe("SongWorkspace", () => {
 		const journalEditor = document.querySelector(
 			'[data-audio-versions-editor="journal"]',
 		);
-		const journalColumn = journalEditor?.parentElement?.parentElement;
+		const journalColumn = journalEditor?.closest(
+			".song-workspace-journal-column",
+		);
 
-		expect(screen.getByText("Song Notes")).toBeTruthy();
+		expect(screen.getByRole("tab", { name: "Song Notes" })).toBeTruthy();
 		expect(journalEditor).toBeTruthy();
 		expect(journalEditor?.closest(".panel-shell")).toBeNull();
 		expect(journalColumn?.className).toContain("xl:min-h-0");

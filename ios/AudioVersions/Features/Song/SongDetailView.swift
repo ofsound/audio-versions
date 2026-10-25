@@ -5,10 +5,19 @@ struct SongDetailView: View {
     @Environment(\.palette) private var palette
     @State private var isEditingJournal = false
     @State private var isAddingToJournal = false
+    @State private var selectedNoteTabID = ""
+    @State private var closedNoteTabIDs: Set<String> = []
+    @State private var editingNoteTabID: String?
+    @State private var editingOriginalNote: SongNoteTab?
     let songID: String
 
     private var song: Song? {
         store.songs.first { $0.id == songID }
+    }
+
+    private var activeNoteTab: SongNoteTab? {
+        let open = song?.resolvedNoteTabs.filter { !closedNoteTabIDs.contains($0.id) } ?? []
+        return open.first { $0.id == selectedNoteTabID } ?? open.first
     }
 
     var body: some View {
@@ -24,9 +33,11 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section {
+                        SongNoteTabBar(song: song, selectedID: $selectedNoteTabID, closedIDs: $closedNoteTabIDs)
+                            .padding(.horizontal, 16).padding(.top, 10)
                         JournalContentView(
-                            text: song.generalNotes,
-                            placeholder: "Add notes about this song",
+                            text: activeNoteTab?.content ?? "",
+                            placeholder: activeNoteTab == nil ? "All tabs are closed. Reopen or create a tab with +." : "Add notes about this song",
                             onOpenLink: store.openSongLink
                         )
                         .padding(.horizontal, 16)
@@ -39,20 +50,23 @@ struct SongDetailView: View {
 
                     Section {
                         Button {
+                            editingNoteTabID = activeNoteTab?.id
+                            editingOriginalNote = activeNoteTab
                             isEditingJournal = true
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "square.and.pencil")
-                                Text(song.generalNotes.isEmpty ? "Add song notes" : "Edit song notes")
+                                Text((activeNoteTab?.content.isEmpty ?? true) ? "Add notes" : "Edit notes")
                             }
                             .foregroundStyle(palette.accentText)
                             .frame(maxWidth: .infinity)
                         }
+                        .disabled(activeNoteTab == nil)
                         .buttonStyle(.bordered)
                         .tint(palette.accent)
                         .controlSize(.large)
                         .accessibilityLabel(
-                            song.generalNotes.isEmpty ? "Add song notes" : "Edit song notes"
+                            (activeNoteTab?.content.isEmpty ?? true) ? "Add notes" : "Edit notes"
                         )
                     }
                     // Keep a separate section so both the journal card and this
@@ -63,28 +77,32 @@ struct SongDetailView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
+                .onAppear { if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
+                .onChange(of: store.requestedNoteTabRevisions[songID]) { _, _ in if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .addToJournalBottomBar {
+                    let tab = activeNoteTab ?? song.resolvedNoteTabs.first
+                    if let tab { selectedNoteTabID = tab.id; closedNoteTabIDs.remove(tab.id); editingNoteTabID = tab.id; editingOriginalNote = tab }
                     isAddingToJournal = true
                 }
                 .sheet(isPresented: $isEditingJournal) {
                     PlainTextNoteEditorView(
-                        title: "Song Notes",
+                        title: song.resolvedNoteTabs.first { $0.id == editingNoteTabID }?.name ?? "Song Notes",
                         accessibilityLabel: "Song notes",
-                        text: song.generalNotes
+                        text: editingOriginalNote?.content ?? ""
                     ) { journal in
-                        store.saveSongJournal(journal, songID: song.id)
+                        guard store.saveSongJournal(journal, songID: song.id, tabID: editingNoteTabID, expected: editingOriginalNote) else { throw NoteTabError.notSaved }
                     }
                 }
                 .sheet(isPresented: $isAddingToJournal) {
                     PlainTextNoteEditorView(
-                        title: "Add to Song Notes",
+                        title: "Add to \(song.resolvedNoteTabs.first { $0.id == editingNoteTabID }?.name ?? "Song Notes")",
                         accessibilityLabel: "Add to song notes",
                         text: "",
                         requiresNonEmptyDraft: true
                     ) { entry in
-                        store.appendSongJournalEntry(entry, songID: song.id)
+                        guard store.appendSongJournalEntry(entry, songID: song.id, tabID: editingNoteTabID, expected: editingOriginalNote) else { throw NoteTabError.notSaved }
                     }
                 }
             } else {

@@ -56,7 +56,14 @@ export interface GalleryScope {
 	audioFileId?: string;
 }
 
+export interface SongNoteTab {
+	id: string;
+	name: string;
+	content: string;
+}
+
 export interface Song {
+	noteTabs?: SongNoteTab[];
 	galleryImages?: GalleryImage[];
 	id: string;
 	title: string;
@@ -115,6 +122,7 @@ export interface Playlist {
 }
 
 export interface WorkspaceState {
+	noteTabs?: { openIds: string[]; activeId: string | null };
 	playheadMsByFileId: Record<string, number>;
 	inspectorRatio: number;
 	lastVisitedAt: string | null;
@@ -160,6 +168,7 @@ export interface CreatePlaylistInput {
 }
 
 export interface SongLinkTarget {
+	noteTabId?: string;
 	songId: string;
 	fileId?: string;
 	annotationId?: string;
@@ -168,6 +177,7 @@ export interface SongLinkTarget {
 }
 
 export interface SongRouteSearch {
+	noteTabId?: string;
 	fileId?: string;
 	annotationId?: string;
 	timeMs?: number;

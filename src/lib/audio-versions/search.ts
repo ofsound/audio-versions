@@ -1,4 +1,5 @@
 import { richTextPreview, richTextToPlainText } from "./rich-text";
+import { getSongNoteTabs } from "./song-note-tabs";
 import type {
 	Annotation,
 	AudioFileRecord,
@@ -35,7 +36,13 @@ export function searchAudioVersions(
 	const results: SearchResult[] = [];
 
 	for (const song of snapshot.songs) {
-		const songPlain = `${song.title} ${song.artist} ${song.project} ${song.generalNotes}`;
+		const noteTabs = getSongNoteTabs(song);
+		const matchingTab = noteTabs.find((tab) =>
+			terms.every((term) =>
+				`${tab.name} ${tab.content}`.toLowerCase().includes(term),
+			),
+		);
+		const songPlain = `${song.title} ${song.artist} ${song.project} ${noteTabs.map((tab) => `${tab.name} ${tab.content}`).join(" ")}`;
 		pushMatch(
 			results,
 			buildScore(song.title, songPlain, terms, 2.5),
@@ -46,23 +53,26 @@ export function searchAudioVersions(
 			plainTextPreview(song.generalNotes, "Open song workspace"),
 			{
 				songId: song.id,
+				...(matchingTab ? { noteTabId: matchingTab.id } : {}),
 			},
 			`song:${song.id}`,
 			"song",
 		);
 
-		pushMatch(
-			results,
-			buildScore("journal", song.generalNotes, terms, 1.3),
-			`${song.title} song notes`,
-			uiSettings.showProject && song.project ? song.project : "Song notes",
-			plainTextPreview(song.generalNotes),
-			{
-				songId: song.id,
-			},
-			`journal:${song.id}`,
-			"journal",
-		);
+		for (const [index, tab] of noteTabs.entries()) {
+			pushMatch(
+				results,
+				buildScore(`journal ${tab.name}`, tab.content, terms, 1.3),
+				index === 0
+					? `${song.title} song notes`
+					: `${song.title} · ${tab.name}`,
+				uiSettings.showProject && song.project ? song.project : "Song notes",
+				plainTextPreview(tab.content),
+				{ songId: song.id, noteTabId: tab.id },
+				index === 0 ? `journal:${song.id}` : `journal:${song.id}:${tab.id}`,
+				"journal",
+			);
+		}
 
 		for (const audioFile of audioBySong[song.id] ?? []) {
 			const audioPlain = `${audioFile.title} ${audioFile.sessionDate} ${richTextToPlainText(audioFile.notes)}`;

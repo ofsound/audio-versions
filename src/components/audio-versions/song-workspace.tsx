@@ -18,8 +18,8 @@ import {
 	GalleryViewer,
 } from "./image-gallery";
 import { InspectorPane } from "./inspector-pane";
-import { JournalEditor } from "./journal-editor";
 import { PanelResizeHandle } from "./panel-resize-handle";
+import { SongNotesTabs } from "./song-notes-tabs";
 import { SongWorkspaceFileDropzone } from "./song-workspace-file-dropzone";
 import { SongWorkspaceHeaderControls } from "./song-workspace-header-controls";
 import { useSongWorkspaceShortcuts } from "./song-workspace-shortcuts";
@@ -51,7 +51,6 @@ export function SongWorkspace({
 		blobsByAudioId,
 		playback,
 		rememberSongOpened,
-		updateSong,
 		addAudioFile,
 		addGalleryImages,
 		removeGalleryImage,
@@ -179,11 +178,6 @@ export function SongWorkspace({
 	const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(
 		null,
 	);
-	const [journalHistoryValue, setJournalHistoryValue] = useState<{
-		revision: number;
-		value: string;
-	}>();
-	const journalHistoryRevisionRef = useRef(0);
 	const handleAnnotationDetailFocusHandled = useCallback(() => {
 		setAnnotationDetailFocusId(null);
 	}, []);
@@ -283,34 +277,6 @@ export function SongWorkspace({
 		},
 		delayMs: DEBOUNCE_MS.notes,
 	});
-	const persistSongJournal = useDebouncedAsyncCallback({
-		callback: async (generalNotes: string) => {
-			await updateSong(songId, {
-				generalNotes,
-			});
-		},
-		delayMs: DEBOUNCE_MS.journal,
-	});
-
-	const recordJournalChange = useCallback(
-		(previousValue: string, nextValue: string) => {
-			const applyJournalHistory = async (value: string) => {
-				persistSongJournal.cancel();
-				journalHistoryRevisionRef.current += 1;
-				setJournalHistoryValue({
-					revision: journalHistoryRevisionRef.current,
-					value,
-				});
-				await updateSong(songId, { generalNotes: value });
-			};
-			history.record({
-				mergeKey: `journal:${songId}`,
-				undo: () => applyJournalHistory(previousValue),
-				redo: () => applyJournalHistory(nextValue),
-			});
-		},
-		[history, persistSongJournal, songId, updateSong],
-	);
 
 	const updateAnnotation = useCallback(
 		async (annotationId: string, patch: Partial<Annotation>) => {
@@ -350,12 +316,6 @@ export function SongWorkspace({
 		},
 		[history, persistDeleteAnnotation, restoreAnnotation],
 	);
-
-	useEffect(() => {
-		return () => {
-			void persistSongJournal.flush();
-		};
-	}, [persistSongJournal]);
 
 	useEffect(() => {
 		if (!selectedFileId) {
@@ -643,12 +603,24 @@ export function SongWorkspace({
 			data-drop-active={isFileDragActive && dropTarget === "song"}
 		>
 			<div className="flex min-h-0 flex-1 flex-col">
-				<JournalEditor
-					historyValue={journalHistoryValue}
-					value={song.generalNotes}
-					onChange={(nextValue) => persistSongJournal.schedule(nextValue)}
-					onHistoryChange={recordJournalChange}
-					onLocalHistoryAction={history.acceptLocalHistoryAction}
+				<SongNotesTabs
+					key={songId}
+					song={song}
+					workspace={workspace}
+					history={history}
+					requestedTabId={search.noteTabId}
+					onTabChange={(noteTabId) =>
+						navigate({
+							to: "/songs/$songId",
+							params: { songId },
+							replace: true,
+							resetScroll: false,
+							search: (prev: SongRouteSearch) => ({
+								...prev,
+								noteTabId: noteTabId ?? undefined,
+							}),
+						})
+					}
 					onInternalLink={(target) => openTarget(target)}
 				/>
 				{strip(songGallery)}

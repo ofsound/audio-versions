@@ -199,3 +199,19 @@ xcodebuild test -quiet \
   -derivedDataPath /tmp/audio-versions-ios-derived \
   CODE_SIGNING_ALLOWED=NO
 ```
+
+### Named Song Notes tabs
+
+Song detail shows all named note documents from `songs.note_tabs`. Tap a tab to
+switch, use + for new/reopened notes, and long-press for rename, close, and delete.
+Closing a tab keeps its text; deletion asks for confirmation and cannot remove the
+last document. Edit and the bottom Add action always target the selected tab.
+
+Tab content and management changes are persisted before networking, replayed in
+order, and merged over refreshed cloud snapshots. Replays compare the edited
+fields with their original values, preserve edits to other tabs and fields, and
+use the song's exact `updated_at` token for the final conditional write. Conflicts
+remain local and can be reviewed/copied in Offline & Sync. Using the cloud version
+fetches successfully before discarding any queued local changes for that tab.
+The first tab mirrors `general_notes` so older clients remain compatible. Deploy
+the shared `20261024010000_song_note_tabs.sql` migration before using cloud tabs.
