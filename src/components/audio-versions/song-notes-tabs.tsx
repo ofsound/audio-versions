@@ -43,7 +43,7 @@ function NoteDocument({
 	onFontSizeChange,
 }: {
 	fontSize: number;
-	onFontSizeChange: (size: number) => void;
+	onFontSizeChange: (delta: number) => void;
 	songId: string;
 	tab: SongNoteTab;
 	visible: boolean;
@@ -513,8 +513,11 @@ export function SongNotesTabs({
 				>
 					<NoteDocument
 						fontSize={settings.ui.songNotesFontSize}
-						onFontSizeChange={(size) => {
-							void updateUiSettings({ songNotesFontSize: size });
+						onFontSizeChange={(delta) => {
+							void updateUiSettings((current) => ({
+								...current,
+								songNotesFontSize: current.songNotesFontSize + delta,
+							}));
 						}}
 						songId={song.id}
 						tab={tab}

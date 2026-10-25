@@ -12,7 +12,7 @@ import {
 
 interface JournalEditorProps {
 	fontSize?: number;
-	onFontSizeChange?: (size: number) => void;
+	onFontSizeChange?: (delta: number) => void;
 	value: string;
 	onChange: (value: string) => void;
 	onHistoryChange?: (
@@ -210,7 +210,7 @@ export function JournalEditor(props: JournalEditorProps) {
 								aria-label="Decrease note text size"
 								disabled={fontSize <= 10}
 								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => onFontSizeChange(fontSize - 1)}
+								onClick={() => onFontSizeChange(-1)}
 								className="icon-button icon-button--sm"
 							>
 								<Minus size={13} />
@@ -226,7 +226,7 @@ export function JournalEditor(props: JournalEditorProps) {
 								aria-label="Increase note text size"
 								disabled={fontSize >= 28}
 								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => onFontSizeChange(fontSize + 1)}
+								onClick={() => onFontSizeChange(1)}
 								className="icon-button icon-button--sm"
 							>
 								<Plus size={13} />

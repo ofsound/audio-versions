@@ -129,3 +129,62 @@ it("waits for queued writes before reading a realtime settings echo", async () =
 	await waitFor(() => expect(mocks.cloud).toHaveBeenCalledTimes(2));
 	expect(result.current.snapshot.settings.ui.showProject).toBe(false);
 });
+
+it("keeps a newer font size when a realtime refresh reads older settings", async () => {
+	const { result } = renderHook(() => useAudioVersionsSnapshotState("user-1"));
+	await waitFor(() => expect(result.current.ready).toBe(true));
+	await act(async () => {
+		await result.current.commitSnapshot(
+			(current) => ({
+				...current,
+				settings: {
+					...current.settings,
+					ui: { ...current.settings.ui, songNotesFontSize: 18 },
+				},
+			}),
+			async () => {},
+		);
+	});
+	expect(result.current.snapshot.settings.ui.songNotesFontSize).toBe(18);
+	const older = snapshot();
+	older.settings = {
+		...older.settings,
+		ui: { ...older.settings.ui, songNotesFontSize: 14 },
+	};
+	mocks.cloud.mockResolvedValue({ exists: true, snapshot: older });
+	act(() => {
+		mocks.subscribe.mock.calls[0][1]();
+	});
+	await waitFor(() => expect(mocks.replace).toHaveBeenCalledTimes(2));
+	expect(result.current.snapshot.settings.ui.songNotesFontSize).toBe(18);
+	expect(mocks.replace.mock.calls[1][0].settings.ui.songNotesFontSize).toBe(18);
+});
+
+it("accepts a newer cloud settings document", async () => {
+	const { result } = renderHook(() => useAudioVersionsSnapshotState("user-1"));
+	await waitFor(() => expect(result.current.ready).toBe(true));
+	await act(async () => {
+		await result.current.commitSnapshot(
+			(current) => ({
+				...current,
+				settings: {
+					...current.settings,
+					ui: { ...current.settings.ui, songNotesFontSize: 16 },
+				},
+			}),
+			async () => {},
+		);
+	});
+	const newer = snapshot();
+	newer.settings = {
+		...result.current.snapshot.settings,
+		revision: (result.current.snapshot.settings.revision ?? 0) + 1,
+		ui: { ...result.current.snapshot.settings.ui, songNotesFontSize: 20 },
+	};
+	mocks.cloud.mockResolvedValue({ exists: true, snapshot: newer });
+	act(() => {
+		mocks.subscribe.mock.calls[0][1]();
+	});
+	await waitFor(() => expect(mocks.replace).toHaveBeenCalledTimes(2));
+	expect(result.current.snapshot.settings.ui.songNotesFontSize).toBe(20);
+});

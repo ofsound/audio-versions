@@ -449,6 +449,7 @@ describe("AudioVersionsProvider", () => {
 				...createEmptySettings(),
 				recents: [],
 				lastOpenSongId: "song-1",
+				revision: 1,
 				workspaceBySongId: {
 					"song-1": {
 						playheadMsByFileId: {},

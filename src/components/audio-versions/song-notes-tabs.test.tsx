@@ -116,22 +116,32 @@ describe("named Song Notes interface", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: "Increase note text size" }),
 		);
-		expect(provider.updateUiSettings).toHaveBeenLastCalledWith({
-			songNotesFontSize: 15,
-		});
-		provider.settings.ui = { ...provider.settings.ui, songNotesFontSize: 15 };
+		fireEvent.click(
+			screen.getByRole("button", { name: "Increase note text size" }),
+		);
+		const increases = provider.updateUiSettings.mock.calls.map(
+			([patch]) => patch,
+		);
+		expect(increases).toHaveLength(2);
+		let ui = provider.settings.ui;
+		for (const patch of increases) {
+			expect(typeof patch).toBe("function");
+			ui = patch(ui);
+		}
+		expect(ui.songNotesFontSize).toBe(16);
+		provider.settings.ui = ui;
 		rerender(<Harness />);
 		expect(currentEditor()).toBe(editor);
 		expect(editor.state.selection.main.head).toBe(3);
 		expect(
 			editor.dom.closest<HTMLElement>(".journal-codemirror")?.style.fontSize,
-		).toBe("15px");
+		).toBe("16px");
 		fireEvent.click(
 			screen.getByRole("button", { name: "Decrease note text size" }),
 		);
-		expect(provider.updateUiSettings).toHaveBeenLastCalledWith({
-			songNotesFontSize: 14,
-		});
+		const decrease = provider.updateUiSettings.mock.lastCall?.[0];
+		expect(typeof decrease).toBe("function");
+		expect(decrease(provider.settings.ui).songNotesFontSize).toBe(15);
 	});
 
 	it("creates named tabs and preserves cursor, undo state and unsaved edits across switches", async () => {

@@ -156,6 +156,8 @@ export interface AudioVersionsSettings {
 	lastOpenSongId?: string;
 	workspaceBySongId: Record<string, WorkspaceState>;
 	ui: AudioVersionsUiSettings;
+	/** Monotonic write counter so an older cloud copy cannot rewind this document. */
+	revision?: number;
 }
 
 export interface AudioVersionsSnapshot {
@@ -310,15 +312,25 @@ export function normalizeUiSettings(
 	};
 }
 
+function normalizeSettingsRevision(
+	value: number | null | undefined,
+): number | undefined {
+	return typeof value === "number" && Number.isInteger(value) && value > 0
+		? value
+		: undefined;
+}
+
 export function normalizeAudioVersionsSettings(
 	value: Partial<AudioVersionsSettings> | null | undefined,
 ): AudioVersionsSettings {
 	const defaults = createEmptySettings();
+	const revision = normalizeSettingsRevision(value?.revision);
 
 	return {
 		recents: value?.recents ?? defaults.recents,
 		lastOpenSongId: value?.lastOpenSongId,
 		workspaceBySongId: value?.workspaceBySongId ?? defaults.workspaceBySongId,
 		ui: normalizeUiSettings(value?.ui),
+		...(revision ? { revision } : {}),
 	};
 }

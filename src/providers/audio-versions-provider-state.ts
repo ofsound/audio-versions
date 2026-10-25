@@ -98,7 +98,7 @@ function mergeLegacySnapshot(
 		annotations: mergeEntityRecords(local.annotations, cloud.annotations),
 		playlists: mergeEntityRecords(local.playlists, cloud.playlists),
 		blobsByAudioId: local.blobsByAudioId,
-		settings: cloud.settings,
+		settings: preferNewerSettings(local.settings, cloud.settings),
 	};
 }
 
@@ -141,7 +141,8 @@ function hasNewerCachedEntities(
 		hasNewer(cloud.songs, merged.songs) ||
 		hasNewer(cloud.audioFiles, merged.audioFiles) ||
 		hasNewer(cloud.annotations, merged.annotations) ||
-		hasNewer(cloud.playlists, merged.playlists)
+		hasNewer(cloud.playlists, merged.playlists) ||
+		(merged.settings.revision ?? 0) > (cloud.settings.revision ?? 0)
 	);
 }
 
@@ -210,6 +211,13 @@ async function migrateLocalAudio(
 	};
 }
 
+function preferNewerSettings(
+	local: AudioVersionsSnapshot["settings"],
+	cloud: AudioVersionsSnapshot["settings"],
+): AudioVersionsSnapshot["settings"] {
+	return (local.revision ?? 0) > (cloud.revision ?? 0) ? local : cloud;
+}
+
 function attachCachedBlobs(
 	cloud: AudioVersionsSnapshot,
 	local: AudioVersionsSnapshot,
@@ -237,6 +245,7 @@ function attachCachedBlobs(
 
 	return {
 		...cloud,
+		settings: preferNewerSettings(local.settings, cloud.settings),
 		songs: cloud.songs.map((record) =>
 			preferNewerLocal(record, localSongs.get(record.id)),
 		),
@@ -419,7 +428,16 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 	const commitSnapshot = useCallback<CommitSnapshot>(
 		async (updater, persist) => {
 			const current = snapshotRef.current;
-			const next = updater(current);
+			let next = updater(current);
+			if (next.settings !== current.settings) {
+				next = {
+					...next,
+					settings: {
+						...next.settings,
+						revision: (current.settings.revision ?? 0) + 1,
+					},
+				};
+			}
 			mutationRevisionRef.current += 1;
 			snapshotRef.current = next;
 			setSnapshot(next);
