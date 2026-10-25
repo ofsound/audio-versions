@@ -1,6 +1,5 @@
 .header-shell {
-	background: var(--background-image-panel), var(--color-header-surface);
-	backdrop-filter: blur(20px);
+	background: var(--color-header-surface);
 }
 
 .audio-versions-header-layout {
@@ -46,11 +45,6 @@
 	min-height: 100vh;
 	flex-direction: column;
 	overflow: hidden;
-}
-
-.audio-versions-shell--workspace .header-shell {
-	background: var(--color-header-surface);
-	backdrop-filter: none;
 }
 
 .song-workspace-panel-resizer {

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, FolderClosed, Settings } from "lucide-react";
+import { ArrowDown, ArrowUp, Settings } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import {
 	LIBRARY_COLUMNS,
@@ -118,8 +118,7 @@ export function LibrarySongList({
 		);
 		const content =
 			Math.max(0, ...values.map((value) => context.measureText(value).width)) +
-			32 +
-			(key === "title" ? 29 : 0);
+			32;
 		setWidth(
 			key,
 			Math.max(
@@ -150,13 +149,12 @@ export function LibrarySongList({
 							params={{ songId: song.id }}
 							aria-label={`Open ${song.title}`}
 							onClick={() => onOpen(song.id)}
-							className="flex min-w-0 items-center gap-3 no-underline"
+							className="block min-w-0 no-underline"
 						>
-							<FolderClosed
-								size={17}
-								className="shrink-0 text-[var(--color-text-muted)]"
-							/>
-							<span className="min-w-0 truncate" title={song.title}>
+							<span
+								className="block min-w-0 truncate text-[var(--color-text)]"
+								title={song.title}
+							>
 								{song.title}
 							</span>
 						</Link>
