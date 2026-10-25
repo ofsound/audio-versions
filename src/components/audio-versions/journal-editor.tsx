@@ -11,6 +11,7 @@ import { parseSongTarget } from "#/lib/audio-versions/links";
 import type { SongLinkTarget } from "#/lib/audio-versions/types";
 import { formatDuration } from "#/lib/audio-versions/waveform";
 import {
+	adjacentJournalTimestamp,
 	captureJournalSelection,
 	captureJournalViewport,
 	type JournalSelection,
@@ -536,13 +537,29 @@ export function JournalEditor({
 							selectTimestamp(targetChip);
 							return;
 						}
-						const selected = targetChip ?? selectedTimestampRef.current;
+						const isDeletion =
+							event.key === "Delete" || event.key === "Backspace";
+						const adjacent =
+							isDeletion && !event.metaKey && !event.ctrlKey && !event.altKey
+								? adjacentJournalTimestamp(
+										event.currentTarget,
+										event.key === "Backspace" ? "backward" : "forward",
+									)
+								: null;
+						const selected =
+							targetChip ??
+							(selectedTimestampRef.current &&
+							isTimestampSelected(selectedTimestampRef.current)
+								? selectedTimestampRef.current
+								: adjacent);
 						const selection = window.getSelection();
 						if (
 							selected &&
 							event.currentTarget.contains(selected) &&
-							(event.key === "Delete" || event.key === "Backspace") &&
-							(targetChip || isTimestampSelected(selected))
+							isDeletion &&
+							(targetChip ||
+								isTimestampSelected(selected) ||
+								selected === adjacent)
 						) {
 							event.preventDefault();
 							const restoreViewport = captureJournalViewport(

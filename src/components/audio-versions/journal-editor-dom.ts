@@ -27,11 +27,13 @@ function journalDocument(root: HTMLElement) {
 				// A sole BR is a browser's empty paragraph placeholder.
 				if (node.parentNode?.childNodes.length !== 1) source += "\n";
 			} else {
-				const marker = /^(STRONG|B)$/.test(node.tagName)
-					? "**"
-					: /^(EM|I)$/.test(node.tagName)
-						? "_"
-						: "";
+				const marker = !node.textContent
+					? ""
+					: /^(STRONG|B)$/.test(node.tagName)
+						? "**"
+						: /^(EM|I)$/.test(node.tagName)
+							? "_"
+							: "";
 				source += marker;
 				Array.from(node.childNodes).forEach(visit);
 				source += marker;
@@ -52,6 +54,62 @@ function journalDocument(root: HTMLElement) {
 
 export function readJournal(root: HTMLElement): string {
 	return journalDocument(root).source;
+}
+
+/** Find the next editable unit, including across empty browser paragraphs. */
+export function adjacentJournalTimestamp(
+	root: HTMLElement,
+	direction: "backward" | "forward",
+): HTMLElement | null {
+	const selection = window.getSelection();
+	if (!selection?.isCollapsed || selection.rangeCount !== 1) return null;
+	const range = selection.getRangeAt(0);
+	if (!root.contains(range.startContainer)) return null;
+	const backward = direction === "backward";
+	const neighbor = (start: Node): Node | null => {
+		for (
+			let node: Node | null = start;
+			node && node !== root;
+			node = node.parentNode
+		) {
+			const sibling = backward ? node.previousSibling : node.nextSibling;
+			if (sibling) return sibling;
+		}
+		return null;
+	};
+	const container = range.startContainer;
+	let candidate: Node | null;
+	if (container.nodeType === Node.TEXT_NODE) {
+		const text = container.textContent ?? "";
+		const remaining = backward
+			? text.slice(0, range.startOffset)
+			: text.slice(range.startOffset);
+		if (remaining.replace(/[\u200b\ufeff]/g, "")) return null;
+		candidate = neighbor(container);
+	} else {
+		candidate =
+			container.childNodes[range.startOffset - (backward ? 1 : 0)] ??
+			neighbor(container);
+	}
+	while (candidate && candidate !== root) {
+		if (candidate instanceof HTMLElement) {
+			if (candidate.matches(".journal-timestamp-chip")) return candidate;
+			// Other atomic content must not be skipped or deleted by this shortcut.
+			if (candidate.getAttribute("contenteditable") === "false") return null;
+			const child = backward ? candidate.lastChild : candidate.firstChild;
+			if (child) {
+				candidate = child;
+				continue;
+			}
+		} else if (
+			candidate.nodeType === Node.TEXT_NODE &&
+			candidate.textContent?.replace(/[\u200b\ufeff]/g, "")
+		) {
+			return null;
+		}
+		candidate = neighbor(candidate);
+	}
+	return null;
 }
 
 export function captureJournalSelection(

@@ -313,4 +313,71 @@ describe("JournalEditor", () => {
 			screen.queryByRole("button", { name: "Timestamp Second" }),
 		).toBeNull();
 	});
+	it.each([
+		"Backspace",
+		"Delete",
+	])("removes an adjacent timestamp with %s without selecting it first", (key) => {
+		const onChange = vi.fn();
+		const value = "Before {{timestamp:Check}} after";
+		render(<JournalEditor value={value} onChange={onChange} />);
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
+		const chip = screen.getByRole("button", { name: "Timestamp Check" });
+		editor.focus();
+		const text = (
+			key === "Backspace" ? chip.nextSibling : chip.previousSibling
+		) as Text;
+		const offset = key === "Backspace" ? 0 : text.length;
+		window.getSelection()?.setBaseAndExtent(text, offset, text, offset);
+		editor.scrollTop = 300;
+		fireEvent.keyDown(editor, { key });
+		expect(onChange).toHaveBeenLastCalledWith("Before  after");
+		expect(
+			screen.queryByRole("button", { name: "Timestamp Check" }),
+		).toBeNull();
+		expect(editor.scrollTop).toBe(300);
+		fireEvent.keyDown(editor, { key: "z", ctrlKey: true });
+		expect(readJournal(editor)).toBe(value);
+	});
+
+	it("backspaces a standalone timestamp from the empty paragraph below it", () => {
+		const onChange = vi.fn();
+		render(
+			<JournalEditor
+				value={"Notes\n**{{timestamp:Check}}**\n"}
+				onChange={onChange}
+			/>,
+		);
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
+		const last = editor.lastElementChild as HTMLElement;
+		editor.focus();
+		window.getSelection()?.setBaseAndExtent(last, 0, last, 0);
+		fireEvent.keyDown(editor, { key: "Backspace" });
+		expect(
+			screen.queryByRole("button", { name: "Timestamp Check" }),
+		).toBeNull();
+		expect(onChange).toHaveBeenLastCalledWith("Notes\n\n");
+		fireEvent.keyDown(editor, { key: "z", ctrlKey: true });
+		expect(editor.querySelector("strong .journal-timestamp-chip")).toBeTruthy();
+	});
+
+	it("does not skip ordinary text or delete a timestamp behind the caret", () => {
+		render(
+			<JournalEditor value="{{timestamp:Check}} text" onChange={() => {}} />,
+		);
+		const editor = screen.getByRole("textbox", { name: "Song notes" });
+		const chip = screen.getByRole("button", { name: "Timestamp Check" });
+		const text = chip.nextSibling as Text;
+		editor.focus();
+		window
+			.getSelection()
+			?.setBaseAndExtent(text, text.length, text, text.length);
+		const event = new KeyboardEvent("keydown", {
+			key: "Backspace",
+			bubbles: true,
+			cancelable: true,
+		});
+		fireEvent(editor, event);
+		expect(event.defaultPrevented).toBe(false);
+		expect(screen.getByRole("button", { name: "Timestamp Check" })).toBe(chip);
+	});
 });
