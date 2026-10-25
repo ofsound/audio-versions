@@ -195,6 +195,121 @@ describe("named Song Notes interface", () => {
 		);
 		expect(provider.deleteNoteTab).toHaveBeenCalledWith("song", "record");
 	});
+	it("cycles open note tabs with command-shift brackets", async () => {
+		render(<Harness />);
+		fireEvent.keyDown(window, {
+			key: "{",
+			code: "BracketLeft",
+			metaKey: true,
+			shiftKey: true,
+		});
+		expect(
+			screen.getByRole("tab", { name: "Mixing" }).getAttribute("aria-selected"),
+		).toBe("true");
+		expect(screen.queryByRole("tab", { name: "Recording" })).toBeNull();
+
+		cleanup();
+		render(<Harness requestedTabId="record" />);
+		await waitFor(() =>
+			expect(currentEditor().state.doc.toString()).toBe("Mic placement"),
+		);
+		const editor = currentEditor();
+		act(() => editor.contentDOM.focus());
+		const outer = vi.fn();
+		window.addEventListener("keydown", outer);
+		try {
+			fireEvent.keyDown(window, {
+				key: "{",
+				code: "BracketLeft",
+				metaKey: true,
+				shiftKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Mixing" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			expect(outer).not.toHaveBeenCalled();
+			await waitFor(() =>
+				expect(document.activeElement).toBe(
+					document
+						.getElementById("note-panel-main")
+						?.querySelector(".cm-content"),
+				),
+			);
+			fireEvent.keyDown(window, {
+				key: "]",
+				code: "BracketRight",
+				metaKey: true,
+				shiftKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Recording" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			fireEvent.keyDown(window, {
+				key: "}",
+				code: "BracketRight",
+				ctrlKey: true,
+				shiftKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Mixing" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			fireEvent.keyDown(window, {
+				key: "[",
+				code: "BracketLeft",
+				metaKey: true,
+				shiftKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Recording" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			fireEvent.keyDown(window, {
+				key: "[",
+				code: "BracketLeft",
+				metaKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Recording" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			screen.getByRole("tab", { name: "Recording" }).focus();
+			fireEvent.keyDown(window, {
+				key: "{",
+				code: "BracketLeft",
+				metaKey: true,
+				shiftKey: true,
+			});
+			expect(document.activeElement).toBe(
+				screen.getByRole("tab", { name: "Mixing" }),
+			);
+			const dialog = document.createElement("div");
+			dialog.setAttribute("role", "dialog");
+			dialog.setAttribute("aria-modal", "true");
+			document.body.append(dialog);
+			fireEvent.keyDown(window, {
+				key: "}",
+				code: "BracketRight",
+				metaKey: true,
+				shiftKey: true,
+			});
+			expect(
+				screen
+					.getByRole("tab", { name: "Mixing" })
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			dialog.remove();
+		} finally {
+			window.removeEventListener("keydown", outer);
+		}
+	});
 	it("uses arrow keys to switch tabs without triggering outer playback shortcuts", async () => {
 		render(<Harness requestedTabId="record" />);
 		await waitFor(() =>

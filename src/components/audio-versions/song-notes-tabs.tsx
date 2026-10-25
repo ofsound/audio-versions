@@ -16,6 +16,22 @@ import type { useSongWorkspaceHistory } from "./use-song-workspace-history";
 
 type WorkspaceHistory = ReturnType<typeof useSongWorkspaceHistory>;
 
+/** Cmd/Ctrl-Shift-[ and ] — shifted keys report "{" and "}" in the browser. */
+function noteTabCycleDirection(event: KeyboardEvent): -1 | 1 | null {
+	if (
+		event.altKey ||
+		event.isComposing ||
+		!(event.metaKey || event.ctrlKey) ||
+		!event.shiftKey
+	)
+		return null;
+	if (event.code === "BracketLeft" || event.key === "[" || event.key === "{")
+		return -1;
+	if (event.code === "BracketRight" || event.key === "]" || event.key === "}")
+		return 1;
+	return null;
+}
+
 function NoteDocument({
 	songId,
 	tab,
@@ -182,6 +198,44 @@ export function SongNotesTabs({
 		);
 	};
 	const requestedRef = useRef<string | undefined>(undefined);
+	const cycleState = useRef({ openIds, activeId, activate, menu });
+	cycleState.current = { openIds, activeId, activate, menu };
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			const direction = noteTabCycleDirection(event);
+			const state = cycleState.current;
+			if (!direction || state.openIds.length < 2 || state.menu === "rename")
+				return;
+			if (shell.current?.closest('[aria-hidden="true"]')) return;
+			const modal = document.querySelector(
+				'[role="dialog"][aria-modal="true"]',
+			);
+			if (modal && !shell.current?.contains(modal)) return;
+			const index = state.activeId ? state.openIds.indexOf(state.activeId) : -1;
+			const count = state.openIds.length;
+			let nextIndex = direction === 1 ? 0 : count - 1;
+			if (index >= 0) nextIndex = (index + direction + count) % count;
+			const id = state.openIds[nextIndex];
+			if (!id) return;
+			event.preventDefault();
+			event.stopPropagation();
+			const focused = document.activeElement;
+			const tabFocused =
+				focused instanceof HTMLElement &&
+				focused.getAttribute("role") === "tab" &&
+				Boolean(tabList.current?.contains(focused));
+			const inside = Boolean(
+				focused instanceof Node && shell.current?.contains(focused),
+			);
+			state.activate(id, inside && !tabFocused);
+			if (tabFocused)
+				tabList.current
+					?.querySelector<HTMLElement>(`[id="note-tab-${id}"]`)
+					?.focus();
+		};
+		window.addEventListener("keydown", onKeyDown, true);
+		return () => window.removeEventListener("keydown", onKeyDown, true);
+	}, []);
 	useEffect(() => {
 		if (
 			requestedTabId &&
