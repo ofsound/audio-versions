@@ -1,15 +1,5 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import {
-	Bookmark,
-	Calendar,
-	File,
-	FolderOpenDot,
-	LayoutGrid,
-	List,
-	Plus,
-	Settings,
-	Sparkles,
-} from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { FolderOpenDot, Plus, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatAudioFileSessionDateRange } from "#/lib/audio-versions/dates";
@@ -45,7 +35,7 @@ export function LibraryView() {
 	const createSongTitleInputRef = useRef<HTMLInputElement | null>(null);
 
 	const recentSongIds = settings.recents;
-	const { showArtist, showProject, libraryView = "list" } = settings.ui;
+	const { showArtist, showProject } = settings.ui;
 	const orderedSongs = useMemo(() => {
 		const recencyMap = new Map(recentSongIds.map((id, index) => [id, index]));
 
@@ -187,32 +177,6 @@ export function LibraryView() {
 
 	const createSongTrigger = (
 		<div className="flex items-center gap-3">
-			<fieldset
-				aria-label="Library view"
-				className="flex border border-[var(--color-border-plain)]"
-			>
-				{(
-					[
-						{ view: "list", label: "List view", Icon: List },
-						{ view: "grid", label: "Grid view", Icon: LayoutGrid },
-					] as const
-				).map(({ view, label, Icon }) => (
-					<button
-						key={view}
-						type="button"
-						aria-label={label}
-						title={label}
-						aria-pressed={libraryView === view}
-						onClick={() => {
-							if (libraryView !== view)
-								void updateUiSettings({ libraryView: view });
-						}}
-						className={`inline-flex h-12 w-12 items-center justify-center ${libraryView === view ? "bg-[var(--color-accent-surface)] text-[var(--color-accent)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}
-					>
-						<Icon size={19} />
-					</button>
-				))}
-			</fieldset>
 			<button
 				type="button"
 				onClick={() => setIsCreateSongOpen(true)}
@@ -274,7 +238,7 @@ export function LibraryView() {
 									</div>
 								</div>
 							</section>
-						) : libraryView === "list" ? (
+						) : (
 							<LibrarySongList
 								columnWidths={settings.ui.libraryColumnWidths}
 								onColumnWidthsChange={(widths) => {
@@ -291,77 +255,6 @@ export function LibraryView() {
 								}}
 								onEdit={setEditingSongId}
 							/>
-						) : (
-							<section
-								aria-label="Song grid"
-								className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-							>
-								{orderedSongs.map((song) => {
-									const sessionDateRange = sessionDateRangeBySongId.get(
-										song.id,
-									);
-									return (
-										<div
-											key={song.id}
-											className="panel-shell panel-shell--plain panel-shell-action relative h-full w-full p-6 text-left"
-										>
-											<Link
-												to="/songs/$songId"
-												params={{ songId: song.id }}
-												onClick={() => {
-													void resetSongPlayheads(song.id);
-												}}
-												aria-label={`Open ${song.title}`}
-												className="absolute inset-0 cursor-pointer"
-											/>
-											<div className="flex items-start gap-2">
-												<div className="block min-w-0 flex-1 text-left">
-													<div>
-														<h2 className="font-title text-2xl font-semibold text-[var(--color-text)]">
-															{song.title}
-														</h2>
-														{showArtist ? (
-															<p className="mt-2 text-sm text-[var(--color-text-muted)]">
-																{song.artist || "No artist set"}
-															</p>
-														) : null}
-													</div>
-												</div>
-												<button
-													type="button"
-													onClick={() => setEditingSongId(song.id)}
-													className="icon-button icon-button--sm relative z-10 -mt-0.5 shrink-0"
-													title="Edit song settings"
-													aria-label={`Edit settings for ${song.title}`}
-												>
-													<Settings size={12} />
-												</button>
-											</div>
-
-											<div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2">
-												{sessionDateRange ? (
-													<StatChip
-														icon={<Calendar size={14} />}
-														label={sessionDateRange}
-													/>
-												) : null}
-												<StatChip
-													icon={<File size={14} />}
-													label={`${
-														audioFileCountBySongId.get(song.id) ?? 0
-													} files`}
-												/>
-												<StatChip
-													icon={<Bookmark size={14} />}
-													label={`${
-														annotationCountBySongId.get(song.id) ?? 0
-													} markers`}
-												/>
-											</div>
-										</div>
-									);
-								})}
-							</section>
 						)}
 					</div>
 				)}
@@ -433,14 +326,5 @@ export function LibraryView() {
 				/>
 			) : null}
 		</>
-	);
-}
-
-function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
-	return (
-		<span className="inline-flex items-center gap-2 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
-			{icon}
-			{label}
-		</span>
 	);
 }

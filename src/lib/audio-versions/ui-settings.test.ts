@@ -71,6 +71,20 @@ describe("ui settings helpers", () => {
 		).toBe(false);
 	});
 
+	it("discards the retired library grid preference from stored settings", () => {
+		window.localStorage.setItem(
+			UI_SETTINGS_STORAGE_KEY,
+			JSON.stringify({ ...createDefaultUiSettings(), libraryView: "grid" }),
+		);
+		const settings = readUiSettingsFromStorage(window);
+		expect(settings).toEqual(createDefaultUiSettings());
+		if (!settings) throw new Error("Expected stored settings");
+		writeUiSettingsToStorage(window, settings);
+		expect(
+			JSON.parse(window.localStorage.getItem(UI_SETTINGS_STORAGE_KEY) ?? "{}"),
+		).not.toHaveProperty("libraryView");
+	});
+
 	it("round-trips settings through local storage normalization", () => {
 		const uiSettings = {
 			...createDefaultUiSettings(),

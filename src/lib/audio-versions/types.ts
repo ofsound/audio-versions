@@ -140,7 +140,6 @@ export interface AudioVersionsUiSettings {
 	songNotesFontSize: number;
 	libraryColumnWidths?: LibraryColumnWidths;
 	songNotesFirst: boolean;
-	libraryView: "list" | "grid";
 	accentLightPrimary: string;
 	accentLightStrong: string;
 	accentDarkPrimary: string;
@@ -239,7 +238,6 @@ export function createDefaultUiSettings(): AudioVersionsUiSettings {
 	return {
 		songNotesFontSize: 14,
 		songNotesFirst: false,
-		libraryView: "list",
 		accentLightPrimary: "#059669",
 		accentLightStrong: "#047857",
 		accentDarkPrimary: "#6ee7b7",
@@ -288,7 +286,6 @@ export function normalizeUiSettings(
 				? Math.max(10, Math.min(28, Math.round(value.songNotesFontSize)))
 				: defaults.songNotesFontSize,
 		songNotesFirst: value?.songNotesFirst ?? defaults.songNotesFirst,
-		libraryView: value?.libraryView === "grid" ? "grid" : "list",
 		accentLightPrimary: normalizeHexColor(
 			value?.accentLightPrimary,
 			defaults.accentLightPrimary,

@@ -96,7 +96,7 @@ export function WaveformThumbnail({
 					<span className="font-title waveform-thumbnail__floating-label waveform-thumbnail__title max-w-[calc(100%-4.5rem)] self-start truncate px-1.5 py-0.5 text-xs font-semibold sm:text-sm">
 						{audioFile.title}
 					</span>
-					<div className="flex w-full items-end justify-between gap-2">
+					<div className="waveform-thumbnail__metadata flex w-full items-end justify-between gap-2">
 						{sessionDateLabel ? (
 							<span className="waveform-thumbnail__floating-label waveform-thumbnail__date px-1.5 py-0.5 text-[10px] tabular-nums sm:text-xs">
 								{sessionDateLabel}
@@ -108,7 +108,7 @@ export function WaveformThumbnail({
 					</div>
 				</div>
 			</div>
-			<div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+			<div className="pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
 				<AddToPlaylistMenu
 					audioFileId={audioFile.id}
 					audioFileTitle={audioFile.title}

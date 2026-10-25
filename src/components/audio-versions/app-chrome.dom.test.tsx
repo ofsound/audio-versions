@@ -105,13 +105,15 @@ describe("AudioVersionsChrome", () => {
 		});
 	});
 
-	it("uses the same library icon element, size, and header grid on index and song routes", () => {
+	it("keeps the same library and playlist links on index and song routes", () => {
 		const { rerender } = render(
 			<AudioVersionsChrome>
 				<main>Library</main>
 			</AudioVersionsChrome>,
 		);
 		const libraryButton = screen.getByRole("link", { name: "Songs" });
+		const playlistsButton = screen.getByRole("link", { name: "Playlists" });
+		const playlistsClasses = playlistsButton.className;
 		const header = libraryButton.closest("header");
 		const classes = libraryButton.className;
 		expect(libraryButton.querySelector("svg")?.getAttribute("width")).toBe(
@@ -130,6 +132,14 @@ describe("AudioVersionsChrome", () => {
 		expect(songLibraryButton).toBe(libraryButton);
 		expect(songLibraryButton.className).toBe(classes);
 		expect(songLibraryButton.closest("header")).toBe(header);
+		const songPlaylistsButton = screen.getByRole("link", { name: "Playlists" });
+		expect(songPlaylistsButton).toBe(playlistsButton);
+		expect(songPlaylistsButton.className).toBe(playlistsClasses);
+		expect(songPlaylistsButton.getAttribute("href")).toBe("/playlists");
+		expect(
+			songPlaylistsButton.querySelector("svg")?.getAttribute("width"),
+		).toBe("19");
+		expect(songPlaylistsButton.previousElementSibling).toBe(songLibraryButton);
 		expect(header?.querySelector(".audio-versions-header-center")).toBeTruthy();
 	});
 

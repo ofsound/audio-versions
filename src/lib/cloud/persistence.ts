@@ -421,7 +421,6 @@ export async function loadCloudSnapshot(
 				ui: {
 					songNotesFontSize: 14,
 					songNotesFirst: false,
-					libraryView: "list",
 					accentLightPrimary: "#059669",
 					accentLightStrong: "#047857",
 					accentDarkPrimary: "#6ee7b7",

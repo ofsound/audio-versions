@@ -536,8 +536,12 @@
 .journal-codemirror .cm-cursor {
 	border-left: 2px solid var(--color-text);
 }
-.journal-codemirror .cm-selectionBackground,
-.journal-codemirror .cm-focused .cm-selectionBackground {
+.journal-codemirror .cm-editor .cm-selectionBackground,
+.journal-codemirror
+	.cm-editor.cm-focused
+	> .cm-scroller
+	> .cm-selectionLayer
+	.cm-selectionBackground {
 	background: var(--color-selection);
 }
 .journal-codemirror .cm-placeholder {

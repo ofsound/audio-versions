@@ -131,18 +131,16 @@ describe("LibraryView", () => {
 		document.body.innerHTML = "";
 	});
 
-	it("defaults to a dense list with sortable columns and saved grid preference", () => {
+	it("renders only a dense list with sortable columns", () => {
 		songs = [
 			{ ...makeSong("song-1"), title: "Zebra" },
 			{ ...makeSong("song-2"), title: "Alpha" },
 		];
-		const { rerender } = render(<LibraryView />);
+		render(<LibraryView />);
 		expect(screen.getByRole("table")).toBeTruthy();
-		expect(
-			screen
-				.getByRole("button", { name: "List view" })
-				.getAttribute("aria-pressed"),
-		).toBe("true");
+		expect(screen.queryByRole("group", { name: "Library view" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Grid view" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "List view" })).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Name" }));
 		expect(
 			screen.getAllByRole("link").map((link) => link.textContent?.trim()),
@@ -151,16 +149,6 @@ describe("LibraryView", () => {
 		expect(
 			screen.getAllByRole("link").map((link) => link.textContent?.trim()),
 		).toEqual(["Zebra", "Alpha"]);
-		fireEvent.click(screen.getByRole("button", { name: "Grid view" }));
-		expect(updateUiSettingsMock).toHaveBeenCalledWith({ libraryView: "grid" });
-		uiSettings = { ...uiSettings, libraryView: "grid" };
-		rerender(<LibraryView />);
-		expect(screen.queryByRole("table")).toBeNull();
-		expect(screen.getByRole("region", { name: "Song grid" })).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "List view" }));
-		expect(updateUiSettingsMock).toHaveBeenLastCalledWith({
-			libraryView: "list",
-		});
 	});
 
 	it("renders create song as a header action and opens the modal on click", () => {
@@ -328,31 +316,14 @@ describe("LibraryView", () => {
 		});
 	});
 
-	it("uses shared classes for the song card shell and inline settings button", () => {
-		uiSettings.libraryView = "grid";
+	it("opens the song from the list but not from settings", () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
 		songs = [makeSong("song-1")];
 
 		renderWithLibraryHeaderSlot(headerSlot);
 
-		const settingsButton = screen.getByRole("button", {
-			name: /edit settings for new song/i,
-		});
-		const songCard = settingsButton.closest(".panel-shell");
-
-		expect(songCard?.className).toContain("panel-shell-action");
-		expect(settingsButton.className).toContain("icon-button");
-	});
-
-	it("opens the song from the card surface but not from settings", () => {
-		const headerSlot = document.createElement("div");
-		document.body.appendChild(headerSlot);
-		songs = [makeSong("song-1")];
-
-		renderWithLibraryHeaderSlot(headerSlot);
-
-		const songCard = screen.getByRole("link", { name: /open new song/i });
+		const songLink = screen.getByRole("link", { name: /open new song/i });
 		const settingsButton = screen.getByRole("button", {
 			name: /edit settings for new song/i,
 		});
@@ -360,7 +331,7 @@ describe("LibraryView", () => {
 		fireEvent.click(settingsButton);
 		expect(navigateMock).not.toHaveBeenCalled();
 
-		fireEvent.click(songCard);
+		fireEvent.click(songLink);
 		expect(resetSongPlayheadsMock).toHaveBeenCalledWith("song-1");
 		expect(navigateMock).toHaveBeenCalledWith({
 			to: "/songs/$songId",
@@ -368,8 +339,7 @@ describe("LibraryView", () => {
 		});
 	});
 
-	it("shows the session date range next to files and markers on song cards", () => {
-		uiSettings.libraryView = "grid";
+	it("shows session dates, file counts, and marker counts in the list", () => {
 		const headerSlot = document.createElement("div");
 		document.body.appendChild(headerSlot);
 		songs = [makeSong("song-1")];
@@ -436,22 +406,28 @@ describe("LibraryView", () => {
 			month: "short",
 			day: "numeric",
 		})}`;
-		expect(screen.getByText("2 files")).toBeTruthy();
-		expect(screen.getByText("1 markers")).toBeTruthy();
+		expect(
+			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[3].textContent,
+		).toBe("2");
+		expect(
+			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[4].textContent,
+		).toBe("1");
 		expect(screen.getByText(sessionDateRange)).toBeTruthy();
 
-		const songCardLink = screen.getByRole("link", { name: /open new song/i });
-		const datePosition = songCardLink.compareDocumentPosition(
+		const songLink = screen.getByRole("link", { name: /open new song/i });
+		const datePosition = songLink.compareDocumentPosition(
 			screen.getByText(sessionDateRange),
 		);
 		const filesPosition = screen
 			.getByText(sessionDateRange)
-			.compareDocumentPosition(screen.getByText("2 files"));
+			.compareDocumentPosition(
+				within(screen.getAllByRole("row")[1]).getAllByRole("cell")[3],
+			);
 		expect(datePosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(filesPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-		fireEvent.click(songCardLink);
-		fireEvent.click(songCardLink);
-		fireEvent.click(songCardLink);
+		fireEvent.click(songLink);
+		fireEvent.click(songLink);
+		fireEvent.click(songLink);
 		expect(navigateMock).toHaveBeenCalledTimes(3);
 		expect(navigateMock).toHaveBeenLastCalledWith({
 			to: "/songs/$songId",

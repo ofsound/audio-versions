@@ -70,7 +70,6 @@ it("keeps newer settings when an older cloud response arrives during an edit", a
 					ui: {
 						...current.settings.ui,
 						showArtist: false,
-						libraryView: "grid",
 					},
 				},
 			}),
@@ -82,7 +81,6 @@ it("keeps newer settings when an older cloud response arrives during an edit", a
 		staleRead.resolve({ snapshot: snapshot() });
 	});
 	expect(result.current.snapshot.settings.ui.showArtist).toBe(false);
-	expect(result.current.snapshot.settings.ui.libraryView).toBe("grid");
 	// No stale full-cache replacement is allowed, either.
 	expect(mocks.replace).toHaveBeenCalledTimes(1);
 	const persisted = {

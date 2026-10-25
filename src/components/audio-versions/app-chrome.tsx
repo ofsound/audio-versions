@@ -102,16 +102,14 @@ export function AudioVersionsChrome({
 								>
 									<Library size={19} />
 								</Link>
-								{!isSongRoute ? (
-									<Link
-										to="/playlists"
-										aria-label="Playlists"
-										title="Playlists"
-										className={`audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0 no-underline ${isPlaylistsRoute ? "text-[var(--color-accent)]" : ""}`}
-									>
-										<ListMusic size={19} />
-									</Link>
-								) : null}
+								<Link
+									to="/playlists"
+									aria-label="Playlists"
+									title="Playlists"
+									className={`audio-versions-header-control theme-toggle-button h-12 w-12 shrink-0 no-underline ${isPlaylistsRoute ? "text-[var(--color-accent)]" : ""}`}
+								>
+									<ListMusic size={19} />
+								</Link>
 							</nav>
 							{isSongRoute ? (
 								<div
