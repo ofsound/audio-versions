@@ -27,6 +27,7 @@ final class ReviewCompanionStore: ObservableObject {
     @Published private(set) var pendingNoteWrites: [PendingNoteWrite] = []
     @Published private(set) var isSynchronizingNotes = false
     @Published private(set) var noteSyncError: String?
+    @Published private(set) var selectedNoteTabs: [String: String] = [:]
     @Published var requestedNoteTabs: [String: String] = [:]
     @Published var requestedNoteTabRevisions: [String: Int] = [:]
     @Published private(set) var pendingAnnotationWrites: [PendingAnnotationWrite] = []
@@ -413,7 +414,7 @@ final class ReviewCompanionStore: ObservableObject {
     }
 
     func openSongLink(_ target: SongLinkTarget) {
-        if let noteTabID = target.noteTabID { requestedNoteTabs[target.songID] = noteTabID; requestedNoteTabRevisions[target.songID, default: 0] += 1 }
+        if let noteTabID = target.noteTabID { selectNoteTab(songID: target.songID, tabID: noteTabID); requestedNoteTabs[target.songID] = noteTabID; requestedNoteTabRevisions[target.songID, default: 0] += 1 }
         var nextPath: [LibraryDestination] = [.song(id: target.songID)]
         let versionID = target.fileID ?? songs
             .first(where: { $0.id == target.songID })?
@@ -443,6 +444,17 @@ final class ReviewCompanionStore: ObservableObject {
 
     func skip(by delta: TimeInterval, in version: AudioVersion) {
         seek(to: currentTime + delta, in: version)
+    }
+
+    func preferredNoteTab(songID: String) -> SongNoteTab? {
+        guard let song = songs.first(where: { $0.id == songID }) else { return nil }
+        return song.resolvedNoteTabs.first { $0.id == selectedNoteTabs[songID] } ?? song.resolvedNoteTabs.first
+    }
+
+    func selectNoteTab(songID: String, tabID: String) {
+        guard songs.first(where: { $0.id == songID })?.resolvedNoteTabs.contains(where: { $0.id == tabID }) == true,
+              selectedNoteTabs[songID] != tabID else { return }
+        selectedNoteTabs[songID] = tabID
     }
 
     @discardableResult
@@ -956,6 +968,7 @@ extension ReviewCompanionStore {
         pendingNoteWrites = []
         isSynchronizingNotes = false
         noteSyncError = nil
+        selectedNoteTabs = [:]
         requestedNoteTabs = [:]
         requestedNoteTabRevisions = [:]
         annotationSyncTask?.cancel()

@@ -1,7 +1,7 @@
 import { redo, undo, undoDepth } from "@codemirror/commands";
 import { EditorState, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { Clock3, Keyboard } from "lucide-react";
+import { Clock3, Minus, Plus } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { SongLinkTarget } from "#/lib/audio-versions/types";
 import {
@@ -11,6 +11,8 @@ import {
 } from "./journal-editor-engine";
 
 interface JournalEditorProps {
+	fontSize?: number;
+	onFontSizeChange?: (size: number) => void;
 	value: string;
 	onChange: (value: string) => void;
 	onHistoryChange?: (
@@ -56,6 +58,8 @@ export function JournalEditor(props: JournalEditorProps) {
 		historyValue,
 		visible = true,
 		showHeading = true,
+		fontSize = 14,
+		onFontSizeChange,
 	} = props;
 	const value = sourceValue.replace(/\r\n?/g, "\n");
 	const host = useRef<HTMLDivElement>(null);
@@ -170,33 +174,67 @@ export function JournalEditor(props: JournalEditorProps) {
 		}
 	}, [historyValue]);
 	useEffect(() => {
-		if (visible) viewRef.current?.requestMeasure();
-	}, [visible]);
+		if (visible && fontSize > 0) viewRef.current?.requestMeasure();
+	}, [visible, fontSize]);
 	return (
 		<div
 			className="journal-editor-shell flex min-h-0 flex-1 flex-col overflow-hidden"
 			data-audio-versions-editor="journal"
 		>
-			<div
-				className={`flex shrink-0 items-center justify-between gap-3 px-6 ${showHeading ? "h-16" : "h-11"}`}
-				data-audio-versions-toolbar
-			>
-				{showHeading ? (
+			{showHeading && (
+				<div className="flex h-16 shrink-0 items-center px-6">
 					<span className="field-label workspace-section-heading">
 						Song Notes
 					</span>
-				) : (
-					<span />
-				)}
-				<div className="flex items-center gap-2">
-					<span
-						role="img"
-						title="Option-drag: column selection · Option-click: add cursor · Cmd-D: next match · Cmd-F: find · Cmd-B/I: bold/italic"
-						aria-label="Editing shortcuts: Option-drag column selection, Option-click multiple cursors, Command-D next match, Command-F find, Command-B bold, Command-I italic"
-						className="text-[var(--color-text-muted)]"
-					>
-						<Keyboard size={15} />
-					</span>
+				</div>
+			)}
+			<div
+				className={`journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-6 pb-3 ${!showHeading ? "journal-editor-tabbed" : ""}`}
+			>
+				<div
+					ref={host}
+					style={{ fontSize: `${fontSize}px` }}
+					className="journal-codemirror journal-editor-frame min-h-0 flex-1 overflow-hidden border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)]"
+				/>
+				<div
+					className="flex shrink-0 items-center justify-between gap-2 py-2"
+					data-audio-versions-toolbar
+				>
+					{onFontSizeChange ? (
+						<fieldset
+							aria-label="Note text size"
+							className="m-0 flex min-w-0 items-center gap-1 border-0 p-0 text-xs text-[var(--color-text-muted)]"
+						>
+							<button
+								type="button"
+								aria-label="Decrease note text size"
+								disabled={fontSize <= 10}
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => onFontSizeChange(fontSize - 1)}
+								className="icon-button icon-button--sm"
+							>
+								<Minus size={13} />
+							</button>
+							<span
+								className="min-w-8 text-center tabular-nums"
+								aria-live="polite"
+							>
+								{fontSize}px
+							</span>
+							<button
+								type="button"
+								aria-label="Increase note text size"
+								disabled={fontSize >= 28}
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => onFontSizeChange(fontSize + 1)}
+								className="icon-button icon-button--sm"
+							>
+								<Plus size={13} />
+							</button>
+						</fieldset>
+					) : (
+						<span />
+					)}
 					<button
 						type="button"
 						onMouseDown={(event) => event.preventDefault()}
@@ -216,12 +254,6 @@ export function JournalEditor(props: JournalEditorProps) {
 						Insert Timestamp
 					</button>
 				</div>
-			</div>
-			<div className="journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-6 pb-3">
-				<div
-					ref={host}
-					className="journal-codemirror journal-editor-frame min-h-0 flex-1 overflow-hidden border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-base leading-7 text-[var(--color-text)]"
-				/>
 			</div>
 		</div>
 	);

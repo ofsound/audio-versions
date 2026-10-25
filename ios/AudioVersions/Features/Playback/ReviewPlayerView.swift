@@ -72,14 +72,7 @@ struct ReviewPlayerView: View {
                     }
                 }
                 .sheet(isPresented: $isAddingToJournal) {
-                    PlainTextNoteEditorView(
-                        title: "Add to Song Notes",
-                        accessibilityLabel: "Add to song notes",
-                        text: "",
-                        requiresNonEmptyDraft: true
-                    ) { entry in
-                        store.appendSongJournalEntry(entry, songID: songID)
-                    }
+                    AddSongNoteView(songID: songID, initialTab: store.preferredNoteTab(songID: songID))
                 }
                 .task(id: versionID) {
                     if let linkTarget {

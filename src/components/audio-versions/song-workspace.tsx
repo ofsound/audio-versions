@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Upload } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -480,6 +480,7 @@ export function SongWorkspace({
 		<section className="panel-shell px-6 py-6">{songHeaderControls}</section>
 	);
 
+	const hasAudioFiles = audioFiles.length > 0;
 	const songGallery: GalleryGroup = {
 		label: "Song gallery",
 		scope: { songId },
@@ -623,9 +624,32 @@ export function SongWorkspace({
 					}
 					onInternalLink={(target) => openTarget(target)}
 				/>
-				{strip(songGallery)}
+				{(hasAudioFiles || songGallery.images.length > 0) && strip(songGallery)}
 			</div>
 		</div>
+	);
+
+	const emptyAudioPanel = (
+		<section
+			key="empty-audio"
+			aria-label="Import audio"
+			data-gallery-drop-target="audio"
+			data-drop-active={isFileDragActive && dropTarget === "audio"}
+			className="flex min-h-48 min-w-0 flex-col items-center justify-center gap-3 px-6 py-12 text-center text-sm text-[var(--color-text-muted)]"
+		>
+			<p>Drag a track here</p>
+			<div className="flex items-center gap-3">
+				<span>or</span>
+				<button
+					type="button"
+					onClick={() => setIsUploadOpen(true)}
+					className="action-secondary inline-flex items-center gap-2 px-3 py-2"
+				>
+					<Upload size={14} />
+					Import file
+				</button>
+			</div>
+		</section>
 	);
 
 	return (
@@ -655,6 +679,7 @@ export function SongWorkspace({
 				<section
 					ref={workspaceGridRef}
 					data-song-notes-first={songNotesFirst}
+					data-song-workspace-empty={!hasAudioFiles}
 					className="song-workspace-scroll-region song-workspace-panel-grid grid min-h-0 flex-1 gap-5 overflow-y-auto xl:overflow-hidden xl:[grid-template-rows:minmax(0,1fr)] xl:items-stretch"
 					style={
 						panelWidths
@@ -666,37 +691,41 @@ export function SongWorkspace({
 							: undefined
 					}
 				>
-					{songNotesFirst
-						? [
-								journalPanel,
-								<PanelResizeHandle
-									key="notes-player"
-									label="Resize song notes and player panels"
-									onResize={(deltaX) => resizePanels("left", deltaX)}
-								/>,
-								playerPanel,
-								<PanelResizeHandle
-									key="player-details"
-									label="Resize player and file notes panels"
-									onResize={(deltaX) => resizePanels("right", deltaX)}
-								/>,
-								detailsPanel,
-							]
-						: [
-								playerPanel,
-								<PanelResizeHandle
-									key="player-details"
-									label="Resize thumbnails and details panels"
-									onResize={(deltaX) => resizePanels("left", deltaX)}
-								/>,
-								detailsPanel,
-								<PanelResizeHandle
-									key="details-notes"
-									label="Resize details and song notes panels"
-									onResize={(deltaX) => resizePanels("right", deltaX)}
-								/>,
-								journalPanel,
-							]}
+					{!hasAudioFiles
+						? songNotesFirst
+							? [journalPanel, emptyAudioPanel]
+							: [emptyAudioPanel, journalPanel]
+						: songNotesFirst
+							? [
+									journalPanel,
+									<PanelResizeHandle
+										key="notes-player"
+										label="Resize song notes and player panels"
+										onResize={(deltaX) => resizePanels("left", deltaX)}
+									/>,
+									playerPanel,
+									<PanelResizeHandle
+										key="player-details"
+										label="Resize player and file notes panels"
+										onResize={(deltaX) => resizePanels("right", deltaX)}
+									/>,
+									detailsPanel,
+								]
+							: [
+									playerPanel,
+									<PanelResizeHandle
+										key="player-details"
+										label="Resize thumbnails and details panels"
+										onResize={(deltaX) => resizePanels("left", deltaX)}
+									/>,
+									detailsPanel,
+									<PanelResizeHandle
+										key="details-notes"
+										label="Resize details and song notes panels"
+										onResize={(deltaX) => resizePanels("right", deltaX)}
+									/>,
+									journalPanel,
+								]}
 				</section>
 			</main>
 

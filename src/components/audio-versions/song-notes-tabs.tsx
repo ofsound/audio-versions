@@ -23,7 +23,11 @@ function NoteDocument({
 	history,
 	onActivate,
 	onInternalLink,
+	fontSize,
+	onFontSizeChange,
 }: {
+	fontSize: number;
+	onFontSizeChange: (size: number) => void;
 	songId: string;
 	tab: SongNoteTab;
 	visible: boolean;
@@ -54,6 +58,8 @@ function NoteDocument({
 	);
 	return (
 		<JournalEditor
+			fontSize={fontSize}
+			onFontSizeChange={onFontSizeChange}
 			value={tab.content}
 			visible={visible}
 			showHeading={false}
@@ -93,8 +99,14 @@ export function SongNotesTabs({
 	onTabChange?: (id: string | null) => void;
 	onInternalLink: (target: SongLinkTarget) => void;
 }) {
-	const { createNoteTab, updateNoteTab, deleteNoteTab, updateWorkspaceState } =
-		useAudioVersions();
+	const {
+		createNoteTab,
+		updateNoteTab,
+		deleteNoteTab,
+		updateWorkspaceState,
+		settings,
+		updateUiSettings,
+	} = useAudioVersions();
 	const tabs = getSongNoteTabs(song);
 	const initial = workspace.noteTabs ?? {
 		openIds: [tabs[0].id],
@@ -108,7 +120,7 @@ export function SongNotesTabs({
 			? local.activeId
 			: (openIds.at(-1) ?? null);
 	const active = tabs.find((tab) => tab.id === activeId);
-	const [menu, setMenu] = useState<"new" | "actions" | "rename" | null>(null);
+	const [menu, setMenu] = useState<"actions" | "rename" | null>(null);
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -129,7 +141,7 @@ export function SongNotesTabs({
 			tabList.current.scrollLeft -= bounds.left - selected.left + 8;
 	}, [activeId]);
 	useEffect(() => {
-		if (menu === "new" || menu === "rename") nameInput.current?.focus();
+		if (menu === "rename") nameInput.current?.focus();
 	}, [menu]);
 	const saveUi = (next: typeof local) => {
 		setLocal(next);
@@ -181,10 +193,7 @@ export function SongNotesTabs({
 		}
 	});
 	useCloseOnEscape(Boolean(menu), () => {
-		const selector =
-			menu === "new"
-				? '[aria-label="New or reopen note tab"]'
-				: '[aria-label="Note tab actions"]';
+		const selector = '[aria-label="Note tab actions"]';
 		setMenu(null);
 		toolbar.current?.querySelector<HTMLElement>(selector)?.focus();
 	});
@@ -215,9 +224,14 @@ export function SongNotesTabs({
 			setBusy(false);
 		}
 	};
-	const create = (newName: string) =>
+	const create = () =>
 		void task(async () => {
-			const id = await createNoteTab(song.id, newName);
+			let number = 1;
+			while (
+				tabs.some((tab) => tab.name.toLowerCase() === `untitled ${number}`)
+			)
+				number++;
+			const id = await createNoteTab(song.id, `Untitled ${number}`);
 			activate(id);
 		});
 	const openTabs = tabs
@@ -240,14 +254,10 @@ export function SongNotesTabs({
 					<button
 						type="button"
 						className="icon-button"
-						aria-label="New or reopen note tab"
-						title="New or reopen note tab"
-						aria-expanded={menu === "new"}
-						onClick={() => {
-							setName("");
-							setError(null);
-							setMenu(menu === "new" ? null : "new");
-						}}
+						aria-label="New note tab"
+						title="New note tab"
+						disabled={busy}
+						onClick={create}
 					>
 						<Plus size={16} />
 					</button>
@@ -255,8 +265,8 @@ export function SongNotesTabs({
 						type="button"
 						className="icon-button"
 						aria-label="Note tab actions"
-						title="Rename or delete this note"
-						disabled={!active}
+						title="Note tab actions"
+						disabled={!active && openIds.length === tabs.length}
 						aria-expanded={menu === "actions" || menu === "rename"}
 						onClick={() => {
 							setError(null);
@@ -271,12 +281,12 @@ export function SongNotesTabs({
 				ref={tabList}
 				role="tablist"
 				aria-label="Song note tabs"
-				className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--color-border-plain)] px-6 pb-1"
+				className="song-note-tablist mx-6 flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--color-border-strong)] px-0 pt-1"
 			>
 				{openTabs.map((tab) => (
 					<div
 						key={tab.id}
-						className={`flex shrink-0 items-center border ${tab.id === activeId ? "border-[var(--color-accent-strong)] bg-[var(--color-surface)]" : "border-transparent"}`}
+						className={`song-note-tab relative flex shrink-0 items-center border ${tab.id === activeId ? "song-note-tab--active border-[var(--color-border-strong)] bg-[var(--color-surface)]" : "border-transparent"}`}
 					>
 						<button
 							type="button"
@@ -336,22 +346,24 @@ export function SongNotesTabs({
 					</div>
 				))}
 			</div>
+			{error && !menu && (
+				<p role="alert" className="px-6 text-sm">
+					{error}
+				</p>
+			)}
 			{menu && (
 				<div
 					ref={popup}
 					className="absolute top-14 right-4 z-30 grid max-h-[min(32rem,70dvh)] overflow-y-auto w-72 max-w-[calc(100%-2rem)] gap-3 border border-[var(--color-border-strong)] bg-[var(--color-surface-overlay)] p-3 shadow-xl"
 					role="dialog"
-					aria-label={
-						menu === "new" ? "New or reopen note tab" : "Note tab actions"
-					}
+					aria-label="Note tab actions"
 				>
-					{menu === "new" || menu === "rename" ? (
+					{menu === "rename" ? (
 						<form
 							className="grid gap-2"
 							onSubmit={(event) => {
 								event.preventDefault();
-								if (menu === "new") create(name);
-								else if (active)
+								if (active)
 									void task(async () => {
 										await updateNoteTab(song.id, active.id, { name });
 										setMenu(null);
@@ -359,14 +371,14 @@ export function SongNotesTabs({
 							}}
 						>
 							<label className="grid gap-1 text-sm">
-								{menu === "new" ? "New tab name" : "Tab name"}
+								Tab name
 								<input
 									ref={nameInput}
 									value={name}
 									maxLength={80}
 									onChange={(event) => setName(event.target.value)}
 									className="input-field w-full"
-									placeholder="Mixing, Recording, Mastering…"
+									placeholder="Tab name"
 								/>
 							</label>
 							<button
@@ -374,7 +386,7 @@ export function SongNotesTabs({
 								disabled={busy || !name.trim()}
 								className="action-secondary px-3 py-2 text-sm"
 							>
-								{menu === "new" ? "Create tab" : "Save name"}
+								Save name
 							</button>
 						</form>
 					) : (
@@ -382,6 +394,7 @@ export function SongNotesTabs({
 							<button
 								type="button"
 								className="action-secondary px-3 py-2 text-left text-sm"
+								disabled={!active}
 								onClick={() => {
 									setName(active?.name ?? "");
 									setMenu("rename");
@@ -413,43 +426,19 @@ export function SongNotesTabs({
 							</button>
 						</>
 					)}
-					{menu === "new" && (
-						<>
-							<div className="flex flex-wrap gap-1">
-								{["Mixing", "Recording", "Mastering"]
-									.filter(
-										(preset) =>
-											!tabs.some(
-												(tab) =>
-													tab.name.toLowerCase() === preset.toLowerCase(),
-											),
-									)
-									.map((preset) => (
-										<button
-											type="button"
-											key={preset}
-											disabled={busy}
-											className="action-secondary px-2 py-1 text-xs"
-											onClick={() => create(preset)}
-										>
-											{preset}
-										</button>
-									))}
-							</div>
-							{tabs
-								.filter((tab) => !openIds.includes(tab.id))
-								.map((tab) => (
-									<button
-										type="button"
-										key={tab.id}
-										className="action-secondary truncate px-3 py-2 text-left text-sm"
-										onClick={() => activate(tab.id)}
-									>
-										Reopen {tab.name}
-									</button>
-								))}
-						</>
-					)}
+					{menu === "actions" &&
+						tabs
+							.filter((tab) => !openIds.includes(tab.id))
+							.map((tab) => (
+								<button
+									type="button"
+									key={tab.id}
+									className="action-secondary truncate px-3 py-2 text-left text-sm"
+									onClick={() => activate(tab.id)}
+								>
+									Reopen {tab.name}
+								</button>
+							))}
 					{error && (
 						<p role="alert" className="text-sm">
 							{error}
@@ -469,6 +458,10 @@ export function SongNotesTabs({
 					}
 				>
 					<NoteDocument
+						fontSize={settings.ui.songNotesFontSize}
+						onFontSizeChange={(size) => {
+							void updateUiSettings({ songNotesFontSize: size });
+						}}
 						songId={song.id}
 						tab={tab}
 						visible={tab.id === activeId}
@@ -484,9 +477,9 @@ export function SongNotesTabs({
 					<button
 						type="button"
 						className="action-secondary px-3 py-2"
-						onClick={() => setMenu("new")}
+						onClick={() => setMenu("actions")}
 					>
-						New or reopen tab
+						Reopen tab
 					</button>
 				</div>
 			)}

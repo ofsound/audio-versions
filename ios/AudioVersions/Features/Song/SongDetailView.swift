@@ -77,13 +77,13 @@ struct SongDetailView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
-                .onAppear { if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
+                .onAppear { if let id = store.preferredNoteTab(songID: songID)?.id { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
+                .onChange(of: store.selectedNoteTabs[songID]) { _, id in if let id { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
                 .onChange(of: store.requestedNoteTabRevisions[songID]) { _, _ in if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .addToJournalBottomBar {
-                    let tab = activeNoteTab ?? song.resolvedNoteTabs.first
-                    if let tab { selectedNoteTabID = tab.id; closedNoteTabIDs.remove(tab.id); editingNoteTabID = tab.id; editingOriginalNote = tab }
+                    if let tab = activeNoteTab { store.selectNoteTab(songID: song.id, tabID: tab.id) }
                     isAddingToJournal = true
                 }
                 .sheet(isPresented: $isEditingJournal) {
@@ -96,14 +96,7 @@ struct SongDetailView: View {
                     }
                 }
                 .sheet(isPresented: $isAddingToJournal) {
-                    PlainTextNoteEditorView(
-                        title: "Add to \(song.resolvedNoteTabs.first { $0.id == editingNoteTabID }?.name ?? "Song Notes")",
-                        accessibilityLabel: "Add to song notes",
-                        text: "",
-                        requiresNonEmptyDraft: true
-                    ) { entry in
-                        guard store.appendSongJournalEntry(entry, songID: song.id, tabID: editingNoteTabID, expected: editingOriginalNote) else { throw NoteTabError.notSaved }
-                    }
+                    AddSongNoteView(songID: song.id, initialTab: store.preferredNoteTab(songID: song.id))
                 }
             } else {
                 ContentUnavailableView(

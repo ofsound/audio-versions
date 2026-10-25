@@ -83,14 +83,42 @@ struct SongNoteTabTests {
         store.saveSongJournal("Phone master notes", songID: song.id, tabID: "master")
         store.renameNoteTab(songID: song.id, tabID: "master", name: "Final")
         let id = try #require(store.createNoteTab(songID: song.id, name: "Recording"))
+        #expect(store.appendSongJournalEntry("Offline car check", songID: song.id, tabID: "master"))
         let restored = try OfflineLibraryStorage(userID: account, root: root)
-        #expect(restored.state.pendingNoteWrites?.count == 3)
-        #expect(restored.state.snapshot.songs[0].resolvedNoteTabs.first { $0.id == "master" }?.content == "Phone master notes")
+        #expect(restored.state.pendingNoteWrites?.count == 4)
+        #expect(restored.state.snapshot.songs[0].resolvedNoteTabs.first { $0.id == "master" }?.content.hasSuffix("Offline car check") == true)
         #expect(restored.state.snapshot.songs[0].resolvedNoteTabs.first { $0.id == "master" }?.name == "Final")
         #expect(restored.state.snapshot.songs[0].resolvedNoteTabs.contains { $0.id == id } == true)
         store.useFixtureLibrary()
         #expect(store.pendingNoteWrites.isEmpty)
     }
+    @Test func remembersEachSongsDestinationAndFallsBackWhenItIsRemoved() throws {
+        let other = Song(id: "other-song", title: song.title, artist: song.artist, generalNotes: song.generalNotes, noteTabs: song.noteTabs, updatedAt: song.updatedAt, versions: [])
+        let store = ReviewCompanionStore(songs: [song, other])
+        #expect(store.preferredNoteTab(songID: song.id)?.id == "song-notes")
+        store.selectNoteTab(songID: song.id, tabID: "master")
+        #expect(store.preferredNoteTab(songID: song.id)?.id == "master")
+        #expect(store.preferredNoteTab(songID: other.id)?.id == "song-notes")
+        store.selectNoteTab(songID: song.id, tabID: "missing")
+        #expect(store.preferredNoteTab(songID: song.id)?.id == "master")
+        store.deleteNoteTab(songID: song.id, tabID: "master")
+        #expect(store.preferredNoteTab(songID: song.id)?.id == "song-notes")
+        store.useFixtureLibrary()
+        #expect(store.selectedNoteTabs.isEmpty)
+    }
+
+    @Test func appendsOnlyToTheChosenTabUsingItsLatestContent() throws {
+        let store = ReviewCompanionStore(songs: [song])
+        let original = song.resolvedNoteTabs[1]
+        #expect(store.saveSongJournal("Updated from another edit", songID: song.id, tabID: original.id))
+        #expect(store.appendSongJournalEntry("Car check", songID: song.id, tabID: original.id, expected: original))
+        let updated = try #require(store.songs.first)
+        #expect(updated.generalNotes == song.generalNotes)
+        let text = try #require(updated.resolvedNoteTabs.first { $0.id == original.id }?.content)
+        #expect(text.hasPrefix("Updated from another edit"))
+        #expect(text.hasSuffix("Car check"))
+    }
+
     @Test func aDraftFromADeletedTabIsKeptForConflictReview() throws {
         let original = song.resolvedNoteTabs[1]
         let write = edit(original, content: "Unsaved sheet draft")

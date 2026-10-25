@@ -1,3 +1,7 @@
+import {
+	type LibraryColumnWidths,
+	normalizeLibraryColumnWidths,
+} from "./library-columns";
 export type AnnotationType = "point" | "range";
 
 export interface RichTextMark {
@@ -133,6 +137,8 @@ const WAVEFORM_HEIGHT_PRESETS = ["large", "medium", "small"] as const;
 export type WaveformHeightPreset = (typeof WAVEFORM_HEIGHT_PRESETS)[number];
 
 export interface AudioVersionsUiSettings {
+	songNotesFontSize: number;
+	libraryColumnWidths?: LibraryColumnWidths;
 	songNotesFirst: boolean;
 	libraryView: "list" | "grid";
 	accentLightPrimary: string;
@@ -231,6 +237,7 @@ export function createDefaultWorkspaceState(): WorkspaceState {
 
 export function createDefaultUiSettings(): AudioVersionsUiSettings {
 	return {
+		songNotesFontSize: 14,
 		songNotesFirst: false,
 		libraryView: "list",
 		accentLightPrimary: "#059669",
@@ -269,8 +276,17 @@ export function normalizeUiSettings(
 	value: Partial<AudioVersionsUiSettings> | null | undefined,
 ): AudioVersionsUiSettings {
 	const defaults = createDefaultUiSettings();
+	const libraryColumnWidths = normalizeLibraryColumnWidths(
+		value?.libraryColumnWidths,
+	);
 
 	return {
+		...(libraryColumnWidths ? { libraryColumnWidths } : {}),
+		songNotesFontSize:
+			typeof value?.songNotesFontSize === "number" &&
+			Number.isFinite(value.songNotesFontSize)
+				? Math.max(10, Math.min(28, Math.round(value.songNotesFontSize)))
+				: defaults.songNotesFontSize,
 		songNotesFirst: value?.songNotesFirst ?? defaults.songNotesFirst,
 		libraryView: value?.libraryView === "grid" ? "grid" : "list",
 		accentLightPrimary: normalizeHexColor(

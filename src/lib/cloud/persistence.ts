@@ -419,6 +419,7 @@ export async function loadCloudSnapshot(
 				recents: [],
 				workspaceBySongId: {},
 				ui: {
+					songNotesFontSize: 14,
 					songNotesFirst: false,
 					libraryView: "list",
 					accentLightPrimary: "#059669",

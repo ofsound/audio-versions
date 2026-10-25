@@ -121,6 +121,20 @@
 			var(--song-workspace-center-panel-width, minmax(280px, 1fr));
 	}
 
+	.song-workspace-panel-grid[data-song-workspace-empty="true"] {
+		grid-template-columns: minmax(0, 1fr) var(
+				--song-workspace-right-panel-width,
+				420px
+			);
+		gap: 1.25rem;
+	}
+	.song-workspace-panel-grid[data-song-workspace-empty="true"][data-song-notes-first="true"] {
+		grid-template-columns: var(--song-workspace-right-panel-width, 420px) minmax(
+				0,
+				1fr
+			);
+	}
+
 	.song-workspace-panel-grid > [data-song-workspace-panel] {
 		padding-bottom: var(--song-workspace-resize-gutter-height);
 	}

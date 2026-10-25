@@ -276,6 +276,10 @@ export function LibraryView() {
 							</section>
 						) : libraryView === "list" ? (
 							<LibrarySongList
+								columnWidths={settings.ui.libraryColumnWidths}
+								onColumnWidthsChange={(widths) => {
+									void updateUiSettings({ libraryColumnWidths: widths });
+								}}
 								songs={orderedSongs}
 								showArtist={showArtist}
 								fileCounts={audioFileCountBySongId}

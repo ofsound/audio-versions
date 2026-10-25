@@ -203,9 +203,13 @@ xcodebuild test -quiet \
 ### Named Song Notes tabs
 
 Song detail shows all named note documents from `songs.note_tabs`. Tap a tab to
-switch, use + for new/reopened notes, and long-press for rename, close, and delete.
+switch, tap + to create an Untitled tab immediately, and long-press for rename, close, and delete.
+Closed tabs can be reopened from the adjacent menu.
 Closing a tab keeps its text; deletion asks for confirmation and cannot remove the
-last document. Edit and the bottom Add action always target the selected tab.
+last document. Edit targets the selected tab. The bottom Add action, both on the song screen and
+in the player, opens a sheet with an “Append to” tab picker. It defaults to the
+last tab selected for that song during the current app session. Changing the
+destination keeps the draft; saving appends to the end of that tab.
 
 Tab content and management changes are persisted before networking, replayed in
 order, and merged over refreshed cloud snapshots. Replays compare the edited

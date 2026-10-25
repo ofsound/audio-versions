@@ -375,7 +375,7 @@
 
 .journal-codemirror strong {
 	border-radius: 0.2em;
-	background: var(--color-accent-surface);
+	background: var(--color-journal-bold-surface);
 	padding-inline: 0.15em;
 	-webkit-box-decoration-break: clone;
 	box-decoration-break: clone;
@@ -563,4 +563,50 @@
 }
 [data-reduce-keyboard-focus] .journal-codemirror:focus-within {
 	box-shadow: none;
+}
+
+.library-column-resizer {
+	position: absolute;
+	inset: 0 -6px 0 auto;
+	z-index: 1;
+	width: 12px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: col-resize;
+	touch-action: none;
+	user-select: none;
+}
+.library-column-resizer > span {
+	position: absolute;
+	top: 25%;
+	bottom: 25%;
+	left: 5px;
+	width: 1px;
+	background: var(--color-border-strong);
+}
+.library-column-resizer:hover > span,
+.library-column-resizer:focus-visible > span {
+	width: 2px;
+	background: var(--color-accent-strong);
+}
+.library-column-resizer:focus-visible {
+	outline: 1px solid var(--color-focus-ring);
+	outline-offset: -2px;
+}
+
+/* The active tab opens into the note surface, without a second toolbar between. */
+.song-note-tablist {
+	border-bottom: 0;
+	box-shadow: inset 0 -1px 0 var(--color-border-strong);
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: thin;
+}
+.song-note-tab--active {
+	border-bottom-color: var(--color-surface);
+	z-index: 1;
+}
+.journal-editor-tabbed .journal-editor-frame {
+	border-top: 0;
 }

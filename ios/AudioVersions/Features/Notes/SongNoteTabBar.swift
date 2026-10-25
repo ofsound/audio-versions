@@ -6,7 +6,6 @@ struct SongNoteTabBar: View {
     let song: Song
     @Binding var selectedID: String
     @Binding var closedIDs: Set<String>
-    @State private var isCreating = false
     @State private var renaming: SongNoteTab?
     @State private var deleting: SongNoteTab?
     @State private var name = ""
@@ -45,30 +44,21 @@ struct SongNoteTabBar: View {
             }
             .onAppear { if let id = activeID { proxy.scrollTo(id, anchor: .center) } }
             .onChange(of: activeID) { _, id in
-                if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
+                if let id { store.selectNoteTab(songID: song.id, tabID: id); withAnimation { proxy.scrollTo(id, anchor: .center) } }
             }
             }
-            Menu {
-                Button("New named tab…", systemImage: "plus") { name = ""; isCreating = true }
-                ForEach(["Mixing", "Recording", "Mastering"].filter { preset in
-                    !tabs.contains { $0.name.localizedCaseInsensitiveCompare(preset) == .orderedSame }
-                }, id: \.self) { preset in
-                    Button(preset) { create(preset) }
-                }
-                if !closedIDs.isEmpty {
+            Button { create() } label: { Image(systemName: "plus").frame(width: 36, height: 36) }
+                .accessibilityLabel("New note tab")
+            if !closedIDs.isEmpty {
+                Menu {
                     Section("Reopen") {
                         ForEach(tabs.filter { closedIDs.contains($0.id) }) { tab in
                             Button(tab.name) { closedIDs.remove(tab.id); selectedID = tab.id }
                         }
                     }
-                }
-            } label: { Image(systemName: "plus").frame(width: 36, height: 36) }
-                .accessibilityLabel("New or reopen note tab")
-        }
-        .alert("New note tab", isPresented: $isCreating) {
-            TextField("Tab name", text: $name)
-            Button("Create") { create(name) }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("Cancel", role: .cancel) {}
+                } label: { Image(systemName: "ellipsis").frame(width: 36, height: 36) }
+                    .accessibilityLabel("Reopen note tab")
+            }
         }
         .alert("Rename note tab", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Tab name", text: $name)
@@ -87,7 +77,10 @@ struct SongNoteTabBar: View {
         closedIDs.insert(tab.id)
         if selectedID == tab.id { selectedID = openTabs.first?.id ?? "" }
     }
-    private func create(_ name: String) {
+    private func create() {
+        var number = 1
+        while tabs.contains(where: { $0.name.localizedCaseInsensitiveCompare("Untitled \(number)") == .orderedSame }) { number += 1 }
+        let name = "Untitled \(number)"
         if let id = store.createNoteTab(songID: song.id, name: name) { selectedID = id; closedIDs.remove(id) }
     }
 }

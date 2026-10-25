@@ -15,6 +15,7 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { changeSongNoteTabs } from "#/lib/audio-versions/song-note-tabs";
 import {
+	createDefaultUiSettings,
 	createDefaultWorkspaceState,
 	type Song,
 	type WorkspaceState,
@@ -25,6 +26,8 @@ import { useSongWorkspaceHistory } from "./use-song-workspace-history";
 let patchSong: (update: (song: Song) => Song) => void;
 let patchWorkspace: (update: (state: WorkspaceState) => WorkspaceState) => void;
 const provider = {
+	settings: { ui: createDefaultUiSettings() },
+	updateUiSettings: vi.fn(),
 	createNoteTab: vi.fn(),
 	updateNoteTab: vi.fn(),
 	deleteNoteTab: vi.fn(),
@@ -74,6 +77,7 @@ function currentEditor() {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
+	provider.settings.ui = createDefaultUiSettings();
 	provider.createNoteTab.mockImplementation(async (_songId, name) => {
 		const id = crypto.randomUUID();
 		patchSong((song) =>
@@ -102,6 +106,34 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 describe("named Song Notes interface", () => {
+	it("adjusts note text one pixel at a time and restores the saved size without replacing the editor", () => {
+		const { rerender } = render(<Harness />);
+		const editor = currentEditor();
+		act(() => editor.dispatch({ selection: { anchor: 3 } }));
+		expect(
+			editor.dom.closest<HTMLElement>(".journal-codemirror")?.style.fontSize,
+		).toBe("14px");
+		fireEvent.click(
+			screen.getByRole("button", { name: "Increase note text size" }),
+		);
+		expect(provider.updateUiSettings).toHaveBeenLastCalledWith({
+			songNotesFontSize: 15,
+		});
+		provider.settings.ui = { ...provider.settings.ui, songNotesFontSize: 15 };
+		rerender(<Harness />);
+		expect(currentEditor()).toBe(editor);
+		expect(editor.state.selection.main.head).toBe(3);
+		expect(
+			editor.dom.closest<HTMLElement>(".journal-codemirror")?.style.fontSize,
+		).toBe("15px");
+		fireEvent.click(
+			screen.getByRole("button", { name: "Decrease note text size" }),
+		);
+		expect(provider.updateUiSettings).toHaveBeenLastCalledWith({
+			songNotesFontSize: 14,
+		});
+	});
+
 	it("creates named tabs and preserves cursor, undo state and unsaved edits across switches", async () => {
 		render(<Harness />);
 		const mixing = currentEditor();
@@ -114,14 +146,12 @@ describe("named Song Notes interface", () => {
 				annotations: Transaction.userEvent.of("input.type"),
 			}),
 		);
-		fireEvent.click(
-			screen.getByRole("button", { name: "New or reopen note tab" }),
-		);
-		fireEvent.change(screen.getByRole("textbox", { name: "New tab name" }), {
-			target: { value: "Mastering" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Create tab" }));
-		await screen.findByRole("tab", { name: "Mastering" });
+		fireEvent.click(screen.getByRole("button", { name: "New note tab" }));
+		await screen.findByRole("tab", { name: "Untitled 1" });
+		expect(provider.createNoteTab).toHaveBeenCalledWith("song", "Untitled 1");
+		expect(screen.queryByRole("dialog")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "New note tab" }));
+		await screen.findByRole("tab", { name: "Untitled 2" });
 		expect(currentEditor().state.doc.toString()).toBe("");
 		fireEvent.click(screen.getByRole("tab", { name: "Mixing" }));
 		expect(currentEditor()).toBe(mixing);
@@ -138,9 +168,7 @@ describe("named Song Notes interface", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Close Mixing tab" }));
 		expect(screen.queryByRole("tab", { name: "Mixing" })).toBeNull();
 		expect(provider.deleteNoteTab).not.toHaveBeenCalled();
-		fireEvent.click(
-			screen.getByRole("button", { name: "New or reopen note tab" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Reopen tab" }));
 		fireEvent.click(screen.getByRole("button", { name: "Reopen Mixing" }));
 		expect(currentEditor().state.doc.toString()).toBe("Mixing notes");
 		fireEvent.doubleClick(screen.getByRole("tab", { name: "Mixing" }));

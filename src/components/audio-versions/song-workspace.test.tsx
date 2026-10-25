@@ -313,6 +313,27 @@ describe("SongWorkspace", () => {
 		vi.clearAllTimers();
 	});
 
+	it("keeps a new song quiet while preserving editable Song Notes and import", () => {
+		const { container } = render(
+			<SongWorkspace songId={baseSong.id} search={{ autoplay: false }} />,
+		);
+		expect(screen.getByRole("tab", { name: "Song Notes" })).toBeTruthy();
+		expect(screen.getByText("Drag a track here")).toBeTruthy();
+		expect(screen.getAllByRole("button", { name: "Import file" })).toHaveLength(
+			1,
+		);
+		expect(screen.queryByTestId("inspector-pane")).toBeNull();
+		expect(screen.queryByTestId("waveform-card")).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /Resize .*panels/ }),
+		).toBeNull();
+		expect(
+			container.querySelector('[data-song-workspace-empty="true"]'),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Import file" }));
+		expect(screen.getByRole("dialog")).toBeTruthy();
+	});
+
 	it("shows uploaded audio after hydration and selects the first file", async () => {
 		const search: SongRouteSearch = {
 			autoplay: false,
@@ -322,9 +343,7 @@ describe("SongWorkspace", () => {
 			<SongWorkspace songId={baseSong.id} search={search} />,
 		);
 
-		expect(
-			screen.getByText(/Add audio to start reviewing waveforms/i),
-		).toBeTruthy();
+		expect(screen.getByText(/Drag a track here/i)).toBeTruthy();
 		expect(screen.queryByText(/waveform stack/i)).toBeNull();
 		expect(
 			screen.queryByText(/Shift\+↑ \/ Shift\+↓ jumps markers/i),

@@ -57,6 +57,10 @@
 		color-mix(in srgb, var(--accent-light-primary-base) 14%, transparent),
 		color-mix(in srgb, var(--accent-dark-primary-base) 16%, transparent)
 	);
+	--color-journal-bold-surface: light-dark(
+		color-mix(in srgb, var(--accent-light-primary-base) 22%, transparent),
+		color-mix(in srgb, var(--accent-dark-primary-base) 48%, transparent)
+	);
 	--color-link: light-dark(
 		color-mix(in srgb, var(--accent-light-primary-base) 68%, black),
 		color-mix(in srgb, var(--accent-dark-primary-base) 88%, white)
