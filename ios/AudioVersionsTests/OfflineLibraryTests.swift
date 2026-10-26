@@ -69,6 +69,41 @@ struct OfflineLibraryTests {
     }
 
     @Test
+    func automaticallyQueuesMissingAudioWithoutPlayingAndPreservesExistingDownloads() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let userID = UUID()
+        let storage = try OfflineLibraryStorage(userID: userID, root: root)
+        var state = storage.state
+        state.snapshot = snapshot()
+        try storage.save(state)
+        let cachedID = state.snapshot.songs[0].versions[0].id
+        let source = root.appending(path: "cached.mp3")
+        try Data(repeating: 42, count: 128).write(to: source)
+        try storage.storeDownload(from: source, versionID: cachedID)
+        let environment = ReviewCloudEnvironment(configuration: CloudConfiguration(
+            supabaseURL: URL(string: "http://127.0.0.1:1")!,
+            supabasePublishableKey: "offline-test-publishable-key",
+            apiBaseURL: URL(string: "http://127.0.0.1:1")!
+        ))
+        let store = ReviewCompanionStore(songs: [])
+        store.configureCloud(library: environment.library, signedMedia: environment.signedMedia,
+                             userID: userID, storageRoot: root)
+        store.synchronizeAnnotations()
+        #expect(store.activeVersionID == nil)
+        #expect(store.downloadingVersionIDs.count == 2)
+        #expect(!store.downloadingVersionIDs.contains(cachedID))
+        #expect(store.downloadedVersionIDs.contains(cachedID))
+        // A user's explicit removal takes precedence over automatic caching this session.
+        store.removeDownload(versionID: cachedID)
+        store.synchronizeAnnotations()
+        #expect(!store.downloadingVersionIDs.contains(cachedID))
+        store.useFixtureLibrary()
+        #expect(store.downloadingVersionIDs.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: storage.directory.path))
+    }
+
+    @Test
     func downloadedAudioAndMetadataSurviveRelaunchAndTemporaryFileDeletion() throws {
         let root = temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }

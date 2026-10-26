@@ -78,9 +78,12 @@ export async function uploadRemoteAudioBlob(
 	};
 }
 
-export async function getRemoteAudioUrl(audioFileId: string): Promise<string> {
+export async function getRemoteAudioUrl(
+	audioFileId: string,
+	refresh = false,
+): Promise<string> {
 	const cached = signedUrlCache.get(audioFileId);
-	if (cached && cached.expiresAt > Date.now() + 60_000) {
+	if (!refresh && cached && cached.expiresAt > Date.now() + 60_000) {
 		return cached.url;
 	}
 

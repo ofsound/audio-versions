@@ -375,8 +375,25 @@ export async function saveAudioFile(audioFile: AudioFileRecord): Promise<void> {
 export async function saveAudioBlob(
 	audioFileId: string,
 	blob: Blob,
+	expectedMedia?: { ownerId: string; pathname: string },
 ): Promise<void> {
 	const db = await getDb();
+	if (expectedMedia) {
+		const transaction = db.transaction(
+			["blobs", "sync", "audioFiles"],
+			"readwrite",
+		);
+		const owner = await transaction.objectStore("sync").get(LOCAL_OWNER_KEY);
+		const file = await transaction.objectStore("audioFiles").get(audioFileId);
+		if (
+			owner === expectedMedia.ownerId &&
+			file?.remoteMedia?.pathname === expectedMedia.pathname
+		) {
+			await transaction.objectStore("blobs").put(blob, audioFileId);
+		}
+		await transaction.done;
+		return;
+	}
 	await db.put("blobs", blob, audioFileId);
 }
 

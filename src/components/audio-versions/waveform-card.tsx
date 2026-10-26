@@ -95,7 +95,13 @@ export function WaveformCard({
 	onDragEnd,
 	onDrop,
 }: WaveformCardProps) {
-	const objectUrl = useAudioSource(audioFile.id, blob, audioFile.remoteMedia);
+	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const objectUrl = useAudioSource(
+		audioFile.id,
+		blob,
+		audioFile.remoteMedia,
+		audioRef,
+	);
 	const appliedPlayRequestRef = useRef<number | null>(null);
 	useEffect(() => {
 		if (
@@ -114,7 +120,6 @@ export function WaveformCard({
 	const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
 	const rulerSurfaceRef = useRef<HTMLDivElement | null>(null);
 	const annotationOverlayRef = useRef<HTMLDivElement | null>(null);
-	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveform = useMemo(
 		() => normalizeWaveformData(audioFile.waveform, audioFile.durationMs),
 		[audioFile.durationMs, audioFile.waveform],

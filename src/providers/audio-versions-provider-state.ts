@@ -30,6 +30,8 @@ import {
 	normalizeLoadedSnapshot,
 } from "./audio-versions-provider-hydration";
 
+import { useAutomaticAudioCache } from "./use-automatic-audio-cache";
+
 export type SnapshotUpdater = (
 	current: AudioVersionsSnapshot,
 ) => AudioVersionsSnapshot;
@@ -270,6 +272,9 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 	const [snapshot, setSnapshot] =
 		useState<AudioVersionsSnapshot>(EMPTY_SNAPSHOT);
 	const [ready, setReady] = useState(false);
+	const [loadedCloudUserId, setLoadedCloudUserId] = useState<
+		string | undefined
+	>();
 	const [error, setError] = useState<string | null>(null);
 
 	const snapshotRef = useRef(snapshot);
@@ -302,7 +307,10 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 				if (cloudUserId) {
 					const [ownerId, cloudResult] = await Promise.all([
 						getLocalOwnerId(),
-						loadCloudSnapshot(cloudUserId),
+						loadCloudSnapshot(cloudUserId).catch(async (error) => {
+							if ((await getLocalOwnerId()) !== cloudUserId) throw error;
+							return { exists: true, snapshot: normalizedLocal };
+						}),
 					]);
 
 					if (ownerId == null && hasLibraryContent(normalizedLocal)) {
@@ -352,6 +360,7 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 				snapshotRef.current = normalizedSnapshot;
 				startTransition(() => {
 					setSnapshot(normalizedSnapshot);
+					setLoadedCloudUserId(cloudUserId);
 					setReady(true);
 				});
 			})
@@ -468,6 +477,14 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 		},
 		[],
 	);
+
+	useAutomaticAudioCache({
+		cloudUserId,
+		ready: ready && loadedCloudUserId === cloudUserId,
+		audioFiles: snapshot.audioFiles,
+		snapshotRef,
+		commitSnapshot,
+	});
 
 	return {
 		commitSnapshot,

@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import type { AudioFileRecord } from "#/lib/audio-versions/types";
 import { getRemoteAudioUrl } from "#/lib/cloud/media";
 
@@ -8,13 +14,15 @@ export function useAudioSource(
 	audioFileId: string,
 	blob: Blob | undefined,
 	remoteMedia: AudioFileRecord["remoteMedia"],
+	audioRef: RefObject<HTMLAudioElement | null>,
 ): string | null {
 	const localObjectUrl = useObjectUrl(blob);
 	const [remoteUrl, setRemoteUrl] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (localObjectUrl || !remoteMedia) {
-			setRemoteUrl(null);
+			// A completed background download must not interrupt a track already playing.
+			if (audioRef.current?.paused !== false) setRemoteUrl(null);
 			return;
 		}
 
@@ -34,7 +42,24 @@ export function useAudioSource(
 		return () => {
 			cancelled = true;
 		};
-	}, [audioFileId, localObjectUrl, remoteMedia]);
+	}, [audioFileId, localObjectUrl, remoteMedia, audioRef]);
 
-	return localObjectUrl ?? remoteUrl;
+	const source =
+		audioRef.current?.paused === false && remoteUrl
+			? remoteUrl
+			: (localObjectUrl ?? remoteUrl);
+	const currentTime = audioRef.current?.currentTime ?? 0;
+	const previousSource = useRef<string | null>(null);
+	useLayoutEffect(() => {
+		if (
+			source &&
+			previousSource.current &&
+			source !== previousSource.current &&
+			audioRef.current
+		) {
+			audioRef.current.currentTime = currentTime;
+		}
+		previousSource.current = source;
+	}, [source, audioRef, currentTime]);
+	return source;
 }

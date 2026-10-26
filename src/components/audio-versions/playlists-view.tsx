@@ -697,8 +697,13 @@ function PlaylistAudio({
 	onAutoplayConsumed: () => void;
 	onEnded: () => void;
 }) {
-	const source = useAudioSource(audioFile.id, blob, audioFile.remoteMedia);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const source = useAudioSource(
+		audioFile.id,
+		blob,
+		audioFile.remoteMedia,
+		audioRef,
+	);
 	useEffect(() => {
 		registerAudioElement(audioFile.id, audioRef.current);
 		return () => registerAudioElement(audioFile.id, null);

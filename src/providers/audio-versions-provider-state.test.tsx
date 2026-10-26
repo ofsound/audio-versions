@@ -188,3 +188,25 @@ it("accepts a newer cloud settings document", async () => {
 	await waitFor(() => expect(mocks.replace).toHaveBeenCalledTimes(2));
 	expect(result.current.snapshot.settings.ui.songNotesFontSize).toBe(20);
 });
+
+it("restores the signed-in owner's local library when cloud loading is offline", async () => {
+	const local = snapshot();
+	local.songs = [
+		{
+			id: "offline-song",
+			title: "Saved song",
+			artist: "",
+			project: "",
+			generalNotes: "",
+			audioFileOrder: [],
+			createdAt: "",
+			updatedAt: "",
+		},
+	];
+	mocks.load.mockResolvedValue(local);
+	mocks.cloud.mockRejectedValue(new TypeError("Failed to fetch"));
+	const { result } = renderHook(() => useAudioVersionsSnapshotState("user-1"));
+	await waitFor(() => expect(result.current.ready).toBe(true));
+	expect(result.current.snapshot.songs[0].title).toBe("Saved song");
+	expect(result.current.error).toBeNull();
+});

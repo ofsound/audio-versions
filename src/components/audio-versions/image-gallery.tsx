@@ -71,7 +71,7 @@ export function GalleryStrip({
 	return (
 		<section
 			aria-label={group.label}
-			className="shrink-0 border-t border-[var(--color-border-plain)] px-6 py-3"
+			className="mx-6 mb-4 shrink-0 border border-[var(--color-border-plain)] px-3 py-3"
 		>
 			<div className="flex items-center justify-between gap-2">
 				<span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)]">

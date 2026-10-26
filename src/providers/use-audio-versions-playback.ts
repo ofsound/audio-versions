@@ -17,6 +17,7 @@ import type {
 	WorkspaceState,
 } from "#/lib/audio-versions/types";
 import { clampTime } from "#/lib/audio-versions/waveform";
+import { getRemoteAudioUrl } from "#/lib/cloud/media";
 
 export interface PlaybackState {
 	activeFileId?: string;
@@ -143,26 +144,67 @@ export function useAudioVersionsPlayback({
 		[pauseOtherAudio],
 	);
 
-	const playAudioElement = useCallback(async (element: HTMLAudioElement) => {
-		const resumePromise = resumeSharedAudioContext();
-		const playPromise = element.play();
-		const [resumeResult, playResult] = await Promise.allSettled([
-			resumePromise,
-			playPromise,
-		]);
-		const resumed =
-			resumeResult.status === "fulfilled" && resumeResult.value === true;
-		const played = playResult.status === "fulfilled";
-
-		if (!resumed || !played) {
-			if (!element.paused) {
-				element.pause();
+	const refreshAudioSource = useCallback(
+		async (fileId: string, element: HTMLAudioElement, force = false) => {
+			const audioFile = snapshotRef.current.audioFiles.find(
+				(entry) => entry.id === fileId,
+			);
+			if (!audioFile?.remoteMedia || element.src.startsWith("blob:")) {
+				return;
 			}
-			return false;
-		}
 
-		return true;
-	}, []);
+			const url = await getRemoteAudioUrl(fileId, force);
+			if (url !== element.src || element.error) {
+				const currentTime = element.currentTime;
+				element.src = url;
+				element.load();
+				// Before metadata loads, this sets the default playback start position.
+				element.currentTime = currentTime;
+			}
+		},
+		[snapshotRef],
+	);
+
+	const playAudioElement = useCallback(
+		async (fileId: string, element: HTMLAudioElement) => {
+			// Resume during the user gesture even if a fresh private URL needs a request.
+			const resumePromise = resumeSharedAudioContext();
+			const playPromise = (async () => {
+				const isRemote =
+					!element.src.startsWith("blob:") &&
+					snapshotRef.current.audioFiles.some(
+						(entry) => entry.id === fileId && entry.remoteMedia,
+					);
+				if (isRemote) {
+					await refreshAudioSource(fileId, element);
+				}
+				try {
+					await element.play();
+				} catch (error) {
+					if (!isRemote || !element.error) throw error;
+					await refreshAudioSource(fileId, element, true);
+					await element.play();
+				}
+			})();
+			const [resumeResult, playResult] = await Promise.allSettled([
+				resumePromise,
+				playPromise,
+			]);
+			const resumed =
+				resumeResult.status === "fulfilled" && resumeResult.value === true;
+			const played = playResult.status === "fulfilled";
+
+			if (!resumed || !played) {
+				if (!element.paused) {
+					element.pause();
+				}
+				return false;
+			}
+
+			return true;
+		},
+		[refreshAudioSource, snapshotRef],
+	);
 
 	const registerAudioElement = useCallback(
 		(fileId: string, element: HTMLAudioElement | null) => {
@@ -220,6 +262,11 @@ export function useAudioVersionsPlayback({
 				return;
 			}
 
+			try {
+				await refreshAudioSource(fileId, element);
+			} catch {
+				return;
+			}
 			const boundedTime = clampTime(timeMs, audioFile.durationMs);
 			element.currentTime = boundedTime / 1000;
 			reportPlaybackState(fileId, {
@@ -228,7 +275,7 @@ export function useAudioVersionsPlayback({
 
 			if (autoplay) {
 				pauseOtherAudio(fileId);
-				if (!(await playAudioElement(element))) {
+				if (!(await playAudioElement(fileId, element))) {
 					return;
 				}
 				reportPlaybackState(fileId, {
@@ -237,7 +284,13 @@ export function useAudioVersionsPlayback({
 				});
 			}
 		},
-		[pauseOtherAudio, playAudioElement, reportPlaybackState, snapshotRef],
+		[
+			pauseOtherAudio,
+			playAudioElement,
+			refreshAudioSource,
+			reportPlaybackState,
+			snapshotRef,
+		],
 	);
 
 	const togglePlayback = useCallback(
@@ -257,7 +310,7 @@ export function useAudioVersionsPlayback({
 			}
 
 			pauseOtherAudio(fileId);
-			if (!(await playAudioElement(element))) {
+			if (!(await playAudioElement(fileId, element))) {
 				return;
 			}
 			reportPlaybackState(fileId, {

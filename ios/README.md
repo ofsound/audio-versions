@@ -48,8 +48,8 @@ a second production identity.
 - Restored email/password Supabase sessions
 - Active songs, files, waveforms, and annotations under existing RLS policies
 - Private playback through the bearer-authenticated signed-media endpoint
-- Complete, temporary track preloading before native `AVPlayer` controls become
-  available
+- Automatic persistent audio downloads for the active library, newest first,
+  with at most two simultaneous downloads; local playback before networking
 - Playback audio session that remains audible through Silent mode and while the
   phone is locked or the app is backgrounded
 - Lock Screen, Control Center, headset, Bluetooth, and AirPlay controls for
@@ -79,13 +79,22 @@ a second production identity.
 
 ## Offline listening and annotation sync
 
-Use the download control beside a version or under its player to save the entire
-file for offline listening. A checkmark appears only after the complete download
-and its metadata have been saved. The download menu removes the local copy;
-it does not delete cloud audio. In **Account**, enable **Downloaded songs only**
-to find songs with saved versions. Other versions still require a connection.
-Downloads can be cancelled and retried. Keep the app open until the download
-finishes; background transfer scheduling is not implemented.
+Audio downloads automatically while the app is running, starting with the newest
+versions and fetching at most two files at once. Completed files are retained
+between launches and used immediately for playback. The app resumes missing
+files after reconnecting, on foreground, and on periodic retries; an in-progress
+download is shared with playback rather than fetched twice. Ordinary playback
+also retains its downloaded audio. Audio IDs identify immutable media, so note
+and metadata changes do not invalidate a completed audio download.
+
+A checkmark appears after the complete file and metadata are saved. Use the
+download control to request a file immediately, cancel a transfer, or remove a
+local copy without deleting cloud audio. Explicit cancellation or removal keeps
+that file out of automatic downloads for the rest of the app session; a manual
+download enables it again. In **Account**, enable **Downloaded songs only** to
+find saved versions. Keep the app running for downloads to finish: iOS can suspend
+transfers when the app is backgrounded, and background transfer scheduling is not
+implemented. Storage availability limits how much of the library can be retained.
 
 The library, playlists, waveforms, notes, and downloaded audio survive relaunch.
 The app restores the last saved library for the signed-in account before trying
@@ -152,8 +161,9 @@ Run these checks after installing a new build from Xcode:
 These checks require a signed build on an iPhone; simulator tests cannot verify
 hardware encryption, Bluetooth routing, or locked-device audio behavior.
 
-1. Download two versions and a playlist's tracks. Cancel another download and
-   confirm it is not marked downloaded. Remove a local copy and confirm the cloud
+1. Open the library online and confirm audio downloads without pressing play,
+   with at most two transfers at once. Let two versions and a playlist's tracks
+   finish. Cancel another download and confirm it is not marked downloaded. Remove a local copy and confirm the cloud
    file remains available.
 2. Enable Airplane Mode, force-quit, and relaunch. Open a downloaded song, play,
    seek, change speed, lock the phone, and cross a downloaded playlist boundary.

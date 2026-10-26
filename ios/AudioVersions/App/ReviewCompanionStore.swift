@@ -39,6 +39,8 @@ final class ReviewCompanionStore: ObservableObject {
     private var offlineStorage: OfflineLibraryStorage?
     private var accountID: UUID?
     private var downloadTasks: [String: Task<Void, Never>] = [:]
+    private var automaticDownloadAttempts: Set<String> = []
+    private var removedDownloadIDs: Set<String> = []
     private var noteSyncTask: Task<Void, Never>?
     private var annotationSyncTask: Task<Void, Never>?
     private var retrySyncTask: Task<Void, Never>?
@@ -792,6 +794,7 @@ final class ReviewCompanionStore: ObservableObject {
         let generation = playbackLoadGeneration
         isPreparingPlayback = true
         playbackErrorMessage = nil
+        let playbackStorage = offlineStorage
 
         playbackPreparationTask = Task { [weak self] in
             var downloadedFileURL: URL?
@@ -799,7 +802,13 @@ final class ReviewCompanionStore: ObservableObject {
                 if invalidateLease {
                     await signedMedia.invalidate(audioFileID: version.id)
                 }
-                let savedURL = self?.offlineStorage?.mediaURL(for: version.id)
+                // Prioritize requested audio and join the same task used by background caching.
+                if self?.offlineStorage?.mediaURL(for: version.id) == nil {
+                    self?.downloadVersion(version)
+                }
+                await self?.downloadTasks[version.id]?.value
+                try Task.checkCancellation()
+                var savedURL = self?.offlineStorage?.mediaURL(for: version.id)
                 let fileURL: URL?
                 if let savedURL {
                     fileURL = savedURL
@@ -807,6 +816,19 @@ final class ReviewCompanionStore: ObservableObject {
                     let lease = try await signedMedia.signedLease(for: version.id)
                     fileURL = try await self?.playbackFileLoader.download(from: lease.url)
                     downloadedFileURL = fileURL
+                    if let self, let storage = playbackStorage, self.offlineStorage === storage,
+                       generation == self.playbackLoadGeneration, self.activeVersionID == version.id,
+                       let fileURL {
+                        try Task.checkCancellation()
+                        // Retain ordinary playback downloads too, rather than deleting them on stop.
+                        do {
+                            try storage.storeDownload(from: fileURL, versionID: version.id)
+                            savedURL = storage.mediaURL(for: version.id)
+                            self.updateOfflineStatus()
+                        } catch {
+                            // Playback remains available even when the device cannot persist more audio.
+                        }
+                    }
                 }
                 try Task.checkCancellation()
                 guard
@@ -823,11 +845,14 @@ final class ReviewCompanionStore: ObservableObject {
 
                 self.audioEngine.load(
                     track: self.playbackTrack(for: version),
-                    url: fileURL,
+                    url: savedURL ?? fileURL,
                     deleteFileWhenStopped: savedURL == nil,
                     autoplay: autoplay,
                     startTime: startTime
                 )
+                if savedURL != nil, let downloadedFileURL {
+                    try? FileManager.default.removeItem(at: downloadedFileURL)
+                }
                 downloadedFileURL = nil
                 self.isPreparingPlayback = false
             } catch is CancellationError {
@@ -962,6 +987,8 @@ extension ReviewCompanionStore {
     private func clearOfflineSession(erase: Bool) {
         downloadTasks.values.forEach { $0.cancel() }
         downloadTasks = [:]
+        automaticDownloadAttempts = []
+        removedDownloadIDs = []
         downloadingVersionIDs = []
         noteSyncTask?.cancel()
         noteSyncTask = nil
@@ -1002,21 +1029,37 @@ extension ReviewCompanionStore {
             Task { @MainActor [weak self] in
                 guard let self, self.networkMonitor === monitor else { return }
                 self.isOffline = offline
-                if !offline { self.synchronizeAnnotations() }
+                if !offline {
+                    self.automaticDownloadAttempts = []
+                    self.synchronizeAnnotations()
+                }
             }
         }
         monitor.start(queue: DispatchQueue(label: "AudioVersions.Connectivity"))
         retrySyncTask = Task { [weak self] in
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(30)) } catch { return }
+                self?.automaticDownloadAttempts = []
                 self?.synchronizeAnnotations()
             }
         }
     }
 
-    func downloadVersion(_ version: AudioVersion) {
+    private func fillAutomaticDownloads() {
+        guard !isOffline, !isCloudLoading, offlineStorage != nil, signedMedia != nil else { return }
+        for version in songs.flatMap(\.versions).sorted(by: { $0.createdAt > $1.createdAt }) {
+            guard downloadTasks.count < 2 else { break }
+            guard !downloadedVersionIDs.contains(version.id), downloadTasks[version.id] == nil,
+                  !automaticDownloadAttempts.contains(version.id), !removedDownloadIDs.contains(version.id) else { continue }
+            automaticDownloadAttempts.insert(version.id)
+            downloadVersion(version, automatic: true)
+        }
+    }
+
+    func downloadVersion(_ version: AudioVersion, automatic: Bool = false) {
         guard let storage = offlineStorage, let signedMedia,
               downloadTasks[version.id] == nil else { return }
+        if !automatic { removedDownloadIDs.remove(version.id) }
         downloadingVersionIDs.insert(version.id)
         // Save the current browsing metadata alongside the audio, so it can be
         // opened after a cold launch without contacting either cloud service.
@@ -1036,29 +1079,39 @@ extension ReviewCompanionStore {
                 if self?.offlineStorage === storage {
                     self?.downloadTasks.removeValue(forKey: version.id)
                     self?.downloadingVersionIDs.remove(version.id)
+                    self?.fillAutomaticDownloads()
                 }
             }
             do {
-                let lease = try await signedMedia.signedLease(for: version.id)
+                var lease = try await signedMedia.signedLease(for: version.id)
                 guard let self else { return }
-                let url = try await playbackFileLoader.download(from: lease.url)
+                let url: URL
+                do {
+                    url = try await playbackFileLoader.download(from: lease.url)
+                } catch PlaybackFileLoadingError.requestFailed(let status) where status == 401 || status == 403 {
+                    await signedMedia.invalidate(audioFileID: version.id)
+                    lease = try await signedMedia.signedLease(for: version.id)
+                    url = try await playbackFileLoader.download(from: lease.url)
+                }
                 temporaryURL = url
                 try Task.checkCancellation()
-                guard offlineStorage === storage else { return }
+                guard offlineStorage === storage, self.version(id: version.id) != nil else { return }
                 try storage.storeDownload(from: url, versionID: version.id)
                 updateOfflineStatus()
             } catch {
                 guard self?.offlineStorage === storage, !Task.isCancelled else { return }
-                self?.cloudErrorMessage = "Download failed: \(error.localizedDescription)"
+                if !automatic { self?.cloudErrorMessage = "Download failed: \(error.localizedDescription)" }
             }
         }
     }
 
     func cancelDownload(versionID: String) {
+        removedDownloadIDs.insert(versionID)
         downloadTasks[versionID]?.cancel()
     }
 
     func removeDownload(versionID: String) {
+        removedDownloadIDs.insert(versionID)
         guard let storage = offlineStorage else { return }
         if activeVersionID == versionID { stopPlayback() }
         do {
@@ -1099,6 +1152,7 @@ extension ReviewCompanionStore {
     }
 
     func synchronizeAnnotations() {
+        fillAutomaticDownloads()
         synchronizeNotes()
         guard !isOffline, !isCloudLoading, annotationSyncTask == nil,
               let storage = offlineStorage, let cloudLibrary,
