@@ -26,6 +26,7 @@ const {
 }));
 
 vi.mock("#/lib/audio-versions/audio-engine", () => ({
+	setAudioElementGain: vi.fn(),
 	closeSharedAudioContext: closeSharedAudioContextMock,
 	recoverSharedAudioContext: recoverSharedAudioContextMock,
 	resumeSharedAudioContext: resumeSharedAudioContextMock,
@@ -177,6 +178,29 @@ describe("useAudioVersionsPlayback", () => {
 		await act(async () => result.current.togglePlayback("file-1"));
 		expect(getRemoteAudioUrlMock).not.toHaveBeenCalled();
 		expect(result.current.playback.isPlaying).toBe(true);
+		unmount();
+	});
+	it("does not start a remote preview after its audio element has been removed", async () => {
+		const { result, unmount, element, playMock } = setup(true);
+		let resolve!: (url: string) => void;
+		getRemoteAudioUrlMock.mockImplementation(
+			() =>
+				new Promise<string>((done) => {
+					resolve = done;
+				}),
+		);
+		act(() => result.current.registerAudioElement("file-1", element));
+		let pending!: Promise<void>;
+		act(() => {
+			pending = result.current.togglePlayback("file-1");
+		});
+		act(() => result.current.registerAudioElement("file-1", null));
+		await act(async () => {
+			resolve("https://media.example/fresh");
+			await pending;
+		});
+		expect(playMock).not.toHaveBeenCalled();
+		expect(result.current.playback.isPlaying).toBe(false);
 		unmount();
 	});
 });

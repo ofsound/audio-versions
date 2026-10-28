@@ -608,9 +608,18 @@
 	scrollbar-width: thin;
 }
 .song-note-tab--active {
-	border-bottom-color: var(--color-surface);
+	--song-note-tab-active-bg: color-mix(
+		in srgb,
+		var(--color-surface) 45%,
+		black
+	);
+	background: var(--song-note-tab-active-bg);
+	border-bottom-color: var(--song-note-tab-active-bg);
 	z-index: 1;
 }
 .journal-editor-tabbed .journal-editor-frame {
 	border-top: 0;
+}
+.journal-editor-tabbed .cm-content {
+	padding: 1.25rem;
 }

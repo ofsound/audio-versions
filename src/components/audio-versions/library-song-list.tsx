@@ -1,17 +1,20 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Settings } from "lucide-react";
+import { ArrowDown, ArrowUp, Play, Settings, Square } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import {
 	LIBRARY_COLUMNS,
 	type LibraryColumnKey,
 	type LibraryColumnWidths,
 } from "#/lib/audio-versions/library-columns";
-import type { Song } from "#/lib/audio-versions/types";
+import type { AudioFileRecord, Song } from "#/lib/audio-versions/types";
 import { useLibraryColumnResize } from "./use-library-column-resize";
 
 type SortColumn = LibraryColumnKey;
 
 interface LibrarySongListProps {
+	previewFiles: Map<string, AudioFileRecord>;
+	previewFileId?: string;
+	onPreview: (file?: AudioFileRecord) => void;
 	columnWidths?: LibraryColumnWidths;
 	onColumnWidthsChange: (widths: LibraryColumnWidths) => void;
 	songs: Song[];
@@ -25,6 +28,9 @@ interface LibrarySongListProps {
 }
 
 export function LibrarySongList({
+	previewFiles,
+	previewFileId,
+	onPreview,
 	columnWidths,
 	onColumnWidthsChange,
 	songs,
@@ -83,7 +89,7 @@ export function LibrarySongList({
 	];
 	const columns = keys.map((key) => ({ key, ...LIBRARY_COLUMNS[key] }));
 	const minimumTableWidth =
-		56 +
+		96 +
 		keys.reduce(
 			(total, key) =>
 				total +
@@ -180,20 +186,51 @@ export function LibrarySongList({
 						{markerCounts.get(song.id) ?? 0}
 					</td>
 					<td className="px-3 py-2 text-right">
-						<button
-							type="button"
-							onClick={() => onEdit(song.id)}
-							className="icon-button icon-button--sm"
-							aria-label={`Edit settings for ${song.title}`}
-							title="Edit song settings"
-						>
-							<Settings size={12} />
-						</button>
+						<div className="flex items-center justify-end gap-1">
+							<button
+								type="button"
+								className="icon-button icon-button--sm"
+								disabled={!previewFiles.has(song.id)}
+								aria-label={`${previewFiles.get(song.id)?.id === previewFileId && previewFileId ? "Stop" : "Play"} preview for ${song.title}`}
+								title={
+									previewFiles.get(song.id)?.id === previewFileId &&
+									previewFileId
+										? "Stop and rewind"
+										: (previewFiles.get(song.id)?.title ?? "No audio files")
+								}
+								onClick={() =>
+									onPreview(
+										previewFiles.get(song.id)?.id === previewFileId
+											? undefined
+											: previewFiles.get(song.id),
+									)
+								}
+							>
+								{previewFiles.get(song.id)?.id === previewFileId &&
+								previewFileId ? (
+									<Square size={12} fill="currentColor" />
+								) : (
+									<Play size={12} fill="currentColor" />
+								)}
+							</button>
+							<button
+								type="button"
+								onClick={() => onEdit(song.id)}
+								className="icon-button icon-button--sm"
+								aria-label={`Edit settings for ${song.title}`}
+								title="Edit song settings"
+							>
+								<Settings size={12} />
+							</button>
+						</div>
 					</td>
 					<td aria-hidden="true" />
 				</tr>
 			)),
 		[
+			previewFiles,
+			previewFileId,
+			onPreview,
 			sortedSongs,
 			showArtist,
 			sessionDates,
@@ -226,7 +263,7 @@ export function LibrarySongList({
 							}}
 						/>
 					))}
-					<col style={{ width: 56 }} />
+					<col style={{ width: 96 }} />
 					<col style={{ width: widths.title === undefined ? 0 : undefined }} />
 				</colgroup>
 				<thead className="sticky top-0 z-10 bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]">
@@ -306,7 +343,7 @@ export function LibrarySongList({
 						))}
 						<th
 							scope="col"
-							className="w-14 border-b border-[var(--color-border-plain)]"
+							className="w-24 border-b border-[var(--color-border-plain)]"
 						>
 							<span className="sr-only">Actions</span>
 						</th>

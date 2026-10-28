@@ -7,6 +7,7 @@ import type {
 } from "#/lib/audio-versions/types";
 import { getWaveformHeightPx } from "#/lib/audio-versions/ui-settings";
 import { normalizeVolumeDb } from "#/lib/audio-versions/waveform";
+import { useAudioVersions } from "#/providers/audio-versions-provider";
 import type { PlaybackState } from "#/providers/use-audio-versions-playback";
 import { reorderAudioFileIds } from "./reorder-audio-file-ids";
 import { WaveformCard } from "./waveform-card";
@@ -92,6 +93,8 @@ export function SongWorkspaceWaveformList({
 	onSelectFile,
 	onOpenUpload,
 }: SongWorkspaceWaveformListProps) {
+	const { getSongById, updateSong } = useAudioVersions();
+	const starredFileId = getSongById(songId)?.starredAudioFileId;
 	const [playRequest, setPlayRequest] = useState<{
 		fileId: string;
 		timeMs: number;
@@ -330,6 +333,19 @@ export function SongWorkspaceWaveformList({
 									<WaveformThumbnail
 										audioFile={audioFile}
 										blob={blobsByAudioId[audioFile.id]}
+										isStarred={starredFileId === audioFile.id}
+										onToggleStar={() => {
+											void updateSong(songId, {
+												starredAudioFileId:
+													starredFileId === audioFile.id ? null : audioFile.id,
+											}).catch((error) =>
+												window.alert(
+													error instanceof Error
+														? error.message
+														: "Could not save the starred file.",
+												),
+											);
+										}}
 										currentTimeMs={
 											playback.currentTimeByFileId[audioFile.id] ??
 											workspacePlayheadMsByFileId[audioFile.id] ??

@@ -9,6 +9,7 @@ import {
 	closeSharedAudioContext,
 	recoverSharedAudioContext,
 	resumeSharedAudioContext,
+	setAudioElementGain,
 	subscribeToAudioEngineGeneration,
 } from "#/lib/audio-versions/audio-engine";
 import type {
@@ -16,7 +17,7 @@ import type {
 	AudioVersionsSnapshot,
 	WorkspaceState,
 } from "#/lib/audio-versions/types";
-import { clampTime } from "#/lib/audio-versions/waveform";
+import { clampTime, volumeDbToGain } from "#/lib/audio-versions/waveform";
 import { getRemoteAudioUrl } from "#/lib/cloud/media";
 
 export interface PlaybackState {
@@ -167,6 +168,11 @@ export function useAudioVersionsPlayback({
 
 	const playAudioElement = useCallback(
 		async (fileId: string, element: HTMLAudioElement) => {
+			// Prepare and resume only during playback, avoiding native device probing on open.
+			const file = snapshotRef.current.audioFiles.find(
+				(entry) => entry.id === fileId,
+			);
+			setAudioElementGain(element, volumeDbToGain(file?.volumeDb ?? 0));
 			// Resume during the user gesture even if a fresh private URL needs a request.
 			const resumePromise = resumeSharedAudioContext();
 			const playPromise = (async () => {
@@ -179,10 +185,12 @@ export function useAudioVersionsPlayback({
 					await refreshAudioSource(fileId, element);
 				}
 				try {
+					if (audioRefs.current.get(fileId) !== element) return;
 					await element.play();
 				} catch (error) {
 					if (!isRemote || !element.error) throw error;
 					await refreshAudioSource(fileId, element, true);
+					if (audioRefs.current.get(fileId) !== element) return;
 					await element.play();
 				}
 			})();
@@ -194,7 +202,7 @@ export function useAudioVersionsPlayback({
 				resumeResult.status === "fulfilled" && resumeResult.value === true;
 			const played = playResult.status === "fulfilled";
 
-			if (!resumed || !played) {
+			if (!resumed || !played || audioRefs.current.get(fileId) !== element) {
 				if (!element.paused) {
 					element.pause();
 				}

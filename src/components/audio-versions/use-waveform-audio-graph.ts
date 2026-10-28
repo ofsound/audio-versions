@@ -1,8 +1,14 @@
-import { type MutableRefObject, useEffect, useSyncExternalStore } from "react";
 import {
-	connectAudioElement,
+	type MutableRefObject,
+	useEffect,
+	useRef,
+	useSyncExternalStore,
+} from "react";
+import {
 	getAudioEngineGeneration,
+	hasAudioElementGraph,
 	releaseAudioElement,
+	resumeSharedAudioContext,
 	setAudioElementGain,
 	subscribeToAudioEngineGeneration,
 } from "#/lib/audio-versions/audio-engine";
@@ -17,6 +23,8 @@ export function useWaveformAudioGraph({
 	audioRef,
 	volumeDb,
 }: UseWaveformAudioGraphOptions) {
+	const volumeRef = useRef(volumeDb);
+	volumeRef.current = volumeDb;
 	const audioEngineGeneration = useSyncExternalStore(
 		subscribeToAudioEngineGeneration,
 		getAudioEngineGeneration,
@@ -33,8 +41,15 @@ export function useWaveformAudioGraph({
 			return;
 		}
 
-		connectAudioElement(element);
+		// Native audio must only initialize on playback, never while opening a song.
+		const prepare = () => {
+			setAudioElementGain(element, volumeDbToGain(volumeRef.current));
+			void resumeSharedAudioContext();
+		};
+		element.addEventListener("play", prepare);
+		if (!element.paused) prepare();
 		return () => {
+			element.removeEventListener("play", prepare);
 			releaseAudioElement(element);
 		};
 	}, [audioEngineGeneration, audioRef]);
@@ -42,7 +57,8 @@ export function useWaveformAudioGraph({
 	useEffect(() => {
 		if (
 			getAudioEngineGeneration() === audioEngineGeneration &&
-			audioRef.current
+			audioRef.current &&
+			hasAudioElementGraph(audioRef.current)
 		) {
 			setAudioElementGain(audioRef.current, volumeDbToGain(volumeDb));
 		}

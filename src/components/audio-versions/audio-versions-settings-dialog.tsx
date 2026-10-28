@@ -36,96 +36,85 @@ export function AudioVersionsSettingsDialog({
 			titleId="settings-title"
 			onClose={onClose}
 			initialFocusRef={firstColorInputRef}
+			panelClassName="w-[calc(100vw-2rem)] max-w-[58rem]"
 		>
-			<div className="grid gap-8 p-5 sm:p-6">
-				<section className="grid gap-4">
-					{canSignOut ? (
-						<div className="py-2">
-							<div className="flex items-center justify-between gap-4">
-								<div className="min-w-0">
-									<div className="text-sm font-semibold text-[var(--color-text)]">
-										Account
-									</div>
-									{userEmail ? (
-										<div className="mt-1 truncate text-sm text-[var(--color-text-muted)]">
-											{userEmail}
-										</div>
-									) : null}
-								</div>
+			<div className="grid md:grid-cols-2">
+				<section
+					aria-labelledby="settings-appearance"
+					className="min-w-0 px-5 py-5 sm:px-6"
+				>
+					<h3
+						id="settings-appearance"
+						className="mb-2 text-lg font-semibold text-[var(--color-text)]"
+					>
+						Appearance
+					</h3>
+					<div className="grid min-h-[4.75rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[var(--color-border-plain)] py-4">
+						<div className="text-sm font-medium text-[var(--color-text)]">
+							Color theme
+						</div>
+						<fieldset
+							aria-label="Color theme"
+							className="grid h-9 w-36 shrink-0 grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-0.5 text-sm font-medium"
+						>
+							{(
+								[
+									{ value: "light", label: "Light", Icon: Sun },
+									{ value: "dark", label: "Dark", Icon: Moon },
+								] as const
+							).map(({ value, label, Icon }) => (
 								<button
+									key={value}
 									type="button"
-									onClick={() => void onSignOut()}
-									aria-label={userEmail ? `Sign out ${userEmail}` : "Sign out"}
-									className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
+									aria-pressed={theme === value}
+									onClick={() => setTheme(value)}
+									className={`inline-flex items-center justify-center gap-1.5 ${theme === value ? "bg-[var(--color-accent-surface)] text-[var(--color-text)] shadow-[inset_0_0_0_1px_var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
 								>
-									<LogOut size={18} />
-									Sign out
+									<Icon size={14} />
+									{label}
 								</button>
-							</div>
-						</div>
-					) : null}
-				</section>
-
-				<section className="grid gap-4">
-					<div className="py-2">
-						<div className="grid justify-items-start gap-3">
-							<div>
-								<div className="text-sm font-semibold text-[var(--color-text)]">
-									Color theme
-								</div>
-							</div>
-							<fieldset
-								aria-label="Color theme"
-								className="grid h-14 w-64 grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-1"
-							>
-								{(
-									[
-										{ value: "light", label: "Light", Icon: Sun },
-										{ value: "dark", label: "Dark", Icon: Moon },
-									] as const
-								).map(({ value, label, Icon }) => (
-									<button
-										key={value}
-										type="button"
-										aria-pressed={theme === value}
-										onClick={() => setTheme(value)}
-										className={`inline-flex items-center justify-center gap-2 text-base font-semibold ${theme === value ? "bg-[var(--color-accent)] text-[var(--color-on-accent)]" : "text-[var(--color-text-muted)]"}`}
-									>
-										<Icon size={18} />
-										{label}
-									</button>
-								))}
-							</fieldset>
-						</div>
+							))}
+						</fieldset>
 					</div>
-					<div className="grid gap-4 md:grid-cols-2">
-						{theme === "light" ? (
-							<ColorSettingField
-								key="light"
-								label="Light accent"
-								value={uiSettings.accentLightPrimary}
-								onChange={(value) =>
-									onUpdateUiSettings({ accentLightPrimary: value })
-								}
-								inputRef={firstColorInputRef}
-							/>
-						) : (
-							<ColorSettingField
-								key="dark"
-								label="Dark accent"
-								value={uiSettings.accentDarkPrimary}
-								onChange={(value) =>
-									onUpdateUiSettings({ accentDarkPrimary: value })
-								}
-								inputRef={firstColorInputRef}
-							/>
-						)}
-					</div>
+					<ColorSettingField
+						key={theme}
+						label={theme === "light" ? "Light accent" : "Dark accent"}
+						value={
+							theme === "light"
+								? uiSettings.accentLightPrimary
+								: uiSettings.accentDarkPrimary
+						}
+						onChange={(value) =>
+							onUpdateUiSettings(
+								theme === "light"
+									? { accentLightPrimary: value }
+									: { accentDarkPrimary: value },
+							)
+						}
+						inputRef={firstColorInputRef}
+					/>
+					<ToggleSettingRow
+						label="Focus Rings"
+						description="Highlight controls when using the keyboard."
+						enabled={uiSettings.keyboardFocusHighlights}
+						onChange={(enabled) =>
+							void onUpdateUiSettings({ keyboardFocusHighlights: enabled })
+						}
+					/>
 				</section>
-
-				<section className="grid gap-6">
-					<ToggleSettingCard
+				<section
+					aria-labelledby="settings-workspace"
+					className="min-w-0 border-t border-[var(--color-border-plain)] px-5 py-5 sm:px-6 md:border-t-0 md:border-l"
+				>
+					<h3
+						id="settings-workspace"
+						className="mb-2 text-lg font-semibold text-[var(--color-text)]"
+					>
+						Workspace
+					</h3>
+					<ToggleSettingRow
 						label="Song Notes First"
+						description="Place song notes in the left column."
 						enabled={uiSettings.songNotesFirst}
 						enabledLabel="On"
 						disabledLabel="Off"
@@ -133,40 +122,58 @@ export function AudioVersionsSettingsDialog({
 							void onUpdateUiSettings({ songNotesFirst: enabled })
 						}
 					/>
-					<ToggleSettingCard
+					<ToggleSettingRow
 						label="Artist"
+						description="Show artist fields and the library column."
 						enabled={uiSettings.showArtist}
 						onChange={(enabled) =>
 							void onUpdateUiSettings({ showArtist: enabled })
 						}
 					/>
-					<ToggleSettingCard
+					<ToggleSettingRow
 						label="Project"
+						description="Show project fields in song settings."
 						enabled={uiSettings.showProject}
 						onChange={(enabled) =>
 							void onUpdateUiSettings({ showProject: enabled })
 						}
 					/>
-					<ToggleSettingCard
-						label="Focus Rings"
-						enabled={uiSettings.keyboardFocusHighlights}
-						onChange={(enabled) =>
-							void onUpdateUiSettings({ keyboardFocusHighlights: enabled })
-						}
-					/>
 				</section>
-
-				<section className="border-t border-[var(--color-border-plain)] pt-6">
+			</div>
+			<footer className="flex flex-col gap-4 border-t border-[var(--color-border-plain)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+				<div className="min-w-0">
+					<div className="text-sm font-medium text-[var(--color-text)]">
+						{canSignOut ? "Account" : "Local library"}
+					</div>
+					<p
+						className="mt-1 truncate text-sm text-[var(--color-text-muted)]"
+						title={userEmail}
+					>
+						{canSignOut ? userEmail : "Stored on this device"}
+					</p>
+				</div>
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
 					<Link
 						to="/trash"
 						onClick={onClose}
-						className="action-secondary inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold no-underline"
+						className="action-secondary inline-flex h-10 items-center justify-center gap-2 px-3 text-sm font-medium no-underline"
 					>
-						<Trash2 size={18} />
+						<Trash2 size={15} />
 						Open Trash
 					</Link>
-				</section>
-			</div>
+					{canSignOut && (
+						<button
+							type="button"
+							onClick={() => void onSignOut()}
+							aria-label={userEmail ? `Sign out ${userEmail}` : "Sign out"}
+							className="action-secondary inline-flex h-10 items-center justify-center gap-2 px-3 text-sm font-medium"
+						>
+							<LogOut size={15} />
+							Sign out
+						</button>
+					)}
+				</div>
+			</footer>
 		</SongModal>
 	);
 }
@@ -189,11 +196,11 @@ function ColorSettingField({
 	});
 
 	return (
-		<label className="grid gap-2">
-			<span className="text-sm font-semibold text-[var(--color-text)]">
+		<label className="grid min-h-[4.75rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[var(--color-border-plain)] py-4">
+			<span className="text-sm font-medium text-[var(--color-text)]">
 				{label}
 			</span>
-			<div className="flex h-12 items-center gap-3 text-[var(--color-text)]">
+			<div className="flex h-9 w-36 items-center gap-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] px-1.5 text-[var(--color-text)]">
 				<input
 					ref={inputRef}
 					type="color"
@@ -201,9 +208,9 @@ function ColorSettingField({
 					onChange={(event) => bufferedValue.setDraft(event.target.value)}
 					onBlur={() => void bufferedValue.flush()}
 					aria-label={label}
-					className="h-11 w-16 shrink-0 cursor-pointer border-0 bg-transparent p-0"
+					className="h-7 w-9 shrink-0 cursor-pointer border-0 bg-transparent p-0"
 				/>
-				<span className="text-sm font-semibold uppercase text-[var(--color-text)]">
+				<span className="font-mono text-xs uppercase text-[var(--color-text)]">
 					{bufferedValue.draft}
 				</span>
 			</div>
@@ -211,27 +218,34 @@ function ColorSettingField({
 	);
 }
 
-function ToggleSettingCard({
+function ToggleSettingRow({
 	label,
+	description,
 	enabled,
 	onChange,
 	enabledLabel = "Show",
 	disabledLabel = "Hide",
 }: {
 	label: string;
+	description: string;
 	enabled: boolean;
 	onChange: (enabled: boolean) => void;
 	enabledLabel?: string;
 	disabledLabel?: string;
 }) {
 	return (
-		<div className="grid justify-items-start gap-2 py-2">
-			<div className="text-sm font-semibold text-[var(--color-text)]">
-				{label}
+		<div className="grid min-h-[4.75rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[var(--color-border-plain)] py-4 last:border-b-0">
+			<div className="min-w-0">
+				<div className="text-sm font-medium text-[var(--color-text)]">
+					{label}
+				</div>
+				<p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
+					{description}
+				</p>
 			</div>
 			<fieldset
 				aria-label={label}
-				className="grid h-8 w-[9.25rem] grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-0.5 text-xs font-semibold"
+				className="grid h-9 w-36 shrink-0 grid-cols-2 border border-[var(--color-border-plain)] bg-[var(--color-surface)] p-0.5 text-sm font-medium"
 			>
 				{[
 					{ value: true, label: enabledLabel },
@@ -244,7 +258,7 @@ function ToggleSettingCard({
 						onClick={() => onChange(option.value)}
 						className={
 							enabled === option.value
-								? "bg-[var(--color-accent)] text-[var(--color-on-accent)]"
+								? "bg-[var(--color-accent-surface)] text-[var(--color-text)] shadow-[inset_0_0_0_1px_var(--color-accent)]"
 								: "text-[var(--color-text-muted)]"
 						}
 					>

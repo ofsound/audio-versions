@@ -2,9 +2,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { FolderOpenDot, Plus, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { resumeSharedAudioContext } from "#/lib/audio-versions/audio-engine";
 import { formatAudioFileSessionDateRange } from "#/lib/audio-versions/dates";
+import { getSongPreviewFile } from "#/lib/audio-versions/song-preview";
+import type { AudioFileRecord } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useLibraryHeaderActionSlot } from "./app-chrome";
+import { LibraryPreviewAudio } from "./library-preview-audio";
 import { LibrarySongList } from "./library-song-list";
 import { SongModal } from "./song-modal";
 import { SongSettingsDialog } from "./song-settings-dialog";
@@ -17,6 +21,7 @@ export function LibraryView() {
 		ready,
 		songs,
 		audioFiles,
+		blobsByAudioId,
 		annotations,
 		settings,
 		createSong,
@@ -25,6 +30,21 @@ export function LibraryView() {
 		resetSongPlayheads,
 		updateUiSettings,
 	} = useAudioVersions();
+	const [previewFileId, setPreviewFileId] = useState<string>();
+	const [previewError, setPreviewError] = useState<string | null>(null);
+	const previewFiles = useMemo(() => {
+		const files = new Map<string, AudioFileRecord>();
+		for (const song of songs) {
+			const file = getSongPreviewFile(song, audioFiles);
+			if (file) files.set(song.id, file);
+		}
+		return files;
+	}, [songs, audioFiles]);
+	const previewFile = audioFiles.find(
+		(file) =>
+			file.id === previewFileId &&
+			songs.some((song) => song.id === file.songId),
+	);
 	const [title, setTitle] = useState("");
 	const [artist, setArtist] = useState("");
 	const [project, setProject] = useState("");
@@ -196,12 +216,29 @@ export function LibraryView() {
 	return (
 		<>
 			{renderedCreateSongTrigger}
+			{previewFile && (
+				<LibraryPreviewAudio
+					key={previewFile.id}
+					audioFile={previewFile}
+					blob={blobsByAudioId[previewFile.id]}
+					onStop={() => setPreviewFileId(undefined)}
+					onError={(message) => {
+						setPreviewError(message);
+						setPreviewFileId(undefined);
+					}}
+				/>
+			)}
 			<main
 				className={`flex w-full flex-col gap-8 px-3 py-8 ${
 					isModalOpen ? "pointer-events-none" : ""
 				}`}
 				aria-hidden={isModalOpen}
 			>
+				{previewError && (
+					<p role="alert" className="text-sm text-[var(--color-text-muted)]">
+						{previewError}
+					</p>
+				)}
 				{!ready ? (
 					<div className="flex min-h-[calc(100dvh-9rem)] flex-1 items-center justify-center">
 						<section className="panel-shell w-fit max-w-[min(28rem,100%)] px-6 py-5 text-sm text-[var(--color-text-muted)]">
@@ -240,6 +277,13 @@ export function LibraryView() {
 							</section>
 						) : (
 							<LibrarySongList
+								previewFiles={previewFiles}
+								previewFileId={previewFileId}
+								onPreview={(file) => {
+									setPreviewError(null);
+									if (file) void resumeSharedAudioContext();
+									setPreviewFileId(file?.id);
+								}}
 								columnWidths={settings.ui.libraryColumnWidths}
 								onColumnWidthsChange={(widths) => {
 									void updateUiSettings({ libraryColumnWidths: widths });

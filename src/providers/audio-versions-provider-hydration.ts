@@ -8,6 +8,7 @@ import {
 	type AudioVersionsSnapshot,
 	createEmptySettings,
 	normalizeAudioVersionsSettings,
+	type Song,
 } from "#/lib/audio-versions/types";
 import {
 	generateWaveformFromFile,
@@ -78,7 +79,7 @@ export async function normalizeLoadedSnapshot(
 					? playlist.sortOrder
 					: index,
 			})),
-			songs: loadedSnapshot.songs.map((song) => ({
+			songs: loadedSnapshot.songs.map<Song>((song) => ({
 				id: song.id,
 				...(song.noteTabs ? { noteTabs: song.noteTabs } : {}),
 				title: song.title,
@@ -87,6 +88,7 @@ export async function normalizeLoadedSnapshot(
 				generalNotes: normalizeJournalText(song.generalNotes),
 				...(song.galleryImages ? { galleryImages: song.galleryImages } : {}),
 				audioFileOrder: song.audioFileOrder,
+				starredAudioFileId: song.starredAudioFileId ?? null,
 				createdAt: song.createdAt,
 				updatedAt: song.updatedAt,
 				...(song.deletedAt ? { deletedAt: song.deletedAt } : {}),

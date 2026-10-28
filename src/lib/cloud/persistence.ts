@@ -11,6 +11,7 @@ import type {
 import { getSupabaseBrowserClient } from "./supabase";
 
 interface SongRow {
+	starred_audio_file_id?: string | null;
 	note_tabs?: Song["noteTabs"];
 	gallery_images?: Song["galleryImages"];
 	id: string;
@@ -112,6 +113,7 @@ function songToRow(userId: string, song: Song) {
 		project: song.project,
 		general_notes: song.generalNotes,
 		audio_file_order: song.audioFileOrder,
+		starred_audio_file_id: song.starredAudioFileId ?? null,
 		created_at: song.createdAt,
 		updated_at: song.updatedAt,
 		deleted_at: song.deletedAt ?? null,
@@ -183,6 +185,7 @@ function songFromRow(row: SongRow): Song {
 		project: row.project,
 		generalNotes: row.general_notes,
 		audioFileOrder: row.audio_file_order,
+		starredAudioFileId: row.starred_audio_file_id ?? null,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 		...(row.deleted_at ? { deletedAt: row.deleted_at } : {}),

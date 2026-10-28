@@ -67,6 +67,7 @@ export interface SongNoteTab {
 }
 
 export interface Song {
+	starredAudioFileId?: string | null;
 	noteTabs?: SongNoteTab[];
 	galleryImages?: GalleryImage[];
 	id: string;

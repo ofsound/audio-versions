@@ -432,11 +432,15 @@ describe("WaveformCard", () => {
 		expect(children.indexOf(decreaseButton)).toBe(1);
 	});
 
-	it("updates the gain node when the stored decibel value changes", async () => {
+	it("initializes audio on playback and updates the gain when the stored decibel value changes", async () => {
 		const { rerender } = renderWaveformCard({
 			audioFile: createAudioFile({ volumeDb: 0 }),
 		});
 
+		expect(MockAudioContext.instances).toHaveLength(0);
+		const audio = document.querySelector("audio");
+		if (!audio) throw new Error("Missing audio");
+		fireEvent.play(audio);
 		await waitFor(() => {
 			expect(MockAudioContext.instances).toHaveLength(1);
 		});

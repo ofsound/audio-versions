@@ -98,6 +98,10 @@ export function connectAudioElement(element: HTMLAudioElement) {
 	}
 }
 
+export function hasAudioElementGraph(element: HTMLAudioElement) {
+	return audioGraphs.has(element);
+}
+
 export function setAudioElementGain(element: HTMLAudioElement, gain: number) {
 	const graph = connectAudioElement(element);
 	if (!graph) {

@@ -4,9 +4,31 @@ import {
 	type AudioVersionsSnapshot,
 	createEmptySettings,
 } from "#/lib/audio-versions/types";
-import { normalizeLoadedSnapshot } from "./audio-versions-provider-hydration";
+import {
+	EMPTY_SNAPSHOT,
+	normalizeLoadedSnapshot,
+} from "./audio-versions-provider-hydration";
 
 describe("normalizeLoadedSnapshot", () => {
+	it("keeps the starred preview file when restoring a saved library", async () => {
+		const song = {
+			id: "song-1",
+			title: "Mix",
+			artist: "",
+			project: "",
+			generalNotes: "",
+			audioFileOrder: ["file-1"],
+			starredAudioFileId: "file-1",
+			createdAt: "today",
+			updatedAt: "today",
+		};
+		const { normalizedSnapshot } = await normalizeLoadedSnapshot({
+			...EMPTY_SNAPSHOT,
+			songs: [song],
+		});
+		expect(normalizedSnapshot.songs[0].starredAudioFileId).toBe("file-1");
+	});
+
 	it("backfills missing session dates from createdAt during hydration", async () => {
 		const snapshot = {
 			songs: [],

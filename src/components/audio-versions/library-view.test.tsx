@@ -68,6 +68,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("#/providers/audio-versions-provider", () => ({
 	useAudioVersions: () => ({
 		ready: true,
+		blobsByAudioId: {},
 		error: null,
 		songs,
 		audioFiles,

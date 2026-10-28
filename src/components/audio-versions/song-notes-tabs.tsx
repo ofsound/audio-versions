@@ -1,4 +1,4 @@
-import { MoreHorizontal, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { DEBOUNCE_MS } from "#/lib/audio-versions/debounce-delays";
 import { getSongNoteTabs } from "#/lib/audio-versions/song-note-tabs";
@@ -10,7 +10,6 @@ import type {
 } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { JournalEditor } from "./journal-editor";
-import { useCloseOnEscape } from "./use-close-on-escape";
 import { useDebouncedAsyncCallback } from "./use-debounced-async-callback";
 import type { useSongWorkspaceHistory } from "./use-song-workspace-history";
 
@@ -130,20 +129,23 @@ export function SongNotesTabs({
 	};
 	const [local, setLocal] = useState(initial);
 	const validIds = new Set(tabs.map((tab) => tab.id));
-	const openIds = local.openIds.filter((id) => validIds.has(id));
+	const openIds = [
+		...local.openIds.filter((id) => validIds.has(id)),
+		...tabs
+			.filter((tab) => !local.openIds.includes(tab.id))
+			.map((tab) => tab.id),
+	];
 	const activeId =
 		local.activeId && openIds.includes(local.activeId)
 			? local.activeId
 			: (openIds.at(-1) ?? null);
-	const active = tabs.find((tab) => tab.id === activeId);
-	const [menu, setMenu] = useState<"actions" | "rename" | null>(null);
+	const [renamingId, setRenamingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const shell = useRef<HTMLDivElement>(null);
 	const tabList = useRef<HTMLDivElement>(null);
-	const popup = useRef<HTMLDivElement>(null);
-	const toolbar = useRef<HTMLDivElement>(null);
+	const addButton = useRef<HTMLButtonElement>(null);
 	const nameInput = useRef<HTMLInputElement>(null);
 	useLayoutEffect(() => {
 		if (!activeId || !tabList.current) return;
@@ -157,8 +159,11 @@ export function SongNotesTabs({
 			tabList.current.scrollLeft -= bounds.left - selected.left + 8;
 	}, [activeId]);
 	useEffect(() => {
-		if (menu === "rename") nameInput.current?.focus();
-	}, [menu]);
+		if (renamingId) {
+			nameInput.current?.focus();
+			nameInput.current?.select();
+		}
+	}, [renamingId]);
 	const saveUi = (next: typeof local) => {
 		setLocal(next);
 		onTabChange?.(next.activeId);
@@ -174,7 +179,7 @@ export function SongNotesTabs({
 					.getElementById(`note-panel-${id}`)
 					?.querySelector<HTMLElement>(".cm-content")
 					?.focus({ preventScroll: true });
-			else toolbar.current?.querySelector<HTMLButtonElement>("button")?.focus();
+			else addButton.current?.focus();
 		});
 	};
 	const activate = (id: string, focus = true) => {
@@ -182,7 +187,7 @@ export function SongNotesTabs({
 			openIds: openIds.includes(id) ? openIds : [...openIds, id],
 			activeId: id,
 		});
-		setMenu(null);
+		setRenamingId(null);
 		if (focus) focusEditor(id);
 	};
 	const close = (id: string) => {
@@ -198,14 +203,13 @@ export function SongNotesTabs({
 		);
 	};
 	const requestedRef = useRef<string | undefined>(undefined);
-	const cycleState = useRef({ openIds, activeId, activate, menu });
-	cycleState.current = { openIds, activeId, activate, menu };
+	const cycleState = useRef({ openIds, activeId, activate, renamingId });
+	cycleState.current = { openIds, activeId, activate, renamingId };
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			const direction = noteTabCycleDirection(event);
 			const state = cycleState.current;
-			if (!direction || state.openIds.length < 2 || state.menu === "rename")
-				return;
+			if (!direction || state.openIds.length < 2 || state.renamingId) return;
 			if (shell.current?.closest('[aria-hidden="true"]')) return;
 			const modal = document.querySelector(
 				'[role="dialog"][aria-modal="true"]',
@@ -246,24 +250,6 @@ export function SongNotesTabs({
 			activate(requestedTabId, false);
 		}
 	});
-	useCloseOnEscape(Boolean(menu), () => {
-		const selector = '[aria-label="Note tab actions"]';
-		setMenu(null);
-		toolbar.current?.querySelector<HTMLElement>(selector)?.focus();
-	});
-	useEffect(() => {
-		if (!menu) return;
-		const dismiss = (event: MouseEvent) => {
-			if (
-				event.target instanceof Node &&
-				!popup.current?.contains(event.target) &&
-				!toolbar.current?.contains(event.target)
-			)
-				setMenu(null);
-		};
-		document.addEventListener("mousedown", dismiss);
-		return () => document.removeEventListener("mousedown", dismiss);
-	}, [menu]);
 	const task = async (action: () => Promise<void>) => {
 		if (busy) return;
 		setBusy(true);
@@ -298,40 +284,6 @@ export function SongNotesTabs({
 			data-song-notes-tabs
 		>
 			<div
-				ref={toolbar}
-				className="flex h-16 shrink-0 items-center justify-between gap-2 px-6"
-			>
-				<span className="field-label workspace-section-heading">
-					Song Notes
-				</span>
-				<div className="flex items-center gap-1">
-					<button
-						type="button"
-						className="icon-button"
-						aria-label="New note tab"
-						title="New note tab"
-						disabled={busy}
-						onClick={create}
-					>
-						<Plus size={16} />
-					</button>
-					<button
-						type="button"
-						className="icon-button"
-						aria-label="Note tab actions"
-						title="Note tab actions"
-						disabled={!active && openIds.length === tabs.length}
-						aria-expanded={menu === "actions" || menu === "rename"}
-						onClick={() => {
-							setError(null);
-							setMenu(menu === "actions" ? null : "actions");
-						}}
-					>
-						<MoreHorizontal size={16} />
-					</button>
-				</div>
-			</div>
-			<div
 				ref={tabList}
 				role="tablist"
 				aria-label="Song note tabs"
@@ -340,8 +292,33 @@ export function SongNotesTabs({
 				{openTabs.map((tab) => (
 					<div
 						key={tab.id}
-						className={`song-note-tab relative flex shrink-0 items-center border ${tab.id === activeId ? "song-note-tab--active border-[var(--color-border-strong)] bg-[var(--color-surface)]" : "border-transparent"}`}
+						className={`song-note-tab relative flex shrink-0 items-center px-2 border ${tab.id === activeId ? "song-note-tab--active border-[var(--color-border-strong)] bg-[var(--color-surface)]" : "border-transparent"}`}
 					>
+						<button
+							type="button"
+							className="ml-1 p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+							aria-label={`Delete ${tab.name} tab`}
+							title={
+								tabs.length <= 1
+									? "Keep at least one note tab"
+									: "Delete tab and notes"
+							}
+							disabled={busy || tabs.length <= 1}
+							onClick={() => {
+								if (
+									!window.confirm(
+										`Delete “${tab.name}” and all of its notes? This cannot be undone.`,
+									)
+								)
+									return;
+								void task(async () => {
+									await deleteNoteTab(song.id, tab.id);
+									close(tab.id);
+								});
+							}}
+						>
+							<X size={12} />
+						</button>
 						<button
 							type="button"
 							role="tab"
@@ -349,13 +326,14 @@ export function SongNotesTabs({
 							aria-controls={`note-panel-${tab.id}`}
 							aria-selected={tab.id === activeId}
 							tabIndex={tab.id === activeId ? 0 : -1}
-							className={`max-w-44 truncate py-2 pr-2 pl-3 text-sm ${tab.id === activeId ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"}`}
+							hidden={renamingId === tab.id}
+							className={`max-w-44 truncate py-2 pr-3 pl-1 text-[15px] ${tab.id === activeId ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"}`}
 							title={`${tab.name} — double-click to rename`}
-							onClick={() => activate(tab.id)}
+							onClick={() => activate(tab.id, false)}
 							onDoubleClick={() => {
-								activate(tab.id);
+								activate(tab.id, false);
 								setName(tab.name);
-								setMenu("rename");
+								setRenamingId(tab.id);
 							}}
 							onKeyDown={(event) => {
 								if (
@@ -388,117 +366,58 @@ export function SongNotesTabs({
 						>
 							{tab.name}
 						</button>
-						<button
-							type="button"
-							className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-							aria-label={`Close ${tab.name} tab`}
-							title="Close tab (notes stay saved)"
-							onClick={() => close(tab.id)}
-						>
-							<X size={12} />
-						</button>
+						{renamingId === tab.id && (
+							<input
+								ref={nameInput}
+								aria-label="Tab name"
+								value={name}
+								maxLength={80}
+								disabled={busy}
+								className="my-1 mr-2 w-36 border border-[var(--color-border-strong)] bg-transparent px-1 text-[15px] text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+								onChange={(event) => setName(event.target.value)}
+								onBlur={() => {
+									if (!name.trim() || name === tab.name) {
+										setRenamingId(null);
+										return;
+									}
+									void task(async () => {
+										await updateNoteTab(song.id, tab.id, { name });
+										setRenamingId(null);
+									});
+								}}
+								onKeyDown={(event) => {
+									event.stopPropagation();
+									if (event.key === "Enter") {
+										event.preventDefault();
+										event.currentTarget.blur();
+									} else if (event.key === "Escape") {
+										event.preventDefault();
+										setRenamingId(null);
+										window.requestAnimationFrame(() => {
+											document.getElementById(`note-tab-${tab.id}`)?.focus();
+										});
+									}
+								}}
+							/>
+						)}
 					</div>
 				))}
+				<button
+					ref={addButton}
+					type="button"
+					className="my-1 flex h-7 w-7 shrink-0 items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+					aria-label="New note tab"
+					title="New note tab"
+					disabled={busy}
+					onClick={create}
+				>
+					<Plus size={14} />
+				</button>
 			</div>
-			{error && !menu && (
+			{error && (
 				<p role="alert" className="px-6 text-sm">
 					{error}
 				</p>
-			)}
-			{menu && (
-				<div
-					ref={popup}
-					className="absolute top-14 right-4 z-30 grid max-h-[min(32rem,70dvh)] overflow-y-auto w-72 max-w-[calc(100%-2rem)] gap-3 border border-[var(--color-border-strong)] bg-[var(--color-surface-overlay)] p-3 shadow-xl"
-					role="dialog"
-					aria-label="Note tab actions"
-				>
-					{menu === "rename" ? (
-						<form
-							className="grid gap-2"
-							onSubmit={(event) => {
-								event.preventDefault();
-								if (active)
-									void task(async () => {
-										await updateNoteTab(song.id, active.id, { name });
-										setMenu(null);
-									});
-							}}
-						>
-							<label className="grid gap-1 text-sm">
-								Tab name
-								<input
-									ref={nameInput}
-									value={name}
-									maxLength={80}
-									onChange={(event) => setName(event.target.value)}
-									className="input-field w-full"
-									placeholder="Tab name"
-								/>
-							</label>
-							<button
-								type="submit"
-								disabled={busy || !name.trim()}
-								className="action-secondary px-3 py-2 text-sm"
-							>
-								Save name
-							</button>
-						</form>
-					) : (
-						<>
-							<button
-								type="button"
-								className="action-secondary px-3 py-2 text-left text-sm"
-								disabled={!active}
-								onClick={() => {
-									setName(active?.name ?? "");
-									setMenu("rename");
-								}}
-							>
-								Rename tab
-							</button>
-							<button
-								type="button"
-								disabled={busy || tabs.length <= 1}
-								className="action-secondary px-3 py-2 text-left text-sm"
-								onClick={() => {
-									if (
-										!active ||
-										!window.confirm(
-											`Delete “${active.name}” and all of its notes? This cannot be undone. Closing a tab keeps its notes instead.`,
-										)
-									)
-										return;
-									const id = active.id;
-									void task(async () => {
-										await deleteNoteTab(song.id, id);
-										close(id);
-										setMenu(null);
-									});
-								}}
-							>
-								Delete notes…
-							</button>
-						</>
-					)}
-					{menu === "actions" &&
-						tabs
-							.filter((tab) => !openIds.includes(tab.id))
-							.map((tab) => (
-								<button
-									type="button"
-									key={tab.id}
-									className="action-secondary truncate px-3 py-2 text-left text-sm"
-									onClick={() => activate(tab.id)}
-								>
-									Reopen {tab.name}
-								</button>
-							))}
-					{error && (
-						<p role="alert" className="text-sm">
-							{error}
-						</p>
-					)}
-				</div>
 			)}
 			{openTabs.map((tab) => (
 				<div
@@ -528,18 +447,6 @@ export function SongNotesTabs({
 					/>
 				</div>
 			))}
-			{!active && (
-				<div className="grid flex-1 content-center justify-items-center gap-3 px-6 py-8 text-center text-sm text-[var(--color-text-muted)]">
-					<p>All note tabs are closed. Your notes are still saved.</p>
-					<button
-						type="button"
-						className="action-secondary px-3 py-2"
-						onClick={() => setMenu("actions")}
-					>
-						Reopen tab
-					</button>
-				</div>
-			)}
 		</div>
 	);
 }

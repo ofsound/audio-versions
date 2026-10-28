@@ -173,50 +173,64 @@ describe("named Song Notes interface", () => {
 			}),
 		);
 	});
-	it("closes without deleting, reopens saved tabs, and renames without replacing their content", async () => {
+	it("renames inline without replacing content and cancels with Escape", async () => {
 		render(<Harness />);
-		fireEvent.click(screen.getByRole("button", { name: "Close Mixing tab" }));
-		expect(screen.queryByRole("tab", { name: "Mixing" })).toBeNull();
-		expect(provider.deleteNoteTab).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Reopen tab" }));
-		fireEvent.click(screen.getByRole("button", { name: "Reopen Mixing" }));
-		expect(currentEditor().state.doc.toString()).toBe("Mixing notes");
+		expect(
+			screen.queryByRole("button", { name: "Note tab actions" }),
+		).toBeNull();
+		const editor = currentEditor();
 		fireEvent.doubleClick(screen.getByRole("tab", { name: "Mixing" }));
-		fireEvent.change(screen.getByRole("textbox", { name: "Tab name" }), {
-			target: { value: "Final mix" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+		const input = screen.getByRole("textbox", { name: "Tab name" });
+		expect(document.activeElement).toBe(input);
+		fireEvent.change(input, { target: { value: "Final mix" } });
+		fireEvent.keyDown(input, { key: "Enter" });
 		await screen.findByRole("tab", { name: "Final mix" });
-		expect(currentEditor().state.doc.toString()).toBe("Mixing notes");
+		expect(currentEditor()).toBe(editor);
+		expect(editor.state.doc.toString()).toBe("Mixing notes");
+		provider.updateNoteTab.mockClear();
+		fireEvent.doubleClick(screen.getByRole("tab", { name: "Final mix" }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Tab name" }), {
+			target: { value: "Discard this" },
+		});
+		fireEvent.keyDown(screen.getByRole("textbox", { name: "Tab name" }), {
+			key: "Escape",
+		});
+		expect(screen.getByRole("tab", { name: "Final mix" })).toBeTruthy();
+		expect(provider.updateNoteTab).not.toHaveBeenCalled();
 	});
-	it("opens the requested closed document and requires confirmation for deletion", async () => {
+	it("shows every saved tab and confirms before deleting its notes", async () => {
 		render(<Harness requestedTabId="record" />);
+		expect(screen.getByRole("tab", { name: "Mixing" })).toBeTruthy();
 		await waitFor(() =>
 			expect(currentEditor().state.doc.toString()).toBe("Mic placement"),
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Note tab actions" }));
-		vi.spyOn(window, "confirm").mockReturnValue(false);
-		fireEvent.click(screen.getByRole("button", { name: "Delete notes…" }));
+		const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete Recording tab" }),
+		);
+		expect(confirm).toHaveBeenCalledWith(
+			expect.stringContaining("all of its notes"),
+		);
 		expect(provider.deleteNoteTab).not.toHaveBeenCalled();
-		vi.mocked(window.confirm).mockReturnValue(true);
-		fireEvent.click(screen.getByRole("button", { name: "Delete notes…" }));
+		expect(screen.getByRole("tab", { name: "Recording" })).toBeTruthy();
+		confirm.mockReturnValue(true);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete Recording tab" }),
+		);
 		await waitFor(() =>
 			expect(screen.queryByRole("tab", { name: "Recording" })).toBeNull(),
 		);
 		expect(provider.deleteNoteTab).toHaveBeenCalledWith("song", "record");
+		expect(currentEditor().state.doc.toString()).toBe("Mixing notes");
+		expect(
+			screen.getByRole<HTMLButtonElement>("button", {
+				name: "Delete Mixing tab",
+			}).disabled,
+		).toBe(true);
 	});
 	it("cycles open note tabs with command-shift brackets", async () => {
 		render(<Harness />);
-		fireEvent.keyDown(window, {
-			key: "{",
-			code: "BracketLeft",
-			metaKey: true,
-			shiftKey: true,
-		});
-		expect(
-			screen.getByRole("tab", { name: "Mixing" }).getAttribute("aria-selected"),
-		).toBe("true");
-		expect(screen.queryByRole("tab", { name: "Recording" })).toBeNull();
+		expect(screen.getByRole("tab", { name: "Recording" })).toBeTruthy();
 
 		cleanup();
 		render(<Harness requestedTabId="record" />);

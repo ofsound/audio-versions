@@ -8,6 +8,7 @@ import { useModalFocusTrap } from "./use-modal-focus-trap";
 
 interface SongModalProps {
 	wide?: boolean;
+	panelClassName?: string;
 	onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 	children: React.ReactNode;
 	initialFocusRef?: MutableRefObject<HTMLElement | null>;
@@ -19,6 +20,7 @@ interface SongModalProps {
 export function SongModal({
 	children,
 	wide = false,
+	panelClassName,
 	onKeyDown,
 	initialFocusRef,
 	onClose,
@@ -57,7 +59,7 @@ export function SongModal({
 				aria-modal="true"
 				aria-labelledby={titleId}
 				tabIndex={-1}
-				className={`song-modal__panel w-[calc(100vw-2rem)] ${wide ? "max-w-[calc(100vw-2rem)] sm:w-[calc(100vw-5rem)]" : "max-w-[72rem] sm:w-[65vw]"}`}
+				className={`song-modal__panel ${panelClassName ?? (wide ? "w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-[calc(100vw-5rem)]" : "w-[calc(100vw-2rem)] max-w-[72rem] sm:w-[65vw]")}`}
 			>
 				<div className="flex items-start justify-between gap-4 border-b border-[var(--color-border-plain)] px-5 py-4 sm:px-6">
 					<div className="min-w-0">

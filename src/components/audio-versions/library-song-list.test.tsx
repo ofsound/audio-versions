@@ -22,6 +22,8 @@ const songs = [
 function view() {
 	return render(
 		<LibrarySongList
+			previewFiles={new Map()}
+			onPreview={vi.fn()}
 			songs={songs}
 			showArtist={false}
 			columnWidths={{ artist: 220 }}

@@ -31,6 +31,7 @@ import { useSongWorkspaceFileDrop } from "./use-song-workspace-file-drop";
 import { useSongWorkspaceHistory } from "./use-song-workspace-history";
 import { useSongWorkspaceRouting } from "./use-song-workspace-routing";
 import { useSongWorkspaceUpload } from "./use-song-workspace-upload";
+import { useWorkspacePanelWidths } from "./use-workspace-panel-widths";
 
 export function SongWorkspace({
 	songId,
@@ -166,11 +167,7 @@ export function SongWorkspace({
 	});
 
 	const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
-	const [panelWidths, setPanelWidths] = useState<{
-		left: number;
-		center: number;
-		right: number;
-	} | null>(null);
+	const [panelWidths, setPanelWidths] = useWorkspacePanelWidths();
 	const workspaceGridRef = useRef<HTMLElement | null>(null);
 	const [annotationDetailFocusId, setAnnotationDetailFocusId] = useState<
 		string | null
@@ -235,7 +232,7 @@ export function SongWorkspace({
 				};
 			});
 		},
-		[songNotesFirst],
+		[songNotesFirst, setPanelWidths],
 	);
 
 	const isModalOpen = isUploadOpen || Boolean(galleryImageId);

@@ -265,6 +265,7 @@ vi.mock("#/providers/audio-versions-provider", () => ({
 
 describe("SongWorkspace", () => {
 	beforeEach(() => {
+		localStorage.removeItem("audio-versions-workspace-panel-widths");
 		currentAudioFiles = [];
 		currentAnnotationsByFileId = {};
 		currentWorkspace = {

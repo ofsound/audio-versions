@@ -1,4 +1,4 @@
-import { Download, Trash2 } from "lucide-react";
+import { Download, Star, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { resolveAudioFileSessionDateLabel } from "#/lib/audio-versions/dates";
 import { downloadAudioFile } from "#/lib/audio-versions/download-audio-file";
@@ -16,6 +16,8 @@ interface WaveformThumbnailProps {
 	currentTimeMs: number;
 	deletingFile: boolean;
 	isSelected: boolean;
+	isStarred?: boolean;
+	onToggleStar?: () => void;
 	onDeleteFile: (fileId: string) => void;
 	onSelectFile: (fileId: string) => void;
 	onPlayFile: (fileId: string) => void;
@@ -27,6 +29,8 @@ export function WaveformThumbnail({
 	currentTimeMs,
 	deletingFile,
 	isSelected,
+	isStarred,
+	onToggleStar,
 	onDeleteFile,
 	onSelectFile,
 	onPlayFile,
@@ -108,7 +112,23 @@ export function WaveformThumbnail({
 					</div>
 				</div>
 			</div>
-			<div className="pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+			<div
+				className={`absolute top-2 right-2 z-20 flex items-center gap-1 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 ${isStarred ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+			>
+				<button
+					type="button"
+					onClick={onToggleStar}
+					className={`icon-button icon-button--sm waveform-thumbnail__action ${isStarred ? "text-[var(--color-accent)]" : ""}`}
+					aria-label={`${isStarred ? "Unstar" : "Star"} ${audioFile.title}`}
+					aria-pressed={Boolean(isStarred)}
+					title={
+						isStarred
+							? "Use newest file for index preview"
+							: "Use this file for index preview"
+					}
+				>
+					<Star size={12} fill={isStarred ? "currentColor" : "none"} />
+				</button>
 				<AddToPlaylistMenu
 					audioFileId={audioFile.id}
 					audioFileTitle={audioFile.title}

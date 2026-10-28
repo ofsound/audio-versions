@@ -28,9 +28,12 @@ it("selects on a single click and opens and plays on a double click", () => {
 	};
 	const onSelectFile = vi.fn();
 	const onPlayFile = vi.fn();
+	const onToggleStar = vi.fn();
 	render(
 		<WaveformThumbnail
 			audioFile={audioFile}
+			isStarred
+			onToggleStar={onToggleStar}
 			currentTimeMs={0}
 			isSelected={false}
 			deletingFile={false}
@@ -39,6 +42,11 @@ it("selects on a single click and opens and plays on a double click", () => {
 			onDeleteFile={vi.fn()}
 		/>,
 	);
+	const star = screen.getByRole("button", { name: "Unstar Mix" });
+	expect(star.getAttribute("aria-pressed")).toBe("true");
+	fireEvent.click(star);
+	expect(onToggleStar).toHaveBeenCalledOnce();
+	expect(onSelectFile).not.toHaveBeenCalled();
 	const thumbnail = screen.getByRole("button", { name: "Select Mix" });
 	fireEvent.click(thumbnail);
 	expect(onSelectFile).toHaveBeenCalledWith("file-1");

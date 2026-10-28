@@ -8,9 +8,12 @@ import {
 	BrowserWindow,
 	dialog,
 	nativeImage,
+	screen,
 	session,
 	shell,
 } from "electron";
+
+import { restoreWindowState, saveWindowState } from "./window-state.mjs";
 
 const ELECTRON_DIR = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(ELECTRON_DIR, "..");
@@ -160,10 +163,20 @@ function getAppIcon() {
 
 async function createMainWindow() {
 	const appIcon = getAppIcon();
+	const statePath = join(app.getPath("userData"), "window-state.json");
+	const savedState = restoreWindowState(statePath, screen.getAllDisplays());
 
 	const window = new BrowserWindow({
 		width: 1600,
 		height: 1080,
+		...(savedState
+			? {
+					x: savedState.x,
+					y: savedState.y,
+					width: savedState.width,
+					height: savedState.height,
+				}
+			: {}),
 		minWidth: 1200,
 		minHeight: 800,
 		show: false,
@@ -175,6 +188,17 @@ async function createMainWindow() {
 		},
 	});
 	mainWindow = window;
+	let saveTimer;
+	const persistBounds = () => {
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => saveWindowState(statePath, window), 250);
+	};
+	for (const event of ["resize", "move", "maximize", "unmaximize"])
+		window.on(event, persistBounds);
+	window.on("close", () => {
+		clearTimeout(saveTimer);
+		saveWindowState(statePath, window);
+	});
 	window.on("closed", () => {
 		if (mainWindow === window) {
 			mainWindow = null;
@@ -197,6 +221,7 @@ async function createMainWindow() {
 	);
 
 	window.once("ready-to-show", () => {
+		if (savedState?.maximized) window.maximize();
 		window.show();
 	});
 

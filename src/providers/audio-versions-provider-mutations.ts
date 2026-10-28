@@ -490,6 +490,10 @@ export function useAudioFileMutations({
 							song.id === targetFile.songId
 								? {
 										...song,
+										starredAudioFileId:
+											song.starredAudioFileId === audioFileId
+												? null
+												: song.starredAudioFileId,
 										audioFileOrder: song.audioFileOrder.filter(
 											(fileId) => fileId !== audioFileId,
 										),
