@@ -193,6 +193,8 @@ export function WaveformCard({
 
 	useWaveformCanvas({
 		canvasRef,
+		getAudioElement: () => audioRef.current,
+		isPlaying,
 		currentTimeMs,
 		isSelected,
 		surfaceRef: canvasSurfaceRef,

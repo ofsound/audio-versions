@@ -16,6 +16,8 @@ interface WaveformThumbnailProps {
 	currentTimeMs: number;
 	deletingFile: boolean;
 	isSelected: boolean;
+	isPlaying?: boolean;
+	getAudioElement?: () => HTMLAudioElement | null | undefined;
 	isStarred?: boolean;
 	onToggleStar?: () => void;
 	onDeleteFile: (fileId: string) => void;
@@ -29,6 +31,8 @@ export function WaveformThumbnail({
 	currentTimeMs,
 	deletingFile,
 	isSelected,
+	isPlaying,
+	getAudioElement,
 	isStarred,
 	onToggleStar,
 	onDeleteFile,
@@ -44,6 +48,8 @@ export function WaveformThumbnail({
 
 	useWaveformCanvas({
 		canvasRef,
+		getAudioElement,
+		isPlaying,
 		currentTimeMs,
 		isSelected,
 		surfaceRef,

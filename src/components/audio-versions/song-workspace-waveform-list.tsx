@@ -93,7 +93,7 @@ export function SongWorkspaceWaveformList({
 	onSelectFile,
 	onOpenUpload,
 }: SongWorkspaceWaveformListProps) {
-	const { getSongById, updateSong } = useAudioVersions();
+	const { getAudioElement, getSongById, updateSong } = useAudioVersions();
 	const starredFileId = getSongById(songId)?.starredAudioFileId;
 	const [playRequest, setPlayRequest] = useState<{
 		fileId: string;
@@ -335,6 +335,11 @@ export function SongWorkspaceWaveformList({
 							{[...audioFiles].reverse().map((audioFile) => (
 								<div className="min-h-0" key={audioFile.id}>
 									<WaveformThumbnail
+										getAudioElement={() => getAudioElement(audioFile.id)}
+										isPlaying={
+											playback.activeFileId === audioFile.id &&
+											playback.isPlaying
+										}
 										audioFile={audioFile}
 										blob={blobsByAudioId[audioFile.id]}
 										isStarred={starredFileId === audioFile.id}

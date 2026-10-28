@@ -8,6 +8,8 @@ interface UseWaveformCanvasOptions {
 	waveform: WaveformData;
 	currentTimeMs: number;
 	isSelected: boolean;
+	isPlaying?: boolean;
+	getAudioElement?: () => HTMLAudioElement | null | undefined;
 }
 
 export function useWaveformCanvas({
@@ -16,14 +18,33 @@ export function useWaveformCanvas({
 	waveform,
 	currentTimeMs,
 	isSelected,
+	isPlaying = false,
+	getAudioElement,
 }: UseWaveformCanvasOptions) {
 	const currentTimeRef = useRef(currentTimeMs);
+	const getAudioElementRef = useRef(getAudioElement);
+	getAudioElementRef.current = getAudioElement;
 	const redrawProgressRef = useRef<(timeMs: number) => void>(() => undefined);
 
 	useEffect(() => {
 		currentTimeRef.current = currentTimeMs;
 		redrawProgressRef.current(currentTimeMs);
 	}, [currentTimeMs]);
+
+	useEffect(() => {
+		if (!isPlaying) return;
+		let frameId: number;
+		const drawFrame = () => {
+			const audio = getAudioElementRef.current?.();
+			if (audio) {
+				currentTimeRef.current = audio.currentTime * 1000;
+				redrawProgressRef.current(currentTimeRef.current);
+			}
+			frameId = window.requestAnimationFrame(drawFrame);
+		};
+		frameId = window.requestAnimationFrame(drawFrame);
+		return () => window.cancelAnimationFrame(frameId);
+	}, [isPlaying]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;

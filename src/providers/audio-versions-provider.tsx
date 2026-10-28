@@ -118,6 +118,7 @@ interface AudioVersionsContextValue extends AudioVersionsSnapshot {
 			| ((current: AudioVersionsUiSettings) => AudioVersionsUiSettings),
 	) => Promise<void>;
 	rememberSongOpened: (songId: string) => Promise<void>;
+	getAudioElement: (fileId: string) => HTMLAudioElement | undefined;
 	registerAudioElement: (
 		fileId: string,
 		element: HTMLAudioElement | null,
@@ -204,6 +205,10 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 		getWorkspaceState: selectors.getWorkspaceState,
 		snapshotRef,
 	});
+	const getAudioElement = useCallback(
+		(fileId: string) => audioRefs.current.get(fileId),
+		[audioRefs],
+	);
 
 	const search = useCallback(
 		(query: string) =>
@@ -345,6 +350,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			...galleryMutations,
 			...noteTabMutations,
 			registerAudioElement,
+			getAudioElement,
 			reportPlaybackState,
 			togglePlayback,
 			seekFile,
@@ -363,6 +369,7 @@ export function AudioVersionsProvider({ children }: { children: ReactNode }) {
 			noteTabMutations,
 			ready,
 			registerAudioElement,
+			getAudioElement,
 			reportPlaybackState,
 			resetSongPlayheads,
 			search,

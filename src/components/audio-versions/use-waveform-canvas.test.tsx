@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { type CSSProperties, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WaveformData } from "#/lib/audio-versions/types";
@@ -15,8 +15,12 @@ const waveform: WaveformData = {
 
 function WaveformCanvasHarness({
 	currentTimeMs = 0,
+	isPlaying = false,
+	audio,
 }: {
 	currentTimeMs?: number;
+	isPlaying?: boolean;
+	audio?: HTMLAudioElement;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
@@ -27,6 +31,8 @@ function WaveformCanvasHarness({
 		waveform,
 		currentTimeMs,
 		isSelected: false,
+		isPlaying,
+		getAudioElement: () => audio,
 	});
 
 	return (
@@ -96,6 +102,47 @@ describe("useWaveformCanvas", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
+	});
+
+	it("draws live audio positions between time updates and stops scheduling when paused", () => {
+		const frames = new Map<number, FrameRequestCallback>();
+		let nextFrameId = 0;
+		vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+			const id = ++nextFrameId;
+			frames.set(id, callback);
+			return id;
+		});
+		vi.mocked(window.cancelAnimationFrame).mockImplementation((id) => {
+			frames.delete(id);
+		});
+		const advanceFrame = () => {
+			const pending = [...frames.values()];
+			frames.clear();
+			act(() => {
+				for (const callback of pending) callback(0);
+			});
+		};
+		const audio = document.createElement("audio");
+		const { rerender, unmount } = render(
+			<WaveformCanvasHarness audio={audio} isPlaying />,
+		);
+		advanceFrame();
+		const context = (
+			screen.getByTestId("canvas") as HTMLCanvasElement
+		).getContext("2d");
+		audio.currentTime = 45;
+		advanceFrame();
+		expect(context?.moveTo).toHaveBeenLastCalledWith(60, 0);
+		// Seeking backward is reflected directly, without extrapolating past it.
+		audio.currentTime = 18;
+		advanceFrame();
+		expect(context?.moveTo).toHaveBeenLastCalledWith(24, 0);
+		rerender(<WaveformCanvasHarness audio={audio} currentTimeMs={18000} />);
+		expect(frames.size).toBe(0);
+		rerender(<WaveformCanvasHarness audio={audio} isPlaying />);
+		expect(frames.size).toBe(1);
+		unmount();
+		expect(frames.size).toBe(0);
 	});
 
 	it("uses fluid CSS sizing and the configured waveform height for canvas drawing", async () => {
