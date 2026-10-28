@@ -489,7 +489,7 @@ export function useAudioVersionsSnapshotState(cloudUserId?: string) {
 	return {
 		commitSnapshot,
 		error,
-		ready,
+		ready: ready && loadedCloudUserId === cloudUserId,
 		setError,
 		snapshot,
 		snapshotRef,

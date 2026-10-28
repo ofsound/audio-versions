@@ -210,3 +210,19 @@ it("restores the signed-in owner's local library when cloud loading is offline",
 	expect(result.current.snapshot.songs[0].title).toBe("Saved song");
 	expect(result.current.error).toBeNull();
 });
+
+it("is not ready with the preceding account's settings while a new account loads", async () => {
+	const { result, rerender } = renderHook(
+		({ user }) => useAudioVersionsSnapshotState(user),
+		{ initialProps: { user: "user-1" } },
+	);
+	await waitFor(() => expect(result.current.ready).toBe(true));
+	const pending = deferred<AudioVersionsSnapshot>();
+	mocks.load.mockReturnValueOnce(pending.promise);
+	rerender({ user: "user-2" });
+	expect(result.current.ready).toBe(false);
+	await act(async () => {
+		pending.resolve(snapshot());
+	});
+	await waitFor(() => expect(result.current.ready).toBe(true));
+});

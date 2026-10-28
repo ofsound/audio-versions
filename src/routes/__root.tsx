@@ -13,6 +13,7 @@ import {
 } from "#/lib/audio-versions/ui-settings";
 import { THEME_STORAGE_KEY } from "#/lib/theme";
 import { AudioVersionsProvider } from "#/providers/audio-versions-provider";
+import { AudioVersionsReadyBoundary } from "#/providers/audio-versions-ready-boundary";
 import { AudioVersionsUiSettingsSync } from "#/providers/audio-versions-ui-settings-sync";
 import { AuthProvider, useAuth } from "#/providers/auth-provider";
 import { ThemeProvider } from "#/providers/theme-provider";
@@ -113,7 +114,9 @@ function AuthenticatedShell({ children }: { children: React.ReactNode }) {
 	return (
 		<AudioVersionsProvider>
 			<AudioVersionsUiSettingsSync />
-			<AudioVersionsChrome>{children}</AudioVersionsChrome>
+			<AudioVersionsReadyBoundary>
+				<AudioVersionsChrome>{children}</AudioVersionsChrome>
+			</AudioVersionsReadyBoundary>
 			<AudioVersionsDevtools />
 		</AudioVersionsProvider>
 	);

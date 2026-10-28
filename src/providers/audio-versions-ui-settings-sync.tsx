@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import {
 	applyUiSettingsToRoot,
 	writeUiSettingsToStorage,
@@ -8,7 +8,7 @@ import { useAudioVersions } from "./audio-versions-provider";
 export function AudioVersionsUiSettingsSync() {
 	const { ready, settings } = useAudioVersions();
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (!ready || typeof window === "undefined") {
 			return;
 		}

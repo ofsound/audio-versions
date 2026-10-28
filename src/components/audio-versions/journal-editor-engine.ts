@@ -24,7 +24,6 @@ import {
 	dropCursor,
 	EditorView,
 	keymap,
-	placeholder,
 	rectangularSelection,
 	WidgetType,
 } from "@codemirror/view";
@@ -361,7 +360,6 @@ export function journalExtensions(callbacks: () => JournalCallbacks) {
 		crosshairCursor(),
 		EditorView.clickAddsSelectionRange.of((event) => event.metaKey),
 		EditorView.lineWrapping,
-		placeholder("Write a note…"),
 		history({ newGroupDelay: 750 }),
 		journalDecorations,
 		search({ top: true }),
