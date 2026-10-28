@@ -1,4 +1,8 @@
-import { del, issueSignedToken, presignUrl } from "@vercel/blob";
+import { del, head, issueSignedToken, presignUrl } from "@vercel/blob";
+import {
+	GALLERY_IMAGE_TYPES,
+	MAX_GALLERY_IMAGE_SIZE,
+} from "#/lib/audio-versions/gallery-images";
 import type { GalleryImage } from "#/lib/audio-versions/types";
 import { cloudCorsHeaders } from "./cors-server";
 import { isOwnedGalleryPath } from "./gallery-path";
@@ -57,6 +61,13 @@ export async function handleGalleryMediaRequest(
 				await del(pathname);
 		}
 		return Response.json({ deleted: true }, { headers });
+	}
+	if (
+		body.action === "prepare-upload" ||
+		body.action === "attach" ||
+		body.action === "remove"
+	) {
+		return mutateGallery(body, client, user.id, headers);
 	}
 	if (
 		body.action !== "url" ||
@@ -133,4 +144,146 @@ export function ownedGalleryPaths(images: unknown, userId: string): string[] {
 			(path) => isOwnedGalleryPath(path, userId),
 		);
 	});
+}
+
+// Conditional, gallery-only writes preserve concurrent notes, metadata and images.
+async function mutateGallery(
+	body: Record<string, unknown>,
+	client: Awaited<ReturnType<typeof authenticateRequest>>["client"],
+	userId: string,
+	headers: HeadersInit,
+): Promise<Response> {
+	const { songId, audioFileId, imageId } = body;
+	if (
+		typeof songId !== "string" ||
+		!UUID.test(songId) ||
+		typeof imageId !== "string" ||
+		!UUID.test(imageId) ||
+		(audioFileId !== undefined &&
+			(typeof audioFileId !== "string" || !UUID.test(audioFileId)))
+	)
+		return new Response("Invalid gallery destination.", { status: 400 });
+	const song = await client
+		.from("songs")
+		.select("id")
+		.eq("id", songId)
+		.eq("user_id", userId)
+		.is("deleted_at", null)
+		.maybeSingle();
+	if (song.error)
+		return new Response("Unable to authorize gallery.", { status: 500 });
+	if (!song.data) return new Response("Song not found.", { status: 404 });
+	const table = audioFileId ? "audio_files" : "songs";
+	const parent = () => {
+		let query = client
+			.from(table)
+			.select("gallery_images,updated_at")
+			.eq("id", audioFileId ?? songId)
+			.eq("user_id", userId)
+			.is("deleted_at", null);
+		if (audioFileId) query = query.eq("song_id", songId);
+		return query.maybeSingle();
+	};
+	let incoming: GalleryImage | undefined;
+	if (body.action === "attach") {
+		incoming = body.image as GalleryImage;
+		if (
+			!incoming ||
+			incoming.id !== imageId ||
+			typeof incoming.name !== "string" ||
+			incoming.name.length > 1024 ||
+			!GALLERY_IMAGE_TYPES.includes(incoming.contentType) ||
+			!Number.isFinite(incoming.size) ||
+			incoming.size <= 0 ||
+			incoming.size > MAX_GALLERY_IMAGE_SIZE ||
+			!Number.isInteger(incoming.width) ||
+			!Number.isInteger(incoming.height) ||
+			incoming.width <= 0 ||
+			incoming.height <= 0 ||
+			incoming.width * incoming.height > 50_000_000 ||
+			typeof incoming.createdAt !== "string" ||
+			!Number.isFinite(Date.parse(incoming.createdAt))
+		)
+			return new Response("Invalid image metadata.", { status: 400 });
+		for (const media of [incoming.remoteMedia, incoming.thumbnailMedia]) {
+			if (
+				!media ||
+				!isOwnedGalleryPath(media.pathname, userId) ||
+				!media.pathname.startsWith(`users/${userId}/images/${imageId}/`)
+			)
+				return new Response("Invalid image media.", { status: 403 });
+			const blob = await head(media.pathname);
+			if (
+				!GALLERY_IMAGE_TYPES.includes(blob.contentType) ||
+				blob.size > MAX_GALLERY_IMAGE_SIZE ||
+				blob.size !== media.size ||
+				blob.contentType !== media.contentType
+			)
+				return new Response("Invalid uploaded image.", { status: 400 });
+		}
+	}
+	for (let attempt = 0; attempt < 5; attempt++) {
+		const { data, error } = await parent();
+		if (error) return new Response("Unable to read gallery.", { status: 500 });
+		if (!data) return new Response("Gallery not found.", { status: 404 });
+		if (body.action === "prepare-upload") {
+			if (
+				typeof body.contentType !== "string" ||
+				!GALLERY_IMAGE_TYPES.includes(body.contentType)
+			)
+				return new Response("Unsupported image type.", { status: 400 });
+			const pathname = `users/${userId}/images/${imageId}/${body.thumbnail ? "thumbnail" : "original"}-${crypto.randomUUID()}`;
+			const validUntil = Date.now() + 15 * 60 * 1000;
+			const options = {
+				pathname,
+				validUntil,
+				allowedContentTypes: [body.contentType],
+				maximumSizeInBytes: MAX_GALLERY_IMAGE_SIZE,
+			};
+			const token = await issueSignedToken({ ...options, operations: ["put"] });
+			const { presignedUrl } = await presignUrl(token, {
+				...options,
+				access: "private",
+				operation: "put",
+				addRandomSuffix: false,
+				allowOverwrite: false,
+			});
+			return Response.json({ url: presignedUrl, pathname }, { headers });
+		}
+		const images: GalleryImage[] = data.gallery_images ?? [];
+		const removed = images.find((image) => image.id === imageId);
+		const next = incoming
+			? removed
+				? images
+				: [...images, incoming]
+			: images.filter((image) => image.id !== imageId);
+		let update = client
+			.from(table)
+			.update({
+				gallery_images: next,
+				updated_at: new Date(
+					Math.max(Date.now(), Date.parse(data.updated_at) + 1),
+				).toISOString(),
+			})
+			.eq("id", audioFileId ?? songId)
+			.eq("user_id", userId)
+			.eq("updated_at", data.updated_at)
+			.is("deleted_at", null);
+		if (audioFileId) update = update.eq("song_id", songId);
+		const result = await update.select("id");
+		if (result.error)
+			return new Response("Unable to save gallery.", { status: 500 });
+		if (result.data?.length) {
+			if (!incoming && removed) {
+				// Metadata is detached before media cleanup; failures cannot resurrect it.
+				await Promise.all(
+					ownedGalleryPaths([removed], userId).map((path) =>
+						del(path).catch(() => undefined),
+					),
+				);
+			}
+			return Response.json({ images: next }, { headers });
+		}
+	}
+	return new Response("The gallery changed. Please retry.", { status: 409 });
 }

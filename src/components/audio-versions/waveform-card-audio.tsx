@@ -1,7 +1,8 @@
-import type { RefObject } from "react";
+import { type RefObject, useLayoutEffect } from "react";
 
 interface WaveformCardAudioProps {
 	audioFileDurationMs: number;
+	externalAudio?: HTMLAudioElement | null;
 	audioRef: RefObject<HTMLAudioElement | null>;
 	currentTimeMs: number;
 	objectUrl: string | null;
@@ -14,12 +15,21 @@ interface WaveformCardAudioProps {
 
 export function WaveformCardAudio({
 	audioFileDurationMs,
+	externalAudio,
 	audioRef,
 	currentTimeMs,
 	objectUrl,
 	onRegisterAudioElement,
 	onReportPlayback,
 }: WaveformCardAudioProps) {
+	useLayoutEffect(() => {
+		if (!externalAudio) return;
+		audioRef.current = externalAudio;
+		return () => {
+			if (audioRef.current === externalAudio) audioRef.current = null;
+		};
+	}, [externalAudio, audioRef]);
+	if (externalAudio) return null;
 	return (
 		/* biome-ignore lint/a11y/useMediaCaption: hidden transport audio is controlled programmatically instead of being exposed as standalone media */
 		<audio

@@ -5,6 +5,7 @@ import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useOptionalAuth } from "#/providers/auth-provider";
 import { AudioVersionsSettingsDialog } from "./audio-versions-settings-dialog";
 import { GlobalSearch } from "./global-search";
+import { LibraryPreviewProvider } from "./library-preview-context";
 import { QuickSongSwitcher } from "./quick-song-switcher";
 import { useCloseOnEscape } from "./use-close-on-escape";
 
@@ -30,7 +31,7 @@ export function useLibraryHeaderActionSlot() {
 	return useContext(HeaderSlotsContext)?.library ?? null;
 }
 
-export function AudioVersionsChrome({
+function AudioVersionsChromeContent({
 	children,
 }: {
 	children: React.ReactNode;
@@ -168,5 +169,17 @@ export function AudioVersionsChrome({
 				<QuickSongSwitcher />
 			</div>
 		</HeaderSlotsContext.Provider>
+	);
+}
+
+export function AudioVersionsChrome({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	return (
+		<LibraryPreviewProvider>
+			<AudioVersionsChromeContent>{children}</AudioVersionsChromeContent>
+		</LibraryPreviewProvider>
 	);
 }

@@ -270,7 +270,7 @@
 		flex: 1 1 auto;
 		overflow: hidden;
 		font-size: 1.5rem;
-		line-height: 1;
+		line-height: 1.2;
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
@@ -581,9 +581,9 @@
 
 .song-modal--contained .song-modal__panel {
 	display: flex;
-	height: min(100%, 64rem);
+	height: min(60%, 64rem);
 	max-height: 100%;
-	width: 100%;
+	width: 75%;
 	max-width: 100%;
 	flex-direction: column;
 	overflow: hidden;

@@ -236,3 +236,53 @@ remain local and can be reviewed/copied in Offline & Sync. Using the cloud versi
 fetches successfully before discarding any queued local changes for that tab.
 The first tab mirrors `general_notes` so older clients remain compatible. Deploy
 the shared `20261024010000_song_note_tabs.sql` migration before using cloud tabs.
+
+### Synced image galleries
+
+Song detail shows the shared Song gallery. The file player shows that version's
+File gallery; its full-screen viewer also includes the song images. Tap a
+thumbnail to browse, swipe between images, pinch or double-tap to zoom, or select
+a thumbnail. Remove asks for confirmation and removes the image across clients.
+
+Add offers the native camera, multi-select Photo Library, and Files picker.
+Camera access is requested only when taking a photo. Photo Library selection uses
+the system picker without requesting full-library access. Imports normalize
+orientation and convert images, including HEIC, to JPEG with a small JPEG preview
+for compatibility with desktop. Each image is limited to 25 MB and 50 megapixels.
+Animated imports are normalized to a still image. Existing gallery metadata and
+media are shared directly; no migration or duplicate mobile gallery is created.
+
+Imports show preparation, upload, and save progress per image. A failed batch
+retains its remaining images for retry while the gallery screen remains open;
+completed images are not uploaded twice. Upload and removal require connectivity.
+Durable offline upload queuing and background uploads remain deferred. Preview
+and original bytes are cached after viewing in the account's protected offline
+library, survive relaunch, and are removed with that account's cache at sign-out.
+
+Visible galleries refresh on entry, foreground, pull-to-refresh, and every 30
+seconds. Desktop uses its existing cloud change subscription. Concurrent gallery
+changes use conditional, gallery-only updates and merge retries; ordinary desktop
+song/file edits no longer write stale gallery arrays.
+
+Deploy the updated `/api/blob/gallery` handler before using native imports and
+removal or the updated desktop gallery writes. It issues constrained private Blob
+upload URLs so image bodies go straight to Blob rather than through the app
+server. The existing image-gallery database migration must already be applied.
+
+Physical-device gallery acceptance (requires the deployed API and a signed build):
+
+1. Open existing song and file galleries from desktop on iPhone. Check thumbnails,
+   full-size images, swipe, zoom, rotation, and both gallery groups in the file viewer.
+2. Capture a portrait photo, select multiple camera-roll images including HEIC,
+   and choose an image from Files. Verify orientation and appearance on desktop.
+3. Deny camera access, cancel each picker, and retry after granting access in
+   Settings. Interrupt a batch upload, then retry: completed items must not duplicate.
+4. Add different images on phone and desktop concurrently. Both must remain.
+   Change song/file notes during an upload and confirm notes and galleries survive.
+5. Remove an image on either client and refresh the other. Check the viewer moves
+   to a remaining image or closes when empty, including while it is open remotely.
+6. View previews and originals, enable Airplane Mode, relaunch, and reopen them.
+   New uncached images must show a retry state. Sign out and check another account
+   cannot access the previous account's cached images.
+7. Leave audio playing while picking and viewing images. Exercise the physical
+   audio checks above after camera capture, backgrounding, and returning to playback.

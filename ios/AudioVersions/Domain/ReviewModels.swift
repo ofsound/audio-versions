@@ -6,6 +6,7 @@ struct Song: Identifiable, Hashable, Codable {
     var artist: String
     var generalNotes: String = ""
     var noteTabs: [SongNoteTab]? = nil
+    var galleryImages: [GalleryImage]? = nil
     var updatedAt: Date
     var deletedAt: Date? = nil
     var versions: [AudioVersion]
@@ -27,6 +28,7 @@ struct AudioVersion: Identifiable, Hashable, Codable {
     /// Whole-file loudness from the shared `loudness` JSON column, when measured.
     var loudness: LoudnessMetrics? = nil
     var annotations: [ReviewAnnotation]
+    var galleryImages: [GalleryImage]? = nil
 
     var annotationCount: Int {
         annotations.count

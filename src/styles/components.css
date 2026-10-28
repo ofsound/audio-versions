@@ -608,10 +608,9 @@
 	scrollbar-width: thin;
 }
 .song-note-tab--active {
-	--song-note-tab-active-bg: color-mix(
-		in srgb,
-		var(--color-surface) 45%,
-		black
+	--song-note-tab-active-bg: light-dark(
+		color-mix(in srgb, var(--color-surface) 96%, var(--color-text)),
+		color-mix(in srgb, var(--color-surface) 45%, black)
 	);
 	background: var(--song-note-tab-active-bg);
 	border-bottom-color: var(--song-note-tab-active-bg);

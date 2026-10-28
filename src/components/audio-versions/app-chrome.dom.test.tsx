@@ -35,11 +35,19 @@ vi.mock("@tanstack/react-router", () => ({
 		({ to }: { to: string }) =>
 			to === "/songs/$songId" && songRouteId ? { songId: songRouteId } : false,
 	useNavigate: () => navigateMock,
+	useLocation: ({
+		select,
+	}: {
+		select: (location: { pathname: string }) => string;
+	}) => select({ pathname: songRouteId ? `/songs/${songRouteId}` : "/" }),
 }));
 
 vi.mock("#/providers/audio-versions-provider", () => ({
 	useAudioVersions: () => ({
 		ready: true,
+		audioFiles: [],
+		songs: [],
+		blobsByAudioId: {},
 		getSongById: () => (songRouteId ? { title: "Dev Day" } : undefined),
 		settings: {
 			ui: createDefaultUiSettings(),
@@ -52,6 +60,9 @@ vi.mock("#/providers/auth-provider", () => ({
 	useOptionalAuth: () => ({
 		cloudAvailable,
 		ready: true,
+		audioFiles: [],
+		songs: [],
+		blobsByAudioId: {},
 		signOut: signOutMock,
 		user: authUser,
 	}),

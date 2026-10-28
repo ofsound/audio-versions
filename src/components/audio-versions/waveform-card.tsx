@@ -11,6 +11,7 @@ import type {
 	CreateAnnotationInput,
 } from "#/lib/audio-versions/types";
 import { normalizeWaveformData } from "#/lib/audio-versions/waveform";
+import { useLibraryPreview } from "./library-preview-context";
 import { useAudioFileLoudness } from "./use-audio-file-loudness";
 import { useAudioSource } from "./use-audio-source";
 import { useWaveformAudioGraph } from "./use-waveform-audio-graph";
@@ -95,13 +96,18 @@ export function WaveformCard({
 	onDragEnd,
 	onDrop,
 }: WaveformCardProps) {
-	const audioRef = useRef<HTMLAudioElement | null>(null);
-	const objectUrl = useAudioSource(
+	const preview = useLibraryPreview();
+	const externalAudio =
+		preview?.fileId === audioFile.id ? preview.element : null;
+	const audioRef = useRef<HTMLAudioElement | null>(externalAudio);
+	if (externalAudio) audioRef.current = externalAudio;
+	const sourceUrl = useAudioSource(
 		audioFile.id,
-		blob,
-		audioFile.remoteMedia,
+		externalAudio ? undefined : blob,
+		externalAudio ? undefined : audioFile.remoteMedia,
 		audioRef,
 	);
+	const objectUrl = externalAudio?.src ?? sourceUrl;
 	const appliedPlayRequestRef = useRef<number | null>(null);
 	useEffect(() => {
 		if (
@@ -182,6 +188,7 @@ export function WaveformCard({
 	const audioEngineGeneration = useWaveformAudioGraph({
 		audioRef,
 		volumeDb: audioFile.volumeDb,
+		managedExternally: Boolean(externalAudio),
 	});
 
 	useWaveformCanvas({
@@ -422,6 +429,7 @@ export function WaveformCard({
 			/>
 
 			<WaveformCardAudio
+				externalAudio={externalAudio}
 				key={audioEngineGeneration}
 				audioFileDurationMs={audioFile.durationMs}
 				audioRef={audioRef}

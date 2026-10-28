@@ -8,12 +8,14 @@ const mocks = vi.hoisted(() => ({
 	del: vi.fn(),
 	sign: vi.fn(),
 	presign: vi.fn(),
+	head: vi.fn(),
 }));
 vi.mock("./supabase-server", () => ({
 	authenticateRequest: mocks.authenticate,
 }));
 vi.mock("@vercel/blob", () => ({
 	del: mocks.del,
+	head: mocks.head,
 	issueSignedToken: mocks.sign,
 	presignUrl: mocks.presign,
 }));
@@ -31,11 +33,13 @@ function query(data: unknown, error: unknown = null) {
 	const result = { data, error };
 	const chain = Object.assign(Promise.resolve(result), {
 		select: vi.fn(),
+		update: vi.fn(),
 		eq: vi.fn(),
 		is: vi.fn(),
 		maybeSingle: vi.fn().mockResolvedValue(result),
 	});
 	chain.select.mockReturnValue(chain);
+	chain.update.mockReturnValue(chain);
 	chain.eq.mockReturnValue(chain);
 	chain.is.mockReturnValue(chain);
 	return chain;
@@ -50,6 +54,7 @@ function send(body: unknown) {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
+	mocks.del.mockResolvedValue(undefined);
 	mocks.authenticate.mockResolvedValue({
 		user: { id: "owner" },
 		client: { from: mocks.from },
@@ -135,6 +140,128 @@ describe("private galleries", () => {
 			),
 		).toEqual([]);
 	});
+	it("issues constrained direct upload URLs only for accessible destinations", async () => {
+		mocks.from
+			.mockReturnValueOnce(query({ id: songId }))
+			.mockReturnValueOnce(
+				query({ gallery_images: [], updated_at: "2026-10-28T12:00:00.000Z" }),
+			);
+		expect(
+			(
+				await send({
+					action: "prepare-upload",
+					songId,
+					audioFileId,
+					imageId,
+					contentType: "image/jpeg",
+				})
+			).status,
+		).toBe(200);
+		expect(mocks.sign).toHaveBeenCalledWith(
+			expect.objectContaining({
+				operations: ["put"],
+				allowedContentTypes: ["image/jpeg"],
+				maximumSizeInBytes: 25 * 1024 * 1024,
+			}),
+		);
+		expect(mocks.presign).toHaveBeenCalledWith(
+			"token",
+			expect.objectContaining({
+				access: "private",
+				operation: "put",
+				allowOverwrite: false,
+				addRandomSuffix: false,
+			}),
+		);
+		mocks.from
+			.mockReturnValueOnce(query({ id: songId }))
+			.mockReturnValueOnce(query(null));
+		expect(
+			(
+				await send({
+					action: "prepare-upload",
+					songId,
+					audioFileId,
+					imageId,
+					contentType: "image/jpeg",
+				})
+			).status,
+		).toBe(404);
+	});
+	it("merges concurrent additions using the latest conditional token", async () => {
+		const incoming = {
+			...image,
+			name: "photo.png",
+			contentType: "image/png",
+			size: 10,
+			width: 20,
+			height: 10,
+			createdAt: "2026-10-28T12:00:00Z",
+			remoteMedia: { pathname: path, contentType: "image/png", size: 10 },
+			thumbnailMedia: { pathname: thumb, contentType: "image/png", size: 10 },
+		};
+		mocks.head.mockResolvedValue({ contentType: "image/png", size: 10 });
+		const other = { ...incoming, id: "44444444-4444-4444-8444-444444444444" };
+		const failedWrite = query([]);
+		const savedWrite = query([{ id: songId }]);
+		mocks.from
+			.mockReturnValueOnce(query({ id: songId }))
+			.mockReturnValueOnce(
+				query({ gallery_images: [], updated_at: "2026-10-28T12:00:00.000Z" }),
+			)
+			.mockReturnValueOnce(failedWrite)
+			.mockReturnValueOnce(
+				query({
+					gallery_images: [other],
+					updated_at: "2026-10-28T12:00:00.001Z",
+				}),
+			)
+			.mockReturnValueOnce(savedWrite);
+		const response = await send({
+			action: "attach",
+			songId,
+			imageId,
+			image: incoming,
+		});
+		expect(response.status).toBe(200);
+		expect((await response.json()).images).toEqual([other, incoming]);
+		expect(failedWrite.eq).toHaveBeenCalledWith(
+			"updated_at",
+			"2026-10-28T12:00:00.000Z",
+		);
+		expect(savedWrite.eq).toHaveBeenCalledWith(
+			"updated_at",
+			"2026-10-28T12:00:00.001Z",
+		);
+		expect(savedWrite.update).toHaveBeenCalledWith({
+			gallery_images: [other, incoming],
+			updated_at: expect.any(String),
+		});
+	});
+	it("removes only the selected image before deleting its private media", async () => {
+		const other = { ...image, id: "44444444-4444-4444-8444-444444444444" };
+		const write = query([{ id: audioFileId }]);
+		mocks.from
+			.mockReturnValueOnce(query({ id: songId }))
+			.mockReturnValueOnce(
+				query({
+					gallery_images: [image, other],
+					updated_at: "2026-10-28T12:00:00.000Z",
+				}),
+			)
+			.mockReturnValueOnce(write);
+		const response = await send({
+			action: "remove",
+			songId,
+			audioFileId,
+			imageId,
+		});
+		expect((await response.json()).images).toEqual([other]);
+		expect(write.eq).toHaveBeenCalledWith("song_id", songId);
+		expect(mocks.del).toHaveBeenCalledWith(path);
+		expect(mocks.del).toHaveBeenCalledWith(thumb);
+	});
+
 	it("rejects malformed bodies before looking up records", async () => {
 		expect((await send({ action: "url", songId: "bad", imageId })).status).toBe(
 			400,

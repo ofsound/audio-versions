@@ -9,6 +9,7 @@ import type { AudioFileRecord } from "#/lib/audio-versions/types";
 import { useAudioVersions } from "#/providers/audio-versions-provider";
 import { useLibraryHeaderActionSlot } from "./app-chrome";
 import { LibraryPreviewAudio } from "./library-preview-audio";
+import { useLibraryPreview } from "./library-preview-context";
 import { LibrarySongList } from "./library-song-list";
 import { SongModal } from "./song-modal";
 import { SongSettingsDialog } from "./song-settings-dialog";
@@ -30,8 +31,12 @@ export function LibraryView() {
 		resetSongPlayheads,
 		updateUiSettings,
 	} = useAudioVersions();
-	const [previewFileId, setPreviewFileId] = useState<string>();
-	const [previewError, setPreviewError] = useState<string | null>(null);
+	const preview = useLibraryPreview();
+	const [localPreviewFileId, setLocalPreviewFileId] = useState<string>();
+	const [localPreviewError, setPreviewError] = useState<string | null>(null);
+	const previewFileId = preview ? preview.fileId : localPreviewFileId;
+	const setPreviewFileId = preview?.setFileId ?? setLocalPreviewFileId;
+	const previewError = preview ? preview.error : localPreviewError;
 	const previewFiles = useMemo(() => {
 		const files = new Map<string, AudioFileRecord>();
 		for (const song of songs) {
@@ -216,7 +221,7 @@ export function LibraryView() {
 	return (
 		<>
 			{renderedCreateSongTrigger}
-			{previewFile && (
+			{!preview && previewFile && (
 				<LibraryPreviewAudio
 					key={previewFile.id}
 					audioFile={previewFile}
@@ -295,7 +300,7 @@ export function LibraryView() {
 								sessionDates={sessionDateRangeBySongId}
 								sessionSortKeys={sessionSortKeys}
 								onOpen={(id) => {
-									void resetSongPlayheads(id);
+									if (previewFile?.songId !== id) void resetSongPlayheads(id);
 								}}
 								onEdit={setEditingSongId}
 							/>

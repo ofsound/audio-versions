@@ -33,6 +33,12 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section {
+                        GallerySection(scope: GalleryScope(songId: song.id))
+                    }
+                    .listRowInsets(Self.groupedSectionInsets)
+                    .listRowBackground(palette.surface)
+
+                    Section {
                         SongNoteTabBar(song: song, selectedID: $selectedNoteTabID, closedIDs: $closedNoteTabIDs)
                             .padding(.horizontal, 16).padding(.top, 10)
                         JournalContentView(
@@ -75,6 +81,7 @@ struct SongDetailView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
                 }
+                .refreshable { await store.refreshCloudLibrary() }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
                 .onAppear { if let id = store.preferredNoteTab(songID: songID)?.id { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }

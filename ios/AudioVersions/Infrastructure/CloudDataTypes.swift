@@ -120,6 +120,7 @@ struct SongRow: Decodable, Sendable {
     let artist: String
     let generalNotes: String
     var noteTabs: [SongNoteTab]? = nil
+    var galleryImages: [GalleryImage]? = nil
     let audioFileOrder: [UUID]
     let updatedAt: String
     let deletedAt: String?
@@ -130,6 +131,7 @@ struct SongRow: Decodable, Sendable {
         case artist
         case generalNotes = "general_notes"
         case noteTabs = "note_tabs"
+        case galleryImages = "gallery_images"
         case audioFileOrder = "audio_file_order"
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
@@ -155,6 +157,7 @@ struct AudioFileRow: Decodable, Sendable {
     let waveform: WaveformRow
     let sessionDate: String
     let loudness: LoudnessMetricsRow?
+    var galleryImages: [GalleryImage]? = nil
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -166,6 +169,7 @@ struct AudioFileRow: Decodable, Sendable {
         case waveform
         case sessionDate = "session_date"
         case loudness
+        case galleryImages = "gallery_images"
         case createdAt = "created_at"
     }
 
@@ -179,6 +183,7 @@ struct AudioFileRow: Decodable, Sendable {
         waveform = try container.decode(WaveformRow.self, forKey: .waveform)
         sessionDate = try container.decodeIfPresent(String.self, forKey: .sessionDate) ?? ""
         loudness = try container.decodeIfPresent(LoudnessMetricsRow.self, forKey: .loudness)
+        galleryImages = try container.decodeIfPresent([GalleryImage].self, forKey: .galleryImages)
         createdAt = try container.decode(String.self, forKey: .createdAt)
     }
 }

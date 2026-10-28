@@ -202,3 +202,16 @@ export async function deleteRemoteGalleryPath(pathname: string): Promise<void> {
 export async function deleteRemoteSongGallery(songId: string): Promise<void> {
 	await galleryMediaRequest({ action: "delete-song", songId });
 }
+
+export async function mutateRemoteGallery(
+	scope: import("#/lib/audio-versions/types").GalleryScope,
+	image: GalleryImage | string,
+): Promise<GalleryImage[]> {
+	const response = await galleryMediaRequest({
+		...scope,
+		action: typeof image === "string" ? "remove" : "attach",
+		imageId: typeof image === "string" ? image : image.id,
+		...(typeof image === "string" ? {} : { image }),
+	});
+	return (await response.json()).images;
+}

@@ -9,11 +9,13 @@ export function LibraryPreviewAudio({
 	blob,
 	onStop,
 	onError,
+	onElement,
 }: {
 	audioFile: AudioFileRecord;
 	blob?: Blob;
 	onStop: () => void;
 	onError: (message: string) => void;
+	onElement?: (element: HTMLAudioElement | null) => void;
 }) {
 	const { registerAudioElement, reportPlaybackState, seekFile } =
 		useAudioVersions();
@@ -30,6 +32,7 @@ export function LibraryPreviewAudio({
 		let cancelled = false;
 		const objectUrl = initialBlob ? URL.createObjectURL(initialBlob) : null;
 		registerAudioElement(audioFile.id, element);
+		onElement?.(element);
 		void (async () => {
 			try {
 				const source = objectUrl ?? (await getRemoteAudioUrl(audioFile.id));
@@ -53,12 +56,14 @@ export function LibraryPreviewAudio({
 			element.pause();
 			element.currentTime = 0;
 			registerAudioElement(audioFile.id, null);
+			onElement?.(null);
 			reportPlaybackState(audioFile.id, { isPlaying: false, currentTimeMs: 0 });
 			if (objectUrl) URL.revokeObjectURL(objectUrl);
 		};
 	}, [
 		audioFile.id,
 		initialBlob,
+		onElement,
 		registerAudioElement,
 		reportPlaybackState,
 		seekFile,
@@ -68,9 +73,22 @@ export function LibraryPreviewAudio({
 		/* biome-ignore lint/a11y/useMediaCaption: hidden audio is controlled by the index row's Play/Stop button */
 		<audio
 			ref={audioRef}
+			crossOrigin="anonymous"
 			preload="none"
 			className="hidden"
-			onEnded={() => callbacks.current.onStop()}
+			onEnded={() => {
+				reportPlaybackState(audioFile.id, {
+					isPlaying: false,
+					currentTimeMs: audioFile.durationMs,
+				});
+				callbacks.current.onStop();
+			}}
+			onPause={(event) =>
+				reportPlaybackState(audioFile.id, {
+					isPlaying: false,
+					currentTimeMs: event.currentTarget.currentTime * 1000,
+				})
+			}
 			onError={() =>
 				callbacks.current.onError("Could not load this preview. Try again.")
 			}

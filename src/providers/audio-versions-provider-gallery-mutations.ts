@@ -13,6 +13,7 @@ import type {
 } from "#/lib/audio-versions/types";
 import {
 	deleteRemoteGalleryPath,
+	mutateRemoteGallery,
 	uploadRemoteGalleryImage,
 } from "#/lib/cloud/media";
 import type { CloudPersistence } from "#/lib/cloud/persistence";
@@ -80,16 +81,15 @@ export function useGalleryMutations({
 					(record) =>
 						record.id === scope.audioFileId && record.songId === scope.songId,
 				);
-				if (file)
-					await Promise.all([saveAudioFile(file), cloud?.saveAudioFile(file)]);
+				if (file) await saveAudioFile(file);
 			} else {
 				const song = snapshot.songs.find(
 					(record) => record.id === scope.songId,
 				);
-				if (song) await Promise.all([saveSong(song), cloud?.saveSong(song)]);
+				if (song) await saveSong(song);
 			}
 		},
-		[cloud],
+		[],
 	);
 
 	const addGalleryImages = useCallback(
@@ -99,6 +99,7 @@ export function useGalleryMutations({
 				const prepared = await prepareGalleryImage(file);
 				let image = prepared.image;
 				let attached = false;
+				let remoteImages: GalleryImage[] | undefined;
 				try {
 					if (ownerRef.current !== cloudUserId)
 						throw new Error(
@@ -115,6 +116,10 @@ export function useGalleryMutations({
 						throw new Error(
 							"The signed-in account changed. Add these images again.",
 						);
+					if (cloud) {
+						attached = true;
+						remoteImages = await mutateRemoteGallery(scope, image);
+					}
 					await saveGalleryBlob(image.id, {
 						original: prepared.original,
 						thumbnail: prepared.thumbnail,
@@ -125,10 +130,11 @@ export function useGalleryMutations({
 								throw new Error(
 									"The signed-in account changed. Add these images again.",
 								);
-							const next = changeGallery(current, scope, (images) => [
-								...images,
-								image,
-							]);
+							const next = changeGallery(
+								current,
+								scope,
+								(images) => remoteImages ?? [...images, image],
+							);
 							attached = true;
 							return next;
 						},
@@ -151,28 +157,33 @@ export function useGalleryMutations({
 			}
 			return added;
 		},
-		[cloudUserId, commitSnapshot, persistParent],
+		[cloud, cloudUserId, commitSnapshot, persistParent],
 	);
 
 	const removeGalleryImage = useCallback(
 		async (scope: GalleryScope, imageId: string) => {
+			const remoteImages = cloud
+				? await mutateRemoteGallery(scope, imageId)
+				: undefined;
 			let removed: GalleryImage | undefined;
 			await commitSnapshot(
 				(current) =>
 					changeGallery(current, scope, (images) => {
 						removed = images.find((image) => image.id === imageId);
-						return images.filter((image) => image.id !== imageId);
+						return (
+							remoteImages ?? images.filter((image) => image.id !== imageId)
+						);
 					}),
 				async (next) => {
 					for (const media of [removed?.remoteMedia, removed?.thumbnailMedia]) {
-						if (media) await deleteRemoteGalleryPath(media.pathname);
+						if (media && !cloud) await deleteRemoteGalleryPath(media.pathname);
 					}
 					await persistParent(next, scope);
 					await deleteGalleryBlob(imageId);
 				},
 			);
 		},
-		[commitSnapshot, persistParent],
+		[cloud, commitSnapshot, persistParent],
 	);
 	return useMemo(
 		() => ({ addGalleryImages, removeGalleryImage }),

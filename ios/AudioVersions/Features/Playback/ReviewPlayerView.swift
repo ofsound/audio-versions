@@ -48,9 +48,11 @@ struct ReviewPlayerView: View {
                             onDelete: { store.delete($0, from: version.id) }
                         )
                         fileNotesSection(version: version)
+                        GallerySection(scope: GalleryScope(songId: songID, audioFileId: versionID))
                     }
                     .padding()
                 }
+                .refreshable { await store.refreshCloudLibrary() }
                 .appCanvas()
                 .navigationTitle(song?.title ?? "Audio Versions")
                 .navigationBarTitleDisplayMode(.inline)

@@ -1344,3 +1344,78 @@ extension ReviewCompanionStore {
         } catch { if offlineStorage === storage { cloudErrorMessage = error.localizedDescription } }
     }
 }
+
+extension ReviewCompanionStore {
+    func galleryImages(in scope: GalleryScope) -> [GalleryImage] {
+        guard let song = songs.first(where: { $0.id == scope.songId }) else { return [] }
+        if let fileID = scope.audioFileId { return song.versions.first { $0.id == fileID }?.galleryImages ?? [] }
+        return song.galleryImages ?? []
+    }
+
+    func galleryData(_ image: GalleryImage, scope: GalleryScope, thumbnail: Bool) async throws -> Data {
+        let sessionID = accountID
+        let storage = offlineStorage
+        let filename = "gallery-\(UUID(uuidString: image.id)?.uuidString ?? "invalid")-\(thumbnail ? "preview" : "original")"
+        let cachedURL = storage?.directory.appending(path: filename)
+        if let cachedURL, let data = try? Data(contentsOf: cachedURL) { return data }
+        guard let signedMedia else { throw GalleryError.unavailable }
+        // A fresh signed link on the second attempt recovers expired/revoked URLs.
+        for attempt in 0..<2 {
+            do {
+                let url = try await signedMedia.galleryURL(scope: scope, imageID: image.id, thumbnail: thumbnail)
+                let (data, response) = try await URLSession.shared.data(from: url)
+                guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode), !data.isEmpty, data.count <= 25 * 1024 * 1024 else { throw SignedMediaError.invalidResponse }
+                guard accountID == sessionID, offlineStorage === storage else { throw GalleryError.accountChanged }
+                if let cachedURL {
+                    try? data.write(to: cachedURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                }
+                return data
+            } catch {
+                if attempt == 1 { throw error }
+            }
+        }
+        throw SignedMediaError.invalidResponse
+    }
+
+    func uploadGalleryImage(_ prepared: PreparedGalleryImage, scope: GalleryScope) async throws -> GalleryImage {
+        guard let signedMedia, !isOffline else { throw GalleryError.unavailable }
+        let sessionID = accountID
+        let image = try await signedMedia.uploadGallery(prepared, scope: scope)
+        guard accountID == sessionID else { throw GalleryError.accountChanged }
+        return image
+    }
+
+    func saveGalleryImage(_ image: GalleryImage, scope: GalleryScope) async throws {
+        guard let signedMedia, !isOffline else { throw GalleryError.unavailable }
+        let sessionID = accountID
+        let images = try await signedMedia.mutateGallery(scope: scope, imageID: image.id, image: image)
+        guard accountID == sessionID else { throw GalleryError.accountChanged }
+        try applyGallery(images, scope: scope)
+    }
+
+    func removeGalleryImage(_ image: GalleryImage, scope: GalleryScope) async throws {
+        guard let signedMedia, !isOffline else { throw GalleryError.unavailable }
+        let sessionID = accountID
+        let images = try await signedMedia.mutateGallery(scope: scope, imageID: image.id, image: nil)
+        guard accountID == sessionID else { throw GalleryError.accountChanged }
+        try applyGallery(images, scope: scope)
+        for variant in ["preview", "original"] {
+            if let uuid = UUID(uuidString: image.id), let storage = offlineStorage {
+                try? FileManager.default.removeItem(at: storage.directory.appending(path: "gallery-\(uuid.uuidString)-\(variant)"))
+            }
+        }
+    }
+
+    private func applyGallery(_ images: [GalleryImage], scope: GalleryScope) throws {
+        guard let index = songs.firstIndex(where: { $0.id == scope.songId }) else { return }
+        if let fileID = scope.audioFileId {
+            guard let fileIndex = songs[index].versions.firstIndex(where: { $0.id == fileID }) else { return }
+            songs[index].versions[fileIndex].galleryImages = images
+        } else { songs[index].galleryImages = images }
+        if let storage = offlineStorage {
+            var next = storage.state
+            next.merge(currentSnapshot)
+            try storage.save(next)
+        }
+    }
+}

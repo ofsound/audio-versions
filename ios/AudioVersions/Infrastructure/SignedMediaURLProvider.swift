@@ -50,9 +50,9 @@ actor SignedMediaURLProvider {
         let url: URL
     }
 
-    private let client: SupabaseClient
-    private let endpointURL: URL
-    private let urlSession: URLSession
+    let client: SupabaseClient
+    let endpointURL: URL
+    let urlSession: URLSession
     private var cache: [String: SignedMediaLease] = [:]
     private var inFlightRequests: [String: InFlightRequest] = [:]
 

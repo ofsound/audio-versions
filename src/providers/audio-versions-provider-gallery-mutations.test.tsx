@@ -6,6 +6,7 @@ import {
 	createEmptySettings,
 	type GalleryImage,
 } from "#/lib/audio-versions/types";
+import type { CloudPersistence } from "#/lib/cloud/persistence";
 import { useGalleryMutations } from "./audio-versions-provider-gallery-mutations";
 import type { CommitSnapshot } from "./audio-versions-provider-state";
 
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 	saveFile: vi.fn(),
 	upload: vi.fn(),
 	deleteRemote: vi.fn(),
+	mutate: vi.fn(),
 }));
 vi.mock("#/lib/audio-versions/db", () => ({
 	saveGalleryBlob: mocks.saveBlob,
@@ -30,6 +32,7 @@ vi.mock("#/lib/audio-versions/gallery-images", () => ({
 vi.mock("#/lib/cloud/media", () => ({
 	uploadRemoteGalleryImage: mocks.upload,
 	deleteRemoteGalleryPath: mocks.deleteRemote,
+	mutateRemoteGallery: mocks.mutate,
 }));
 const image: GalleryImage = {
 	id: "image",
@@ -108,6 +111,40 @@ describe("gallery mutations", () => {
 		expect(snapshot.songs[0]?.galleryImages).toEqual([]);
 		expect(mocks.deleteBlob).toHaveBeenCalledWith("image");
 	});
+	it("uses gallery-only cloud writes and retains images added by the phone", async () => {
+		let snapshot = initial();
+		const phoneImage = { ...image, id: "phone", name: "phone.jpg" };
+		mocks.upload.mockResolvedValue(image);
+		mocks.mutate
+			.mockResolvedValueOnce([phoneImage, image])
+			.mockResolvedValueOnce([phoneImage]);
+		const cloud = {
+			saveSong: vi.fn(),
+			saveAudioFile: vi.fn(),
+		} as unknown as CloudPersistence;
+		const commitSnapshot: CommitSnapshot = async (update, persist) => {
+			snapshot = update(snapshot);
+			await persist(snapshot);
+			return snapshot;
+		};
+		const { result } = renderHook(() =>
+			useGalleryMutations({ cloud, cloudUserId: "owner", commitSnapshot }),
+		);
+		await act(() =>
+			result.current.addGalleryImages({ songId: "song" }, [
+				new File(["x"], "photo.png"),
+			]),
+		);
+		expect(snapshot.songs[0].galleryImages).toEqual([phoneImage, image]);
+		await act(() =>
+			result.current.removeGalleryImage({ songId: "song" }, image.id),
+		);
+		expect(snapshot.songs[0].galleryImages).toEqual([phoneImage]);
+		expect(cloud.saveSong).not.toHaveBeenCalled();
+		expect(cloud.saveAudioFile).not.toHaveBeenCalled();
+		expect(mocks.deleteRemote).not.toHaveBeenCalled();
+	});
+
 	it("rejects stale destinations and cleans unattached blobs", async () => {
 		const snapshot = initial();
 		const commitSnapshot: CommitSnapshot = async (update, persist) => {

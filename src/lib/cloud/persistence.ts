@@ -264,15 +264,16 @@ export function createCloudPersistence(userId: string): CloudPersistence {
 
 	return {
 		async saveSong(song) {
-			const { error } = await client
-				.from("songs")
-				.upsert(songToRow(userId, song));
+			const { gallery_images: _gallery, ...row } = songToRow(userId, song);
+			const { error } = await client.from("songs").upsert(row);
 			throwIfError(error);
 		},
 		async saveAudioFile(audioFile) {
-			const { error } = await client
-				.from("audio_files")
-				.upsert(audioFileToRow(userId, audioFile));
+			const { gallery_images: _gallery, ...row } = audioFileToRow(
+				userId,
+				audioFile,
+			);
+			const { error } = await client.from("audio_files").upsert(row);
 			throwIfError(error);
 		},
 		async saveAnnotation(annotation) {

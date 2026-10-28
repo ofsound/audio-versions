@@ -40,11 +40,15 @@ export function useSongWorkspaceRouting({
 	song,
 	songId,
 }: UseSongWorkspaceRoutingOptions) {
+	const entryPlaybackFileId = useRef(
+		playback.isPlaying ? playback.activeFileId : undefined,
+	).current;
 	const selectedFileId =
-		(search.fileId &&
-		audioFiles.some((audioFile) => audioFile.id === search.fileId)
+		(search.fileId && audioFiles.some((file) => file.id === search.fileId)
 			? search.fileId
-			: audioFiles.at(-1)?.id) ?? undefined;
+			: audioFiles.some((file) => file.id === entryPlaybackFileId)
+				? entryPlaybackFileId
+				: audioFiles.at(-1)?.id) ?? undefined;
 	const selectedFile = audioFiles.find(
 		(audioFile) => audioFile.id === selectedFileId,
 	);

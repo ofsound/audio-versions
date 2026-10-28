@@ -17,11 +17,13 @@ import { volumeDbToGain } from "#/lib/audio-versions/waveform";
 interface UseWaveformAudioGraphOptions {
 	audioRef: MutableRefObject<HTMLAudioElement | null>;
 	volumeDb: number;
+	managedExternally?: boolean;
 }
 
 export function useWaveformAudioGraph({
 	audioRef,
 	volumeDb,
+	managedExternally = false,
 }: UseWaveformAudioGraphOptions) {
 	const volumeRef = useRef(volumeDb);
 	volumeRef.current = volumeDb;
@@ -32,7 +34,10 @@ export function useWaveformAudioGraph({
 	);
 
 	useEffect(() => {
-		if (getAudioEngineGeneration() !== audioEngineGeneration) {
+		if (
+			managedExternally ||
+			getAudioEngineGeneration() !== audioEngineGeneration
+		) {
 			return;
 		}
 
@@ -52,7 +57,7 @@ export function useWaveformAudioGraph({
 			element.removeEventListener("play", prepare);
 			releaseAudioElement(element);
 		};
-	}, [audioEngineGeneration, audioRef]);
+	}, [audioEngineGeneration, audioRef, managedExternally]);
 
 	useEffect(() => {
 		if (
