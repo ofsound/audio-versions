@@ -72,9 +72,7 @@ struct LibraryView: View {
                     }
                 } else {
                     List(filteredSongs) { song in
-                        NavigationLink(value: LibraryDestination.song(id: song.id)) {
-                            LibrarySongRow(song: song)
-                        }
+                        LibrarySongRow(song: song)
                         .listRowBackground(palette.canvas)
                         .listRowSeparatorTint(palette.hairline)
                         .swipeActions(edge: .trailing) {
@@ -348,37 +346,33 @@ private struct LibrarySongRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(palette.brandTile)
-                .frame(width: 54, height: 54)
-                .overlay {
-                    Image(systemName: "waveform")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(palette.onAccent)
-                }
+            VersionPreviewButton(version: song.previewVersion, title: song.title)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(song.title)
-                    .font(.headline)
-                    .foregroundStyle(palette.textPrimary)
-                Text(song.latestVersion?.name ?? "No versions")
-                    .font(.subheadline)
-                    .foregroundStyle(palette.textSecondary)
-                    .lineLimit(1)
+            NavigationLink(value: LibraryDestination.song(id: song.id)) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(song.title)
+                        .font(.headline)
+                        .foregroundStyle(palette.textPrimary)
+                    Text(song.latestVersion?.name ?? "No versions")
+                        .font(.subheadline)
+                        .foregroundStyle(palette.textSecondary)
+                        .lineLimit(1)
 
-                HStack(spacing: 5) {
-                    Text(song.versions.count == 1 ? "1 version" : "\(song.versions.count) versions")
-                    if let sessionDateRange = song.sessionDateRangeLabel {
-                        Text("•")
-                        Text(sessionDateRange)
+                    HStack(spacing: 5) {
+                        Text(song.versions.count == 1 ? "1 version" : "\(song.versions.count) versions")
+                        if let sessionDateRange = song.sessionDateRangeLabel {
+                            Text("•")
+                            Text(sessionDateRange)
+                        }
                     }
+                    .font(.caption)
+                    .foregroundStyle(palette.textTertiary)
                 }
-                .font(.caption)
-                .foregroundStyle(palette.textTertiary)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.vertical, 8)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 

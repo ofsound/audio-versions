@@ -17,17 +17,26 @@ struct OfflineDownload: Codable {
     let byteCount: Int64
 }
 
+struct PendingSongStar: Codable, Equatable, Sendable {
+    let id: UUID
+    let songID: String
+    /// `nil` clears the star so the newest file is the index preview.
+    let starredAudioFileID: String?
+}
+
 struct OfflineLibraryState: Codable {
     var snapshot = CloudLibrarySnapshot(songs: [], trashedSongs: [], playlists: [])
     var downloads: [String: OfflineDownload] = [:]
     var pendingWrites: [PendingAnnotationWrite] = []
     var pendingNoteWrites: [PendingNoteWrite]? = nil
+    var pendingSongStars: [PendingSongStar]? = nil
 
     /// A refreshed cloud snapshot must never replace unsynced phone edits.
     mutating func merge(_ remote: CloudLibrarySnapshot) {
         snapshot = remote
         for write in pendingWrites { apply(write) }
         for write in pendingNoteWrites ?? [] { apply(write) }
+        for star in pendingSongStars ?? [] { apply(star) }
     }
 
     mutating func apply(_ write: PendingAnnotationWrite) {
@@ -50,6 +59,11 @@ struct OfflineLibraryState: Codable {
               let song = try? write.applying(to: snapshot.songs[index], checkingConflicts: false)
         else { return }
         snapshot.songs[index] = song
+    }
+
+    mutating func apply(_ star: PendingSongStar) {
+        guard let index = snapshot.songs.firstIndex(where: { $0.id == star.songID }) else { return }
+        snapshot.songs[index].starredAudioFileID = star.starredAudioFileID
     }
 
     mutating func acknowledge(_ write: PendingAnnotationWrite, token: String) {

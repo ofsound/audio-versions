@@ -7,9 +7,14 @@ struct Song: Identifiable, Hashable, Codable {
     var generalNotes: String = ""
     var noteTabs: [SongNoteTab]? = nil
     var galleryImages: [GalleryImage]? = nil
+    var starredAudioFileID: String? = nil
     var updatedAt: Date
     var deletedAt: Date? = nil
     var versions: [AudioVersion]
+
+    var previewVersion: AudioVersion? {
+        versions.first { $0.id == starredAudioFileID } ?? latestVersion
+    }
 
     var latestVersion: AudioVersion? {
         versions.max { $0.createdAt < $1.createdAt }

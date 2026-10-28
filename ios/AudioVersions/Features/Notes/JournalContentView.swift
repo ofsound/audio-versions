@@ -7,7 +7,10 @@ struct JournalContentView: View {
 
     let text: String
     let placeholder: String
+    var fontSize: CGFloat = 14
     let onOpenLink: (SongLinkTarget) -> Void
+
+    private var noteFont: Font { .system(size: fontSize) }
 
     private var lines: [JournalRenderedLine] {
         SongJournalLink.renderedLines(from: text)
@@ -17,12 +20,13 @@ struct JournalContentView: View {
         Group {
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(placeholder)
+                    .font(noteFont)
                     .foregroundStyle(palette.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                        JournalContentLineView(line: line, onOpenLink: onOpenLink)
+                        JournalContentLineView(line: line, fontSize: fontSize, onOpenLink: onOpenLink)
                             .padding(
                                 .bottom,
                                 line.hasTimestamp && index < lines.count - 1 ? 8 : 0
@@ -52,7 +56,10 @@ private struct JournalContentLineView: View {
     @Environment(\.palette) private var palette
 
     let line: JournalRenderedLine
+    let fontSize: CGFloat
     let onOpenLink: (SongLinkTarget) -> Void
+
+    private var noteFont: Font { .system(size: fontSize) }
 
     private var hasInlineChip: Bool {
         line.segments.contains {
@@ -68,7 +75,7 @@ private struct JournalContentLineView: View {
     var body: some View {
         if line.segments.isEmpty {
             Text(" ")
-                .font(.body)
+                .font(noteFont)
                 .foregroundStyle(palette.textPrimary)
                 .accessibilityHidden(true)
         } else if !hasInlineChip,
@@ -76,7 +83,7 @@ private struct JournalContentLineView: View {
                   line.segments.count == 1
         {
             Text(value.isEmpty ? " " : value)
-                .font(.body)
+                .font(noteFont)
                 .foregroundStyle(palette.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
@@ -86,7 +93,7 @@ private struct JournalContentLineView: View {
                     case let .text(value):
                         if !value.isEmpty {
                             Text(value)
-                                .font(.body)
+                                .font(noteFont)
                                 .foregroundStyle(palette.textPrimary)
                         }
                     case let .link(link):
@@ -263,5 +270,49 @@ private struct JournalFlowLayout: Layout {
         }
 
         return rows
+    }
+}
+
+struct SongNoteTextSizeControls: View {
+    @Environment(\.palette) private var palette
+
+    let fontSize: Int
+    let onAdjust: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Button {
+                onAdjust(-1)
+            } label: {
+                Image(systemName: "minus")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(fontSize <= 10)
+            .accessibilityLabel("Decrease note text size")
+
+            Text("\(fontSize)px")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(palette.textSecondary)
+                .frame(minWidth: 36)
+                .accessibilityLabel("\(fontSize) pixels")
+
+            Button {
+                onAdjust(1)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(fontSize >= 28)
+            .accessibilityLabel("Increase note text size")
+        }
+        .foregroundStyle(palette.textSecondary)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Note text size")
     }
 }

@@ -12,6 +12,8 @@ struct PlainTextNoteEditorView: View {
     let requiresNonEmptyDraft: Bool
     let noteTabs: [SongNoteTab]
     let selectedNoteTabID: Binding<String>?
+    let songNotesFontSize: Int?
+    let onAdjustSongNotesFontSize: ((Int) -> Void)?
     let onSave: (String) throws -> Void
 
     private var canSave: Bool {
@@ -26,12 +28,16 @@ struct PlainTextNoteEditorView: View {
         requiresNonEmptyDraft: Bool = false,
         noteTabs: [SongNoteTab] = [],
         selectedNoteTabID: Binding<String>? = nil,
+        songNotesFontSize: Int? = nil,
+        onAdjustSongNotesFontSize: ((Int) -> Void)? = nil,
         onSave: @escaping (String) throws -> Void
     ) {
         self.title = title
         self.accessibilityLabel = accessibilityLabel
         self.noteTabs = noteTabs
         self.selectedNoteTabID = selectedNoteTabID
+        self.songNotesFontSize = songNotesFontSize
+        self.onAdjustSongNotesFontSize = onAdjustSongNotesFontSize
         self.requiresNonEmptyDraft = requiresNonEmptyDraft
         _draft = State(initialValue: text)
         self.onSave = onSave
@@ -50,9 +56,15 @@ struct PlainTextNoteEditorView: View {
                     .padding(.top, 12)
                     .accessibilityLabel("Destination note tab")
                 }
+                if let songNotesFontSize, let onAdjustSongNotesFontSize {
+                    SongNoteTextSizeControls(fontSize: songNotesFontSize, onAdjust: onAdjustSongNotesFontSize)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, selectedNoteTabID == nil ? 8 : 0)
+                }
                 TextEditor(text: $draft)
                 .focused($isEditorFocused)
-                .font(.body)
+                .font(songNotesFontSize.map { .system(size: CGFloat($0)) } ?? .body)
                 .foregroundStyle(palette.textPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)

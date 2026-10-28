@@ -28,6 +28,37 @@ struct OfflineLibraryTests {
     }
 
     @Test
+    func metadataRefreshDoesNotCancelCloudPlaybackPreparation() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let userID = UUID()
+        let storage = try OfflineLibraryStorage(userID: userID, root: root)
+        var state = storage.state
+        state.snapshot = snapshot()
+        try storage.save(state)
+        let environment = ReviewCloudEnvironment(configuration: CloudConfiguration(
+            supabaseURL: URL(string: "http://127.0.0.1:1")!,
+            supabasePublishableKey: "offline-test-publishable-key",
+            apiBaseURL: URL(string: "http://127.0.0.1:1")!
+        ))
+        let store = ReviewCompanionStore(songs: [])
+        store.configureCloud(library: environment.library, signedMedia: environment.signedMedia,
+                             userID: userID, storageRoot: root)
+        let version = try #require(store.songs.first?.versions.first)
+        store.preparePlayback(for: version)
+        #expect(store.isPreparingPlayback)
+
+        store.replaceLibrary(with: store.songs, playlists: store.playlists, preservingPlayback: true)
+        #expect(store.activeVersionID == version.id)
+        #expect(store.isPreparingPlayback)
+        #expect(store.isPlaybackLoading)
+
+        store.useFixtureLibrary()
+        #expect(!store.isPreparingPlayback)
+        #expect(store.activeVersionID == nil)
+    }
+
+    @Test
     func storeRestoresOfflineLibraryAndPersistsEditsBeforeNetworking() throws {
         let root = temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }

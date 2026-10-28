@@ -198,6 +198,33 @@ final class CloudLibraryService: @unchecked Sendable {
         return row.updatedAt
     }
 
+    /// Sets or clears `songs.starred_audio_file_id` without writing other song columns.
+    func updateStarredAudioFileID(_ audioFileID: String?, songID: String) async throws {
+        guard let songUUID = UUID(uuidString: songID) else {
+            throw CloudDataError.invalidIdentifier(songID)
+        }
+        let starredID: String?
+        if let audioFileID {
+            guard let fileUUID = UUID(uuidString: audioFileID) else {
+                throw CloudDataError.invalidIdentifier(audioFileID)
+            }
+            starredID = fileUUID.uuidString.lowercased()
+        } else {
+            starredID = nil
+        }
+        try await client
+            .from("songs")
+            .update(
+                SongStarUpdate(
+                    starredAudioFileID: starredID,
+                    updatedAt: CloudTimestamp.format(.now)
+                )
+            )
+            .eq("id", value: songUUID)
+            .is("deleted_at", value: nil)
+            .execute()
+    }
+
     @discardableResult
     func updateAudioFileNotes(_ notes: String, audioFileID: String) async throws -> String {
         guard let audioFileID = UUID(uuidString: audioFileID) else {
@@ -459,6 +486,7 @@ final class CloudLibraryService: @unchecked Sendable {
                 generalNotes: row.generalNotes,
                 noteTabs: row.noteTabs,
                 galleryImages: row.galleryImages,
+                starredAudioFileID: row.starredAudioFileID?.uuidString.lowercased(),
                 updatedAt: try CloudTimestamp.parse(row.updatedAt),
                 deletedAt: try row.deletedAt.map(CloudTimestamp.parse),
                 versions: versions

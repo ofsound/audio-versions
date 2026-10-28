@@ -6,6 +6,49 @@ import Testing
 @MainActor
 struct PersistentMiniPlayerTests {
     @Test
+    func metadataRefreshPreservesPlayingAndPausedTracksAndPlaylistQueue() throws {
+        let store = ReviewCompanionStore(songs: FixtureLibrary.songs, playlists: [])
+        let versions = store.songs.flatMap(\.versions)
+        let first = try #require(versions.first)
+        let second = try #require(versions.dropFirst().first)
+        let playlist = try #require(store.createPlaylist(named: "Queue", audioFileIDs: [first.id, second.id]))
+        store.play(version: first, in: playlist)
+        store.seek(to: 12, in: first, preservePlaylistQueue: true)
+
+        store.replaceLibrary(with: store.songs, playlists: store.playlists, preservingPlayback: true)
+        #expect(store.activeVersionID == first.id)
+        #expect(store.isPlaying)
+        #expect(store.currentTime == 12)
+        #expect(store.isPlaylistActive(playlist.id))
+
+        store.togglePlayback(for: first, preservePlaylistQueue: true)
+        store.replaceLibrary(with: store.songs, playlists: store.playlists, preservingPlayback: true)
+        #expect(!store.isPlaying)
+        #expect(store.currentTime == 12)
+        store.playNextPlaylistVersion()
+        #expect(store.activeVersionID == second.id)
+        #expect(store.isPlaying)
+
+        store.replaceLibrary(with: [])
+        #expect(store.activeVersionID == nil)
+        #expect(!store.isPlaying)
+        #expect(!store.isPlaylistActive(playlist.id))
+    }
+
+    @Test
+    func metadataRefreshDropsRemovedQueueWithoutStoppingItsTrack() throws {
+        let store = ReviewCompanionStore(songs: FixtureLibrary.songs, playlists: [])
+        let version = try #require(store.songs.first?.versions.first)
+        let playlist = try #require(store.createPlaylist(named: "Queue", audioFileIDs: [version.id]))
+        store.play(version: version, in: playlist)
+        store.replaceLibrary(with: store.songs, playlists: [], preservingPlayback: true)
+        #expect(store.activeVersionID == version.id)
+        #expect(store.isPlaying)
+        #expect(!store.isPlaylistActive(playlist.id))
+        store.replaceLibrary(with: [])
+    }
+
+    @Test
     func playlistControlsOnlyRepresentTheCurrentQueue() throws {
         let store = ReviewCompanionStore(songs: FixtureLibrary.songs, playlists: [])
         let version = try #require(store.songs.first?.versions.first)

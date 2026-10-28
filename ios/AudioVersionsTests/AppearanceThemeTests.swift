@@ -48,6 +48,27 @@ struct AppearanceThemeTests {
     }
 
     @Test
+    func songNotesFontSizeStaysBetweenTenAndTwentyEight() throws {
+        let defaults = try #require(
+            UserDefaults(suiteName: "com.benmontgomery.audioversions.tests.song-notes-font")
+        )
+        defaults.removeObject(forKey: AppearanceStore.songNotesFontSizeStorageKey)
+        defer { defaults.removeObject(forKey: AppearanceStore.songNotesFontSizeStorageKey) }
+
+        let store = AppearanceStore(defaults: defaults)
+        #expect(store.songNotesFontSize == 14)
+
+        store.adjustSongNotesFontSize(by: -20)
+        #expect(store.songNotesFontSize == 10)
+        store.adjustSongNotesFontSize(by: 100)
+        #expect(store.songNotesFontSize == 28)
+        #expect(AppearanceStore(defaults: defaults).songNotesFontSize == 28)
+
+        defaults.set(0, forKey: AppearanceStore.songNotesFontSizeStorageKey)
+        #expect(AppearanceStore(defaults: defaults).songNotesFontSize == 10)
+    }
+
+    @Test
     func paletteMatchesTheResolvedScheme() {
         #expect(AppPalette.forScheme(.dark) == .dark)
         #expect(AppPalette.forScheme(.light) == .light)

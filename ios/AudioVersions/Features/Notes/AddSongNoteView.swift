@@ -4,6 +4,7 @@ import SwiftUI
 /// changes tabs. Appending uses the latest content of the chosen document.
 struct AddSongNoteView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @EnvironmentObject private var appearance: AppearanceStore
     @State private var destination: SongNoteTab?
     let songID: String
 
@@ -35,7 +36,9 @@ struct AddSongNoteView: View {
                     destination = tab
                     store.selectNoteTab(songID: songID, tabID: id)
                 }
-            )
+            ),
+            songNotesFontSize: appearance.songNotesFontSize,
+            onAdjustSongNotesFontSize: { appearance.adjustSongNotesFontSize(by: $0) }
         ) { entry in
             guard let destination,
                   store.appendSongJournalEntry(entry, songID: songID, tabID: destination.id, expected: destination)

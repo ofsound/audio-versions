@@ -121,6 +121,7 @@ struct SongRow: Decodable, Sendable {
     let generalNotes: String
     var noteTabs: [SongNoteTab]? = nil
     var galleryImages: [GalleryImage]? = nil
+    var starredAudioFileID: UUID? = nil
     let audioFileOrder: [UUID]
     let updatedAt: String
     let deletedAt: String?
@@ -132,6 +133,7 @@ struct SongRow: Decodable, Sendable {
         case generalNotes = "general_notes"
         case noteTabs = "note_tabs"
         case galleryImages = "gallery_images"
+        case starredAudioFileID = "starred_audio_file_id"
         case audioFileOrder = "audio_file_order"
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
@@ -277,6 +279,28 @@ struct SongJournalUpdate: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case generalNotes = "general_notes"
         case updatedAt = "updated_at"
+    }
+}
+
+/// Partial song update matching the web `starredAudioFileId` patch.
+/// A missing value writes JSON null so unstarring clears `starred_audio_file_id`.
+struct SongStarUpdate: Encodable, Sendable {
+    let starredAudioFileID: String?
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case starredAudioFileID = "starred_audio_file_id"
+        case updatedAt = "updated_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if let starredAudioFileID {
+            try container.encode(starredAudioFileID, forKey: .starredAudioFileID)
+        } else {
+            try container.encodeNil(forKey: .starredAudioFileID)
+        }
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 

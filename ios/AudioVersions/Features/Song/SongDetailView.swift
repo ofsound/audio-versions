@@ -2,13 +2,18 @@ import SwiftUI
 
 struct SongDetailView: View {
     @EnvironmentObject private var store: ReviewCompanionStore
+    @EnvironmentObject private var appearance: AppearanceStore
     @Environment(\.palette) private var palette
     @State private var isEditingJournal = false
     @State private var isAddingToJournal = false
     @State private var selectedNoteTabID = ""
-    @State private var closedNoteTabIDs: Set<String> = []
     @State private var editingNoteTabID: String?
     @State private var editingOriginalNote: SongNoteTab?
+    @State private var noteTabRename: SongNoteTab?
+    @State private var isRenamingNoteTab = false
+    @State private var noteTabName = ""
+    @State private var noteTabPendingDelete: SongNoteTab?
+    @State private var isDeletingNoteTab = false
     let songID: String
 
     private var song: Song? {
@@ -16,8 +21,8 @@ struct SongDetailView: View {
     }
 
     private var activeNoteTab: SongNoteTab? {
-        let open = song?.resolvedNoteTabs.filter { !closedNoteTabIDs.contains($0.id) } ?? []
-        return open.first { $0.id == selectedNoteTabID } ?? open.first
+        let tabs = song?.resolvedNoteTabs ?? []
+        return tabs.first { $0.id == selectedNoteTabID } ?? tabs.first
     }
 
     var body: some View {
@@ -39,54 +44,71 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section {
-                        SongNoteTabBar(song: song, selectedID: $selectedNoteTabID, closedIDs: $closedNoteTabIDs)
-                            .padding(.horizontal, 16).padding(.top, 10)
+                        SongNoteTabBar(
+                            song: song,
+                            selectedID: $selectedNoteTabID,
+                            onRename: { tab in
+                                noteTabName = tab.name
+                                noteTabRename = tab
+                                isRenamingNoteTab = true
+                            },
+                            onDelete: { tab in
+                                noteTabPendingDelete = tab
+                                isDeletingNoteTab = true
+                            }
+                        )
+                        .padding(.horizontal, 16).padding(.top, 10)
                         JournalContentView(
                             text: activeNoteTab?.content ?? "",
-                            placeholder: activeNoteTab == nil ? "All tabs are closed. Reopen or create a tab with +." : "Add notes about this song",
+                            placeholder: "Add notes about this song",
+                            fontSize: CGFloat(appearance.songNotesFontSize),
                             onOpenLink: store.openSongLink
                         )
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
+                        SongNoteTextSizeControls(fontSize: appearance.songNotesFontSize) { delta in
+                            appearance.adjustSongNotesFontSize(by: delta)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 4)
                     } header: {
                         DetailSectionHeader("Song Notes")
                     }
                     .listRowInsets(Self.groupedSectionInsets)
                     .listRowBackground(palette.surface)
 
-                    Section {
-                        Button {
-                            editingNoteTabID = activeNoteTab?.id
-                            editingOriginalNote = activeNoteTab
-                            isEditingJournal = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "square.and.pencil")
-                                Text((activeNoteTab?.content.isEmpty ?? true) ? "Add notes" : "Edit notes")
+                    if let activeNoteTab, !activeNoteTab.content.isEmpty {
+                        Section {
+                            Button {
+                                editingNoteTabID = activeNoteTab.id
+                                editingOriginalNote = activeNoteTab
+                                isEditingJournal = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "square.and.pencil")
+                                    Text("Edit notes")
+                                }
+                                .foregroundStyle(palette.accentText)
+                                .frame(maxWidth: .infinity)
                             }
-                            .foregroundStyle(palette.accentText)
-                            .frame(maxWidth: .infinity)
+                            .buttonStyle(.bordered)
+                            .tint(palette.accent)
+                            .controlSize(.large)
+                            .accessibilityLabel("Edit notes")
                         }
-                        .disabled(activeNoteTab == nil)
-                        .buttonStyle(.bordered)
-                        .tint(palette.accent)
-                        .controlSize(.large)
-                        .accessibilityLabel(
-                            (activeNoteTab?.content.isEmpty ?? true) ? "Add notes" : "Edit notes"
-                        )
+                        // Keep a separate section so both the journal card and this
+                        // control retain rounded corners, but sit tightly underneath.
+                        .listSectionSpacing(8)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
                     }
-                    // Keep a separate section so both the journal card and this
-                    // control retain rounded corners, but sit tightly underneath.
-                    .listSectionSpacing(8)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
                 }
                 .refreshable { await store.refreshCloudLibrary() }
                 .scrollContentBackground(.hidden)
                 .appCanvas()
-                .onAppear { if let id = store.preferredNoteTab(songID: songID)?.id { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
-                .onChange(of: store.selectedNoteTabs[songID]) { _, id in if let id { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
-                .onChange(of: store.requestedNoteTabRevisions[songID]) { _, _ in if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id; closedNoteTabIDs.remove(id) } }
+                .onAppear { if let id = store.preferredNoteTab(songID: songID)?.id { selectedNoteTabID = id } }
+                .onChange(of: store.selectedNoteTabs[songID]) { _, id in if let id { selectedNoteTabID = id } }
+                .onChange(of: store.requestedNoteTabRevisions[songID]) { _, _ in if let id = store.requestedNoteTabs[songID] { selectedNoteTabID = id } }
                 .navigationTitle(song.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .addToJournalBottomBar {
@@ -97,13 +119,37 @@ struct SongDetailView: View {
                     PlainTextNoteEditorView(
                         title: song.resolvedNoteTabs.first { $0.id == editingNoteTabID }?.name ?? "Song Notes",
                         accessibilityLabel: "Song notes",
-                        text: editingOriginalNote?.content ?? ""
+                        text: editingOriginalNote?.content ?? "",
+                        songNotesFontSize: appearance.songNotesFontSize,
+                        onAdjustSongNotesFontSize: { appearance.adjustSongNotesFontSize(by: $0) }
                     ) { journal in
                         guard store.saveSongJournal(journal, songID: song.id, tabID: editingNoteTabID, expected: editingOriginalNote) else { throw NoteTabError.notSaved }
                     }
                 }
                 .sheet(isPresented: $isAddingToJournal) {
                     AddSongNoteView(songID: song.id, initialTab: store.preferredNoteTab(songID: song.id))
+                }
+                // `presenting` keeps the long-pressed tab. The old alert read the
+                // optional after dismissal cleared it and could rename the previous tab.
+                .alert(
+                    "Rename note tab",
+                    isPresented: $isRenamingNoteTab,
+                    presenting: noteTabRename
+                ) { tab in
+                    TextField("Tab name", text: $noteTabName)
+                    Button("Save") {
+                        store.renameNoteTab(songID: songID, tabID: tab.id, name: noteTabName)
+                    }
+                    Button("Cancel", role: .cancel) {}
+                }
+                .confirmationDialog(
+                    deleteNoteTabTitle,
+                    isPresented: $isDeletingNoteTab,
+                    titleVisibility: .visible,
+                    presenting: noteTabPendingDelete
+                ) { tab in
+                    Button("Delete tab and notes", role: .destructive) { confirmDelete(tab) }
+                    Button("Cancel", role: .cancel) {}
                 }
             } else {
                 ContentUnavailableView(
@@ -114,6 +160,21 @@ struct SongDetailView: View {
             }
         }
         .persistentMiniPlayer()
+    }
+
+    private var deleteNoteTabTitle: String {
+        let name = noteTabPendingDelete?.name ?? "this tab"
+        return "Delete “\(name)” and all of its notes? This cannot be undone."
+    }
+
+    private func confirmDelete(_ tab: SongNoteTab) {
+        let tabs = store.songs.first { $0.id == songID }?.resolvedNoteTabs ?? []
+        let index = tabs.firstIndex { $0.id == tab.id } ?? 0
+        guard store.deleteNoteTab(songID: songID, tabID: tab.id) else { return }
+        guard selectedNoteTabID == tab.id else { return }
+        let remaining = tabs.filter { $0.id != tab.id }
+        let nextIndex = max(0, index - 1)
+        if remaining.indices.contains(nextIndex) { selectedNoteTabID = remaining[nextIndex].id }
     }
 
     private func sortedVersions(for song: Song) -> [AudioVersion] {
@@ -178,6 +239,8 @@ private struct ScrollableVersionList: View {
             LazyVStack(spacing: 0) {
                 ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
                     HStack(spacing: 10) {
+                        VersionPreviewButton(version: version, title: version.name, compact: true)
+
                         NavigationLink(
                             value: LibraryDestination.version(
                                 songID: songID,
@@ -185,27 +248,19 @@ private struct ScrollableVersionList: View {
                                 target: nil
                             )
                         ) {
-                            HStack(spacing: 10) {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(palette.brandTile)
-                                    .frame(width: 36, height: 36)
-                                    .overlay {
-                                        Image(systemName: "waveform")
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(palette.onAccent)
-                                    }
-
-                                VersionRow(version: version)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .contentShape(Rectangle())
+                            VersionRow(version: version)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
 
-                        OfflineDownloadControl(version: version, compact: true)
-
-                        AddVersionToPlaylistMenu(version: version)
-                            .frame(width: 36, height: 36)
+                        HStack(spacing: 0) {
+                            VersionPreviewStarButton(songID: songID, version: version)
+                            OfflineDownloadControl(version: version, compact: true)
+                            AddVersionToPlaylistMenu(version: version)
+                                .frame(width: 36, height: 36)
+                                .padding(.trailing, 10)
+                        }
 
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))

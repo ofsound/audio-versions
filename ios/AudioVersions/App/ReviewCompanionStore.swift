@@ -43,6 +43,7 @@ final class ReviewCompanionStore: ObservableObject {
     private var automaticDownloadAttempts: Set<String> = []
     private var removedDownloadIDs: Set<String> = []
     private var noteSyncTask: Task<Void, Never>?
+    private var songStarSyncTask: Task<Void, Never>?
     private var annotationSyncTask: Task<Void, Never>?
     private var retrySyncTask: Task<Void, Never>?
     private var networkMonitor: NWPathMonitor?
@@ -184,6 +185,7 @@ final class ReviewCompanionStore: ObservableObject {
 
         await annotationSyncTask?.value
         await noteSyncTask?.value
+        await songStarSyncTask?.value
         guard accountID == sessionID, self.cloudLibrary === cloudLibrary else { return }
         do {
             var snapshot = try await cloudLibrary.fetchActiveSnapshot()
@@ -198,7 +200,8 @@ final class ReviewCompanionStore: ObservableObject {
             replaceLibrary(
                 with: snapshot.songs,
                 trashedSongs: snapshot.trashedSongs,
-                playlists: snapshot.playlists
+                playlists: snapshot.playlists,
+                preservingPlayback: true
             )
             let cutoff = Date.now.addingTimeInterval(-30 * 24 * 60 * 60)
             for song in snapshot.trashedSongs where (song.deletedAt ?? .distantFuture) <= cutoff {
@@ -237,16 +240,27 @@ final class ReviewCompanionStore: ObservableObject {
     func replaceLibrary(
         with songs: [Song],
         trashedSongs: [Song] = [],
-        playlists: [Playlist] = []
+        playlists: [Playlist] = [],
+        preservingPlayback: Bool = false
     ) {
-        stopPlayback()
-        activeVersionID = nil
-        fixtureCurrentTime = 0
+        // Gallery and foreground refreshes replace metadata while audio may
+        // still be preparing or playing. Only stop if the active file is gone.
+        let activeFileExists = activeVersionID.map { id in
+            songs.contains { $0.versions.contains { $0.id == id } }
+        } ?? false
+        if !preservingPlayback || !activeFileExists {
+            stopPlayback()
+            self.activeVersionID = nil
+            fixtureCurrentTime = 0
+        }
         self.songs = songs
         self.trashedSongs = trashedSongs
         self.playlists = playlists
-        activePlaylistID = nil
-        audioEngine.setQueueControlsEnabled(false)
+        if let activePlaylistID,
+           !playlists.contains(where: { $0.id == activePlaylistID }) || activeVersionID == nil {
+            self.activePlaylistID = nil
+            audioEngine.setQueueControlsEnabled(false)
+        }
     }
 
     func trashSong(_ song: Song) {
@@ -333,6 +347,25 @@ final class ReviewCompanionStore: ObservableObject {
         fixtureCurrentTime = 0
         playbackErrorMessage = nil
         hasAttemptedPlaybackRecovery = false
+    }
+
+    func toggleSongPreview(for song: Song) {
+        guard let version = song.previewVersion else { return }
+        togglePreview(for: version)
+    }
+
+    func isPreviewing(_ version: AudioVersion) -> Bool {
+        activeVersionID == version.id && (isPlaying || isPlaybackLoading)
+    }
+
+    func togglePreview(for version: AudioVersion) {
+        if isPreviewing(version) {
+            activate(version: version)
+            stopPlayback()
+            activeVersionID = nil
+        } else {
+            open(version: version, at: 0, autoplay: true)
+        }
     }
 
     func togglePlayback(for version: AudioVersion, preservePlaylistQueue: Bool = false) {
@@ -501,9 +534,43 @@ final class ReviewCompanionStore: ObservableObject {
         enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .update, tab: tab, expected: previous))
     }
 
-    func deleteNoteTab(songID: String, tabID: String) {
-        guard let previous = songs.first(where: { $0.id == songID })?.resolvedNoteTabs.first(where: { $0.id == tabID }) else { return }
-        enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .delete, tab: previous, expected: previous))
+    @discardableResult
+    func deleteNoteTab(songID: String, tabID: String) -> Bool {
+        guard let song = songs.first(where: { $0.id == songID }),
+              let previous = song.resolvedNoteTabs.first(where: { $0.id == tabID }) else { return false }
+        guard song.resolvedNoteTabs.count > 1 else {
+            cloudErrorMessage = NoteTabError.lastTab.localizedDescription
+            return false
+        }
+        return enqueueNote(PendingNoteWrite(id: UUID(), songID: songID, operation: .delete, tab: previous, expected: previous))
+    }
+
+    /// Stars one file for the library index preview, or clears it when that file is already starred.
+    func toggleStarredAudioFile(songID: String, audioFileID: String) {
+        guard let songIndex = songs.firstIndex(where: { $0.id == songID }),
+              songs[songIndex].versions.contains(where: { $0.id == audioFileID }) else { return }
+        let nextID: String? = songs[songIndex].starredAudioFileID == audioFileID ? nil : audioFileID
+        guard let storage = offlineStorage else {
+            songs[songIndex].starredAudioFileID = nextID
+            songs[songIndex].updatedAt = .now
+            return
+        }
+        do {
+            var next = storage.state
+            next.snapshot = currentSnapshot
+            guard let snapshotIndex = next.snapshot.songs.firstIndex(where: { $0.id == songID }) else { return }
+            next.snapshot.songs[snapshotIndex].starredAudioFileID = nextID
+            next.snapshot.songs[snapshotIndex].updatedAt = .now
+            var pending = next.pendingSongStars ?? []
+            pending.removeAll { $0.songID == songID }
+            pending.append(PendingSongStar(id: UUID(), songID: songID, starredAudioFileID: nextID))
+            next.pendingSongStars = pending
+            try storage.save(next)
+            songs = next.snapshot.songs
+            synchronizeSongStars()
+        } catch {
+            cloudErrorMessage = "The index preview could not be saved on this iPhone: \(error.localizedDescription)"
+        }
     }
 
     @discardableResult
@@ -1012,6 +1079,8 @@ extension ReviewCompanionStore {
         downloadingVersionIDs = []
         noteSyncTask?.cancel()
         noteSyncTask = nil
+        songStarSyncTask?.cancel()
+        songStarSyncTask = nil
         pendingNoteWrites = []
         isSynchronizingNotes = false
         noteSyncError = nil
@@ -1174,6 +1243,7 @@ extension ReviewCompanionStore {
     func synchronizeAnnotations() {
         fillAutomaticDownloads()
         synchronizeNotes()
+        synchronizeSongStars()
         guard !isOffline, !isCloudLoading, annotationSyncTask == nil,
               let storage = offlineStorage, let cloudLibrary,
               !storage.state.pendingWrites.isEmpty else { return }
@@ -1283,6 +1353,31 @@ extension ReviewCompanionStore {
         } catch {
             cloudErrorMessage = "Notes could not be saved on this iPhone: \(error.localizedDescription)"
             return false
+        }
+    }
+
+    private func synchronizeSongStars() {
+        guard !isOffline, !isCloudLoading, songStarSyncTask == nil,
+              let storage = offlineStorage, let cloudLibrary,
+              !(storage.state.pendingSongStars ?? []).isEmpty else { return }
+        songStarSyncTask = Task { [weak self] in
+            guard let self else { return }
+            defer { if self.offlineStorage === storage { self.songStarSyncTask = nil } }
+            while !Task.isCancelled, self.offlineStorage === storage,
+                  let write = storage.state.pendingSongStars?.first {
+                do {
+                    try await cloudLibrary.updateStarredAudioFileID(write.starredAudioFileID, songID: write.songID)
+                    guard !Task.isCancelled, self.offlineStorage === storage else { return }
+                    var next = storage.state
+                    next.pendingSongStars?.removeAll { $0.id == write.id }
+                    if next.pendingSongStars?.isEmpty == true { next.pendingSongStars = nil }
+                    try storage.save(next)
+                } catch is CancellationError {
+                    return
+                } catch {
+                    return
+                }
+            }
         }
     }
 

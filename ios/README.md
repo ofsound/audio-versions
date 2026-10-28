@@ -219,11 +219,14 @@ xcodebuild test -quiet \
 
 ### Named Song Notes tabs
 
-Song detail shows all named note documents from `songs.note_tabs`. Tap a tab to
-switch, tap + to create an Untitled tab immediately, and long-press for rename, close, and delete.
-Closed tabs can be reopened from the adjacent menu.
-Closing a tab keeps its text; deletion asks for confirmation and cannot remove the
-last document. Edit targets the selected tab. The bottom Add action, both on the song screen and
+Song detail shows every saved note tab from `songs.note_tabs`. Tap a tab to
+switch, and tap + to create an Untitled tab immediately. Long-press a tab to
+rename it, or to delete that tab and all of its notes. Deletion asks for
+confirmation — Delete “{name}” and all of its notes? This cannot be undone. —
+and cannot remove the last tab. Tabs stay visible until they are deleted.
+Edit targets the selected tab. Decrease and increase note text size on the song
+notes surface; the size is remembered on this iPhone, from 10 to 28 points,
+starting at 14. The bottom Add action, both on the song screen and
 in the player, opens a sheet with an “Append to” tab picker. It defaults to the
 last tab selected for that song during the current app session. Changing the
 destination keeps the draft; saving appends to the end of that tab.

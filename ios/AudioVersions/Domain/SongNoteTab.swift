@@ -33,7 +33,7 @@ enum NoteTabError: Error, LocalizedError {
         switch self {
         case .conflict: "This note changed on another device. Your local changes are kept on this iPhone for review."
         case .invalidName: "Use a tab name between 1 and 80 characters."
-        case .lastTab: "Keep at least one note tab. You can close it or clear its text instead."
+        case .lastTab: "Keep at least one note tab. Clear its text instead."
         case .notSaved: "Your notes could not be saved on this iPhone. Your draft is still in the editor; try saving again."
         }
     }

@@ -142,9 +142,15 @@ struct ReviewPlayerView: View {
     private func playerCard(version: AudioVersion) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(version.name)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(palette.textPrimary)
+                HStack(alignment: .center, spacing: 8) {
+                    Text(version.name)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(palette.textPrimary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VersionPreviewStarButton(songID: songID, version: version)
+                }
 
                 VersionMetadataLine(version: version)
 

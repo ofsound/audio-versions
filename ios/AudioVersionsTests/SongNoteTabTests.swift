@@ -23,7 +23,9 @@ struct SongNoteTabTests {
         let data = try JSONEncoder().encode(song)
         #expect(try JSONDecoder().decode(Song.self, from: data).resolvedNoteTabs == song.resolvedNoteTabs)
         let old = #"{"snapshot":{"songs":[],"trashedSongs":[],"playlists":[]},"downloads":{},"pendingWrites":[]}"#.data(using: .utf8)!
-        #expect(try JSONDecoder().decode(OfflineLibraryState.self, from: old).pendingNoteWrites == nil)
+        let legacyState = try JSONDecoder().decode(OfflineLibraryState.self, from: old)
+        #expect(legacyState.pendingNoteWrites == nil)
+        #expect(legacyState.pendingSongStars == nil)
     }
     @Test func offlineContentEditsPreserveRemoteRenamesAndOtherTabs() throws {
         let tab = song.resolvedNoteTabs[1]
@@ -51,6 +53,7 @@ struct SongNoteTabTests {
         let primary = only.resolvedNoteTabs[0]
         let last = PendingNoteWrite(id: UUID(), songID: only.id, operation: .delete, tab: primary, expected: primary)
         #expect(throws: NoteTabError.self) { try last.applying(to: only, checkingConflicts: true) }
+        #expect(NoteTabError.lastTab.errorDescription == "Keep at least one note tab. Clear its text instead.")
     }
     @Test func queuedTabsSurviveRelaunchAndOverlayCloudRefresh() throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
@@ -92,6 +95,17 @@ struct SongNoteTabTests {
         store.useFixtureLibrary()
         #expect(store.pendingNoteWrites.isEmpty)
     }
+    @Test func renameChangesOnlyTheRequestedTab() {
+        let store = ReviewCompanionStore(songs: [song])
+        store.renameNoteTab(songID: song.id, tabID: "master", name: "Final")
+        store.renameNoteTab(songID: song.id, tabID: "song-notes", name: "Mix")
+        let tabs = store.songs[0].resolvedNoteTabs
+        #expect(tabs.first { $0.id == "song-notes" }?.name == "Mix")
+        #expect(tabs.first { $0.id == "song-notes" }?.content == "Current primary notes")
+        #expect(tabs.first { $0.id == "master" }?.name == "Final")
+        #expect(tabs.first { $0.id == "master" }?.content == "Old limiter")
+    }
+
     @Test func remembersEachSongsDestinationAndFallsBackWhenItIsRemoved() throws {
         let other = Song(id: "other-song", title: song.title, artist: song.artist, generalNotes: song.generalNotes, noteTabs: song.noteTabs, updatedAt: song.updatedAt, versions: [])
         let store = ReviewCompanionStore(songs: [song, other])
