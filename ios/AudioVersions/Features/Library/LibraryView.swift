@@ -36,12 +36,28 @@ struct LibraryView: View {
         store.isCloudLoading && store.songs.isEmpty
     }
 
+    private var showsLibraryLoadError: Bool {
+        store.songs.isEmpty && store.cloudErrorMessage != nil && !store.isCloudLoading
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: $store.selectedLibraryTab) {
             NavigationStack(path: $store.navigationPath) {
                 Group {
                 if isBootstrappingLibrary {
                     LibraryBootstrapView()
+                } else if showsLibraryLoadError {
+                    ContentUnavailableView {
+                        Label("Couldn’t load your library", systemImage: "wifi.exclamationmark")
+                    } description: {
+                        Text("Check your connection and try again.")
+                    } actions: {
+                        Button("Retry", systemImage: "arrow.clockwise") {
+                            Task { await store.refreshCloudLibrary() }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    }
                 } else if filteredSongs.isEmpty {
                     if searchText.isEmpty {
                         ContentUnavailableView(
@@ -81,6 +97,7 @@ struct LibraryView: View {
                     LibrarySearchField(text: $searchText)
                 }
             }
+                .persistentMiniPlayer()
                 .toolbar {
                 if !isBootstrappingLibrary {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -135,16 +152,19 @@ struct LibraryView: View {
             .tabItem {
                 Label("Songs", systemImage: "music.note.house")
             }
+            .tag(LibraryTab.songs)
 
             PlaylistLibraryView()
                 .tabItem {
                     Label("Playlists", systemImage: "music.note.list")
                 }
+                .tag(LibraryTab.playlists)
 
             TrashLibraryView()
                 .tabItem {
                     Label("Trash", systemImage: "trash")
                 }
+                .tag(LibraryTab.trash)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             OfflineSyncStatusView()
@@ -181,7 +201,7 @@ struct LibraryView: View {
         .alert(
             "Audio Versions couldn’t complete that request",
             isPresented: Binding(
-                get: { store.cloudErrorMessage != nil },
+                get: { store.cloudErrorMessage != nil && !showsLibraryLoadError },
                 set: { isPresented in
                     if !isPresented {
                         store.clearCloudError()
@@ -244,6 +264,7 @@ private struct TrashLibraryView: View {
                 }
             }
             .appCanvas()
+            .persistentMiniPlayer()
             .navigationTitle("Trash")
             .toolbar {
                 if !store.trashedSongs.isEmpty {
@@ -308,12 +329,14 @@ private struct LibrarySearchField: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(palette.textTertiary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Clear search")
             }
         }
+        .frame(minHeight: 44)
         .padding(.horizontal, 14)
-        .padding(.vertical, 11)
         .background(palette.surfaceInset, in: Capsule())
         .accessibilityElement(children: .contain)
     }
@@ -353,7 +376,7 @@ private struct LibrarySongRow: View {
                 .font(.caption)
                 .foregroundStyle(palette.textTertiary)
             }
-            .padding(.vertical, 5)
+            .padding(.vertical, 8)
         }
         .accessibilityElement(children: .combine)
     }

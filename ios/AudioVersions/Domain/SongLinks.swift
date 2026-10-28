@@ -159,6 +159,10 @@ enum JournalInlineSegment: Hashable {
     case timestamp(SongJournalTimestamp)
 }
 
+enum LibraryTab: Hashable {
+    case songs, playlists, trash
+}
+
 enum LibraryDestination: Hashable {
     case song(id: String)
     case version(songID: String, versionID: String, target: SongLinkTarget?)

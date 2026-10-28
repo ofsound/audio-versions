@@ -31,12 +31,12 @@ describe("calculateWaveformThumbnailGridLayout", () => {
 			}),
 		).toMatchObject({
 			columns: 2,
-			density: "compact",
+			density: "comfortable",
 			rows: 6,
 		});
 	});
 
-	it("fits 36 items without overflow and adapts columns to height", () => {
+	it("keeps 36 items in two columns and scrolls instead of adding columns", () => {
 		const shortViewport = calculateWaveformThumbnailGridLayout({
 			height: 400,
 			itemCount: 36,
@@ -49,22 +49,27 @@ describe("calculateWaveformThumbnailGridLayout", () => {
 		});
 
 		expect(shortViewport).toMatchObject({
-			columns: 4,
-			density: "compact",
-			rows: 9,
+			columns: 2,
+			density: "comfortable",
+			rows: 18,
 		});
 		expect(tallViewport).toMatchObject({
-			columns: 3,
-			density: "compact",
-			rows: 12,
+			columns: 2,
+			density: "comfortable",
+			rows: 18,
 		});
-		expect(
-			(shortViewport?.rowHeightPx ?? 0) * (shortViewport?.rows ?? 0) +
-				(shortViewport?.gapPx ?? 0) * ((shortViewport?.rows ?? 0) - 1),
-		).toBeGreaterThanOrEqual(396);
+		for (const [layout, height] of [
+			[shortViewport, 400],
+			[tallViewport, 700],
+		] as const) {
+			expect(layout?.rowHeightPx).toBeGreaterThanOrEqual(64);
+			expect(
+				layout ? getWaveformThumbnailGridContentHeight(layout) : 0,
+			).toBeGreaterThan(height);
+		}
 	});
 
-	it("falls back to a compressed treatment in a very short viewport", () => {
+	it("preserves readable rows in a very short viewport", () => {
 		expect(
 			calculateWaveformThumbnailGridLayout({
 				height: 120,
@@ -72,7 +77,9 @@ describe("calculateWaveformThumbnailGridLayout", () => {
 				width: 600,
 			}),
 		).toMatchObject({
-			density: "compressed",
+			columns: 2,
+			rowHeightPx: 64,
+			density: "comfortable",
 		});
 	});
 

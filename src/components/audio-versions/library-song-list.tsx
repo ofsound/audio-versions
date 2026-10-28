@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Play, Settings, Square } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	fitLibraryColumnWidths,
 	LIBRARY_COLUMNS,
 	type LibraryColumnKey,
 	type LibraryColumnWidths,
@@ -44,11 +45,22 @@ export function LibrarySongList({
 }: LibrarySongListProps) {
 	const navigate = useNavigate();
 	const tableRef = useRef<HTMLTableElement>(null);
-	const { widths, setWidth, handleProps } = useLibraryColumnResize(
-		tableRef,
-		columnWidths,
-		onColumnWidthsChange,
-	);
+	const {
+		widths: requestedWidths,
+		setWidth,
+		handleProps,
+	} = useLibraryColumnResize(tableRef, columnWidths, onColumnWidthsChange);
+	const [availableWidth, setAvailableWidth] = useState(0);
+	useEffect(() => {
+		const container = tableRef.current?.parentElement;
+		if (!container) return;
+		const measure = () => setAvailableWidth(container.clientWidth);
+		measure();
+		if (typeof ResizeObserver === "undefined") return;
+		const observer = new ResizeObserver(measure);
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, []);
 	const [sort, setSort] = useState<{
 		column: SortColumn;
 		ascending: boolean;
@@ -87,6 +99,7 @@ export function LibrarySongList({
 		"files",
 		"markers",
 	];
+	const widths = fitLibraryColumnWidths(requestedWidths, keys, availableWidth);
 	const columns = keys.map((key) => ({ key, ...LIBRARY_COLUMNS[key] }));
 	const minimumTableWidth =
 		96 +

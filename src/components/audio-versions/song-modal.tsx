@@ -8,6 +8,7 @@ import { useModalFocusTrap } from "./use-modal-focus-trap";
 
 interface SongModalProps {
 	wide?: boolean;
+	contained?: boolean;
 	panelClassName?: string;
 	onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 	children: React.ReactNode;
@@ -20,6 +21,7 @@ interface SongModalProps {
 export function SongModal({
 	children,
 	wide = false,
+	contained = false,
 	panelClassName,
 	onKeyDown,
 	initialFocusRef,
@@ -36,7 +38,7 @@ export function SongModal({
 
 	return (
 		<div
-			className="song-modal"
+			className={`song-modal ${contained ? "song-modal--contained" : ""}`}
 			onKeyDownCapture={(event) => {
 				if (event.key !== "Escape") {
 					return;
@@ -61,7 +63,7 @@ export function SongModal({
 				tabIndex={-1}
 				className={`song-modal__panel ${panelClassName ?? (wide ? "w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-[calc(100vw-5rem)]" : "w-[calc(100vw-2rem)] max-w-[72rem] sm:w-[65vw]")}`}
 			>
-				<div className="flex items-start justify-between gap-4 border-b border-[var(--color-border-plain)] px-5 py-4 sm:px-6">
+				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--color-border-plain)] px-5 py-4 sm:px-6">
 					<div className="min-w-0">
 						<h2
 							id={titleId}

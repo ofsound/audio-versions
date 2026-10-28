@@ -156,6 +156,13 @@ Run these checks after installing a new build from Xcode:
     previous/next from Lock Screen and a headset, repeat-all wrapping, repeat-one,
     interruption behavior, and that Now Playing metadata changes to the new file.
 
+11. While a version plays, navigate back through song notes and the library, then
+    switch to Playlists and Trash. The mini player should stay above the tab bar,
+    keep showing the active song/version, and pause/resume that same track. Tap
+    its title to return to the full file player without rewinding or interrupting
+    playback. The full player page should have no duplicate mini player. Repeat
+    with a playlist and verify the queue still advances in order.
+
 ## Physical-device offline acceptance
 
 These checks require a signed build on an iPhone; simulator tests cannot verify

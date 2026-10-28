@@ -18,6 +18,8 @@ struct OfflineDownloadControl: View {
                             if !compact { Text("Cancel download") }
                             Image(systemName: "xmark")
                         }
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Cancel download of \(version.name)")
                 } else if store.downloadedVersionIDs.contains(version.id) {
@@ -28,6 +30,8 @@ struct OfflineDownloadControl: View {
                     } label: {
                         Label("Downloaded", systemImage: "checkmark.circle.fill")
                             .labelStyle(DownloadLabelStyle(compact: compact))
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("\(version.name) is available offline. Download options")
                 } else {
@@ -36,6 +40,8 @@ struct OfflineDownloadControl: View {
                     } label: {
                         Label("Download for offline", systemImage: "arrow.down.circle")
                             .labelStyle(DownloadLabelStyle(compact: compact))
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .disabled(store.isOffline)
                     .accessibilityLabel("Download \(version.name) for offline listening")
@@ -43,7 +49,6 @@ struct OfflineDownloadControl: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(palette.accentText)
-            .frame(minWidth: 36, minHeight: 36)
         }
     }
 }

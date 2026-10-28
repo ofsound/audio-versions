@@ -33,3 +33,32 @@ export function normalizeLibraryColumnWidths(
 	}
 	return Object.keys(widths).length ? widths : undefined;
 }
+
+/** Fit stored widths to the viewport while reserving the row's action buttons. */
+export function fitLibraryColumnWidths(
+	widths: LibraryColumnWidths,
+	keys: LibraryColumnKey[],
+	availableWidth: number,
+): LibraryColumnWidths {
+	if (availableWidth <= 0) return widths;
+	const requested = (key: LibraryColumnKey) =>
+		widths[key] ??
+		(key === "title"
+			? LIBRARY_COLUMNS.title.minimum
+			: LIBRARY_COLUMNS[key].width);
+	const total = keys.reduce((sum, key) => sum + requested(key), 0);
+	const available = availableWidth - 96;
+	if (total <= available) return widths;
+	const minimum = keys.reduce(
+		(sum, key) => sum + LIBRARY_COLUMNS[key].minimum,
+		0,
+	);
+	const scale = Math.max(0, (available - minimum) / (total - minimum || 1));
+	return Object.fromEntries(
+		keys.map((key) => [
+			key,
+			LIBRARY_COLUMNS[key].minimum +
+				(requested(key) - LIBRARY_COLUMNS[key].minimum) * scale,
+		]),
+	);
+}

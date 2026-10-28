@@ -59,7 +59,7 @@ export function GlobalSearch() {
 						setQuery(event.target.value);
 						setOpen(true);
 					}}
-					onFocus={() => setOpen(true)}
+					onClick={() => setOpen(true)}
 					placeholder="Search songs, song notes, file notes, and markers"
 					className="min-h-0 min-w-0 flex-1 self-stretch border-0 bg-transparent py-0 text-sm leading-none text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
 				/>

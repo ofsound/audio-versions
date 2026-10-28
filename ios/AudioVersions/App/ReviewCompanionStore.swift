@@ -7,6 +7,7 @@ final class ReviewCompanionStore: ObservableObject {
     @Published private(set) var songs: [Song]
     @Published private(set) var trashedSongs: [Song]
     @Published private(set) var playlists: [Playlist]
+    @Published var selectedLibraryTab: LibraryTab = .songs
     @Published var navigationPath: [LibraryDestination] = []
     @Published var activeVersionID: String?
     @Published var playbackRate: Double = 1 {
@@ -92,6 +93,21 @@ final class ReviewCompanionStore: ObservableObject {
         audioEngine.onPreviousTrack = { [weak self] in
             self?.playPreviousPlaylistVersion()
         }
+    }
+
+    var activePlaybackVersion: AudioVersion? {
+        activeVersionID.flatMap(version)
+    }
+
+    var activePlaybackSong: Song? {
+        guard let activeVersionID else { return nil }
+        return songs.first { $0.versions.contains { $0.id == activeVersionID } }
+    }
+
+    func showCurrentPlayer() {
+        guard let song = activePlaybackSong, let version = activePlaybackVersion else { return }
+        selectedLibraryTab = .songs
+        navigationPath = [.song(id: song.id), .version(songID: song.id, versionID: version.id, target: nil)]
     }
 
     var currentTime: TimeInterval {
@@ -395,7 +411,7 @@ final class ReviewCompanionStore: ObservableObject {
     /// Downloads the complete track and prepares the local player when the
     /// player screen appears, without starting playback.
     func preparePlayback(for version: AudioVersion) {
-        activate(version: version)
+        activate(version: version, preservePlaylistQueue: activeVersionID == version.id)
 
         guard signedMedia != nil else { return }
 
@@ -444,8 +460,8 @@ final class ReviewCompanionStore: ObservableObject {
         openSongLink(target)
     }
 
-    func skip(by delta: TimeInterval, in version: AudioVersion) {
-        seek(to: currentTime + delta, in: version)
+    func skip(by delta: TimeInterval, in version: AudioVersion, preservePlaylistQueue: Bool = false) {
+        seek(to: currentTime + delta, in: version, preservePlaylistQueue: preservePlaylistQueue)
     }
 
     func preferredNoteTab(songID: String) -> SongNoteTab? {
@@ -657,6 +673,10 @@ final class ReviewCompanionStore: ObservableObject {
                 cloudErrorMessage = error.localizedDescription
             }
         }
+    }
+
+    func isPlaylistActive(_ playlistID: String) -> Bool {
+        activePlaylistID == playlistID
     }
 
     func togglePlaylistPlayback(version: AudioVersion, playlist: Playlist) {

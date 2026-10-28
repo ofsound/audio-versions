@@ -106,6 +106,7 @@ struct SongDetailView: View {
                 )
             }
         }
+        .persistentMiniPlayer()
     }
 
     private func sortedVersions(for song: Song) -> [AudioVersion] {

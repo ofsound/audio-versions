@@ -35,6 +35,7 @@ interface CalculateWaveformThumbnailGridLayoutOptions {
 
 const TARGET_ASPECT_RATIO = 5;
 const MIN_COLUMN_WIDTH_PX = 112;
+const MIN_SCROLLABLE_ROW_HEIGHT_PX = 64;
 const DEFAULT_MAX_ROW_HEIGHT_PX = getWaveformHeightPx("large");
 
 function getGapPx(itemCount: number) {
@@ -82,6 +83,7 @@ export function calculateWaveformThumbnailGridLayout({
 	const cappedMaxRowHeightPx = Math.max(1, maxRowHeightPx);
 	const gapPx = getGapPx(itemCount);
 	const maxColumns = Math.min(
+		2,
 		itemCount,
 		Math.max(1, Math.floor((width + gapPx) / (MIN_COLUMN_WIDTH_PX + gapPx))),
 	);
@@ -120,13 +122,24 @@ export function calculateWaveformThumbnailGridLayout({
 		return null;
 	}
 
-	// Preserve the column count chosen for a readable waveform aspect ratio, then
-	// let those rows grow to consume the remaining tray height. This avoids a
-	// short grid floating at the bottom of an otherwise empty left panel.
+	const minimumRowHeightPx = Math.min(
+		MIN_SCROLLABLE_ROW_HEIGHT_PX,
+		cappedMaxRowHeightPx,
+	);
+	if (
+		maxColumns === 2 &&
+		minimumRowHeightPx * itemCount + gapPx * (itemCount - 1) > height
+	) {
+		bestLayout.columns = 2;
+		bestLayout.rows = Math.ceil(itemCount / 2);
+	}
+
+	// Keep rows readable once the two-column limit is reached. Excess rows
+	// overflow into the tray's own vertical scroller instead of compressing.
 	const availableRowHeightPx =
 		(height - bestLayout.gapPx * (bestLayout.rows - 1)) / bestLayout.rows;
 	const rowHeightPx = Math.max(
-		1,
+		minimumRowHeightPx,
 		Math.min(cappedMaxRowHeightPx, availableRowHeightPx),
 	);
 

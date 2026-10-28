@@ -287,7 +287,7 @@ export function SongNotesTabs({
 				ref={tabList}
 				role="tablist"
 				aria-label="Song note tabs"
-				className="song-note-tablist mx-6 flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--color-border-strong)] px-0 pt-1"
+				className="song-note-tablist mx-6 flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--color-border-strong)] px-0 pt-[11px]"
 			>
 				{openTabs.map((tab) => (
 					<div
@@ -327,7 +327,7 @@ export function SongNotesTabs({
 							aria-selected={tab.id === activeId}
 							tabIndex={tab.id === activeId ? 0 : -1}
 							hidden={renamingId === tab.id}
-							className={`max-w-44 truncate py-2 pr-3 pl-1 text-[15px] ${tab.id === activeId ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"}`}
+							className="field-label workspace-section-heading max-w-44 truncate py-2 pr-3 pl-1"
 							title={`${tab.name} — double-click to rename`}
 							onClick={() => activate(tab.id, false)}
 							onDoubleClick={() => {
@@ -373,7 +373,7 @@ export function SongNotesTabs({
 								value={name}
 								maxLength={80}
 								disabled={busy}
-								className="my-1 mr-2 w-36 border border-[var(--color-border-strong)] bg-transparent px-1 text-[15px] text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+								className="field-label workspace-section-heading my-1 mr-2 w-36 border border-[var(--color-border-strong)] bg-transparent px-1 text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
 								onChange={(event) => setName(event.target.value)}
 								onBlur={() => {
 									if (!name.trim() || name === tab.name) {

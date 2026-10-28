@@ -42,7 +42,7 @@ struct ReviewPlayerView: View {
                             annotations: version.annotations,
                             activeTime: store.currentTime,
                             onSelect: { annotation in
-                                store.seek(to: annotation.startTime, in: version)
+                                store.seek(to: annotation.startTime, in: version, preservePlaylistQueue: true)
                             },
                             onEdit: { editingAnnotation = $0 },
                             onDelete: { store.delete($0, from: version.id) }
@@ -165,7 +165,7 @@ struct ReviewPlayerView: View {
                 duration: version.duration,
                 currentTime: store.currentTime,
                 annotations: version.annotations,
-                onSeek: { store.seek(to: $0, in: version) }
+                onSeek: { store.seek(to: $0, in: version, preservePlaylistQueue: true) }
             )
             .allowsHitTesting(store.isPlaybackReady(for: version))
 
@@ -176,19 +176,14 @@ struct ReviewPlayerView: View {
             }
             .font(.caption.monospacedDigit())
             .foregroundStyle(palette.textSecondary)
-            .overlay {
-                if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
-                    HStack(spacing: 4) {
-                        ProgressView()
-                            .controlSize(.mini)
-                            .tint(palette.accent)
-                        Text(status)
-                    }
-                    .font(.caption2)
-                    .foregroundStyle(palette.textTertiary)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(status)
+
+            if let status = store.playbackStatusText, store.playbackErrorMessage == nil {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small).tint(palette.accent)
+                    Text(status).font(.footnote).foregroundStyle(palette.textSecondary)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(status)
             }
 
             if let error = store.playbackErrorMessage {
@@ -206,7 +201,7 @@ struct ReviewPlayerView: View {
 
             HStack(spacing: 0) {
                 Button {
-                    store.seek(to: 0, in: version)
+                    store.seek(to: 0, in: version, preservePlaylistQueue: true)
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.title3.weight(.semibold))
@@ -219,7 +214,7 @@ struct ReviewPlayerView: View {
                 .accessibilityLabel("Reset playhead")
 
                 Button {
-                    store.skip(by: -10, in: version)
+                    store.skip(by: -10, in: version, preservePlaylistQueue: true)
                 } label: {
                     Image(systemName: "gobackward.10")
                         .foregroundStyle(palette.accentText)
@@ -231,7 +226,7 @@ struct ReviewPlayerView: View {
                 .accessibilityLabel("Skip back 10 seconds")
 
                 Button {
-                    store.togglePlayback(for: version)
+                    store.togglePlayback(for: version, preservePlaylistQueue: true)
                 } label: {
                     Group {
                         if !store.isPlaybackReady(for: version),
@@ -255,7 +250,7 @@ struct ReviewPlayerView: View {
                 .accessibilityLabel(playbackControlAccessibilityLabel(for: version))
 
                 Button {
-                    store.skip(by: 10, in: version)
+                    store.skip(by: 10, in: version, preservePlaylistQueue: true)
                 } label: {
                     Image(systemName: "goforward.10")
                         .foregroundStyle(palette.accentText)
@@ -313,7 +308,7 @@ struct ReviewPlayerView: View {
                 .accessibilityLabel(store.outputRouteName)
 
             AudioRoutePicker()
-                .frame(width: 28, height: 28)
+                .frame(width: 44, height: 44)
                 .accessibilityLabel("Choose audio output")
         }
         .frame(maxWidth: .infinity)

@@ -312,11 +312,15 @@ export function SongWorkspaceWaveformList({
 					className={`song-workspace-version-tray flex min-h-0 w-full flex-col p-3 ${
 						shouldStretchVersionTray ? "flex-1" : "shrink-0"
 					}`}
-					style={versionTrayHeight ? { height: versionTrayHeight } : undefined}
+					style={
+						versionTrayHeight && !shouldStretchVersionTray
+							? { height: versionTrayHeight }
+							: undefined
+					}
 				>
-					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto xl:overflow-hidden">
+					<div className="song-workspace-file-browser__list min-h-0 flex-1 overflow-y-auto overscroll-contain">
 						<div
-							className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
+							className="waveform-thumbnail-grid grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"
 							data-density={thumbnailGridLayout?.density}
 							style={
 								thumbnailGridLayout

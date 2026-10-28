@@ -78,6 +78,7 @@ struct PlaylistLibraryView: View {
                 CreatePlaylistSheet()
             }
         }
+        .persistentMiniPlayer()
     }
 }
 
@@ -100,7 +101,7 @@ private struct PlaylistDetailView: View {
     }
 
     private var activeVersion: AudioVersion? {
-        guard let activeVersionID = store.activeVersionID else { return nil }
+        guard store.isPlaylistActive(playlistID), let activeVersionID = store.activeVersionID else { return nil }
         return versions.first { $0.id == activeVersionID }
     }
 
@@ -212,6 +213,10 @@ private struct PlaylistPlayerControls: View {
         activeVersion ?? firstVersion
     }
 
+    private var isLoading: Bool { activeVersion != nil && store.isPlaybackLoading }
+    private var playbackError: String? { activeVersion == nil ? nil : store.playbackErrorMessage }
+    private var elapsedTime: TimeInterval { activeVersion == nil ? 0 : store.currentTime }
+
     var body: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
@@ -229,11 +234,11 @@ private struct PlaylistPlayerControls: View {
             }
 
             HStack(spacing: 10) {
-                Text(store.currentTime.playbackTimestamp)
+                Text(elapsedTime.playbackTimestamp)
                     .frame(width: 42, alignment: .trailing)
                 Slider(
                     value: Binding(
-                        get: { min(store.currentTime, displayedVersion?.duration ?? 0) },
+                        get: { PlaybackTimeline.clamp(elapsedTime, duration: displayedVersion?.duration ?? 0) },
                         set: { value in
                             guard let activeVersion else { return }
                             store.seek(
@@ -245,38 +250,56 @@ private struct PlaylistPlayerControls: View {
                     ),
                     in: 0 ... max(0.01, displayedVersion?.duration ?? 0.01)
                 )
-                .disabled(activeVersion == nil)
+                .disabled(activeVersion == nil || isLoading || playbackError != nil)
                 Text((displayedVersion?.duration ?? 0).playbackTimestamp)
                     .frame(width: 42, alignment: .leading)
             }
             .font(.caption.monospacedDigit())
             .foregroundStyle(palette.textSecondary)
 
-            HStack(spacing: 28) {
-                Button("Previous", systemImage: "backward.fill") {
+            HStack(spacing: 16) {
+                Button {
                     store.playPreviousPlaylistVersion()
+                } label: {
+                    Image(systemName: "backward.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                .labelStyle(.iconOnly)
-                .disabled(activeVersion == nil)
+                .accessibilityLabel("Previous")
+                .disabled(activeVersion == nil || isLoading || playbackError != nil)
 
                 Button {
                     guard let version = activeVersion ?? firstVersion else { return }
-                    store.togglePlaylistPlayback(version: version, playlist: playlist)
+                    if playbackError != nil {
+                        store.retryPlayback(for: version)
+                    } else {
+                        store.togglePlaylistPlayback(version: version, playlist: playlist)
+                    }
                 } label: {
-                    Image(systemName: store.isPlaying && activeVersion != nil ? "pause.fill" : "play.fill")
+                    Group {
+                        if isLoading {
+                            ProgressView().tint(palette.onAccent)
+                        } else {
+                            Image(systemName: playbackError != nil ? "arrow.clockwise" : store.isPlaying && activeVersion != nil ? "pause.fill" : "play.fill")
+                        }
+                    }
                         .font(.title2)
                         .frame(width: 58, height: 58)
                         .foregroundStyle(palette.onAccent)
                         .background(palette.accent, in: Circle())
                 }
-                .disabled(displayedVersion == nil)
-                .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+                .disabled(displayedVersion == nil || isLoading)
+                .accessibilityLabel(isLoading ? "Loading audio" : playbackError != nil ? "Retry playback" : store.isPlaying && activeVersion != nil ? "Pause" : "Play")
 
-                Button("Next", systemImage: "forward.fill") {
+                Button {
                     store.playNextPlaylistVersion()
+                } label: {
+                    Image(systemName: "forward.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                .labelStyle(.iconOnly)
-                .disabled(activeVersion == nil)
+                .accessibilityLabel("Next")
+                .disabled(activeVersion == nil || isLoading || playbackError != nil)
 
                 Button {
                     let modes = PlaylistLoopMode.allCases
@@ -289,16 +312,32 @@ private struct PlaylistPlayerControls: View {
                                 ? palette.textSecondary
                                 : palette.accentText
                         )
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Loop \(store.playlistLoopMode.rawValue)")
             }
             .buttonStyle(.plain)
             .font(.title3)
 
-            if let status = store.playbackStatusText {
-                Label(status, systemImage: "arrow.down.circle")
-                    .font(.caption)
+            if isLoading {
+                Label("Loading audio…", systemImage: "arrow.down.circle")
+                    .font(.footnote)
                     .foregroundStyle(palette.textSecondary)
+            }
+            if let playbackError {
+                VStack(spacing: 8) {
+                    Label(playbackError, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(palette.danger)
+                    Button("Retry playback", systemImage: "arrow.clockwise") {
+                        if let activeVersion { store.retryPlayback(for: activeVersion) }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(palette.accent)
+                    .controlSize(.large)
+                }
+                .padding(.horizontal, 16)
             }
         }
         .padding(.vertical, 18)
@@ -307,6 +346,7 @@ private struct PlaylistPlayerControls: View {
 }
 
 private struct PlaylistVersionRow: View {
+    @EnvironmentObject private var store: ReviewCompanionStore
     @Environment(\.palette) private var palette
     let index: Int
     let version: AudioVersion
@@ -322,10 +362,13 @@ private struct PlaylistVersionRow: View {
                 .frame(width: 22, alignment: .trailing)
             Button(action: onTogglePlayback) {
                 Image(systemName: isActive && isPlaying ? "pause.fill" : "play.fill")
-                    .frame(width: 30, height: 30)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            VStack(alignment: .leading, spacing: 3) {
+            .disabled(isActive && store.isPlaybackLoading)
+            .accessibilityLabel("\(isActive && isPlaying ? "Pause" : "Play") \(version.name)")
+            VStack(alignment: .leading, spacing: 5) {
                 Text(version.name)
                     .font(.body.weight(isActive ? .semibold : .regular))
                 Text(version.duration.playbackTimestamp)

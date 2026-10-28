@@ -13,6 +13,7 @@ import {
 	shell,
 } from "electron";
 
+import { createRuntimeSnapshot } from "./runtime-snapshot.mjs";
 import { restoreWindowState, saveWindowState } from "./window-state.mjs";
 
 const ELECTRON_DIR = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,7 @@ const SERVER_READY_POLL_MS = 250;
 
 /** @type {Promise<void> | null} */
 let productionServerPromise = null;
+let runtimeSnapshot = null;
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
 /** @type {string | null} */
@@ -124,14 +126,19 @@ async function startProductionServer() {
 	}
 
 	productionServerPromise = (async () => {
-		const serverEntryPath = getServerEntryPath();
+		const builtServerEntryPath = getServerEntryPath();
 
-		if (!(await canAccessFile(serverEntryPath))) {
+		if (!(await canAccessFile(builtServerEntryPath))) {
 			throw new Error(
-				`Missing built server at ${serverEntryPath}. Run npm run build before launching Electron.`,
+				`Missing built server at ${builtServerEntryPath}. Run npm run build before launching Electron.`,
 			);
 		}
 
+		runtimeSnapshot = await createRuntimeSnapshot(
+			resolve(builtServerEntryPath, "../.."),
+			app.getPath("temp"),
+		);
+		const serverEntryPath = runtimeSnapshot.entryPath;
 		process.env.HOST = SERVER_HOST;
 		process.env.NODE_ENV = process.env.NODE_ENV ?? "production";
 		process.env.PORT = String(SERVER_PORT);
@@ -143,6 +150,8 @@ async function startProductionServer() {
 		);
 	})().catch((error) => {
 		productionServerPromise = null;
+		runtimeSnapshot?.cleanup();
+		runtimeSnapshot = null;
 		throw error;
 	});
 
@@ -258,6 +267,7 @@ app.on("activate", () => {
 app.on("before-quit", () => {
 	stopProductionServer();
 });
+app.on("will-quit", () => runtimeSnapshot?.cleanup());
 
 function denyDevicePermissions() {
 	// Audio Versions never captures audio, video, or other hardware. Denying these

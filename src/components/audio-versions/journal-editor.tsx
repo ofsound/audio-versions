@@ -189,7 +189,7 @@ export function JournalEditor(props: JournalEditorProps) {
 				</div>
 			)}
 			<div
-				className={`journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-6 pb-3 ${!showHeading ? "journal-editor-tabbed" : ""}`}
+				className={`journal-editor-frame-wrap flex min-h-0 flex-1 flex-col px-6 ${showHeading ? "pb-3" : "journal-editor-tabbed"}`}
 			>
 				<div
 					ref={host}
@@ -197,7 +197,7 @@ export function JournalEditor(props: JournalEditorProps) {
 					className="journal-codemirror journal-editor-frame min-h-0 flex-1 overflow-hidden border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)]"
 				/>
 				<div
-					className="flex shrink-0 items-center justify-between gap-2 py-2"
+					className={`flex shrink-0 items-center justify-between gap-2 ${showHeading ? "py-2" : "py-3.5"}`}
 					data-audio-versions-toolbar
 				>
 					{onFontSizeChange ? (

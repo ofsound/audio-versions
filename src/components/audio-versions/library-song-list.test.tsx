@@ -2,7 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeLibraryColumnWidths } from "#/lib/audio-versions/library-columns";
+import {
+	fitLibraryColumnWidths,
+	normalizeLibraryColumnWidths,
+} from "#/lib/audio-versions/library-columns";
 import type { Song } from "#/lib/audio-versions/types";
 import { LibrarySongList } from "./library-song-list";
 
@@ -102,6 +105,18 @@ describe("library column resizing", () => {
 		expect(change.mock.calls[2][0].title).toBe(450);
 		expect(document.body.style.cursor).toBe("");
 	});
+	it("fits oversized saved columns while reserving room for Play and Settings", () => {
+		const keys = ["title", "sessions", "files", "markers"] as const;
+		const saved = { title: 700, sessions: 400, files: 100, markers: 150 };
+		const fitted = fitLibraryColumnWidths(saved, [...keys], 1000);
+		expect(keys.reduce((sum, key) => sum + (fitted[key] ?? 0), 96)).toBeCloseTo(
+			1000,
+		);
+		expect(fitted.title).toBeGreaterThanOrEqual(160);
+		expect(saved.title).toBe(700);
+		expect(fitLibraryColumnWidths(saved, [...keys], 1800)).toBe(saved);
+	});
+
 	it("normalizes stored widths and ignores malformed preferences", () => {
 		expect(
 			normalizeLibraryColumnWidths({

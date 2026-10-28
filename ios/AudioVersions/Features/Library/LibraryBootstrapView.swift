@@ -18,6 +18,9 @@ struct LibraryBootstrapView: View {
             ProgressView()
                 .controlSize(.regular)
                 .tint(palette.accent)
+            Text("Loading your library…")
+                .font(.subheadline)
+                .foregroundStyle(palette.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .appCanvas()

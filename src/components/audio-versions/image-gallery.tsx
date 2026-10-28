@@ -71,7 +71,7 @@ export function GalleryStrip({
 	return (
 		<section
 			aria-label={group.label}
-			className="mx-6 mb-4 shrink-0 border border-[var(--color-border-plain)] px-3 py-3"
+			className="mx-6 mb-4 shrink-0 border border-[var(--color-border-plain)] px-3 py-3 xl:mb-0"
 		>
 			<div className="flex items-center justify-between gap-2">
 				<span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)]">
@@ -213,8 +213,9 @@ export function GalleryViewer({
 	if (!current) return null;
 	return (
 		<SongModal
-			title="Image explorer"
-			titleId="image-explorer-title"
+			title="Image Gallery"
+			titleId="image-gallery-title"
+			contained
 			onClose={onClose}
 			onKeyDown={(event) => {
 				if (
@@ -230,7 +231,7 @@ export function GalleryViewer({
 			}}
 			wide
 		>
-			<div className="flex h-[min(calc(100dvh-10rem),58rem)] min-h-0 flex-col">
+			<div className="flex min-h-0 flex-1 flex-col">
 				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[var(--color-border-plain)] px-4 py-2">
 					<div className="min-w-0 flex-1">
 						<p
@@ -238,10 +239,6 @@ export function GalleryViewer({
 							title={current.image.name}
 						>
 							{current.image.name}
-						</p>
-						<p className="text-xs text-[var(--color-text-muted)]">
-							{current.group.label} · {Math.max(0, index) + 1} of{" "}
-							{entries.length} · {current.image.width} × {current.image.height}
 						</p>
 					</div>
 					<button

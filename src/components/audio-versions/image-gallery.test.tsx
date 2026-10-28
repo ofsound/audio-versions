@@ -61,7 +61,9 @@ describe("image explorer", () => {
 	it("shows both levels and navigates by arrows, thumbnails, keyboard and Escape", () => {
 		const close = vi.fn();
 		render(<Explorer close={close} />);
-		const dialog = screen.getByRole("dialog", { name: "Image explorer" });
+		const dialog = screen.getByRole("dialog", { name: "Image Gallery" });
+		expect(dialog.closest(".song-modal--contained")).toBeTruthy();
+		expect(screen.queryByText(/1 of 2|1600 × 1000/)).toBeNull();
 		expect(
 			within(dialog).getByRole("region", { name: "Song gallery overview" }),
 		).toBeTruthy();
@@ -74,7 +76,7 @@ describe("image explorer", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next image" }));
 		expect(screen.getByRole("img", { name: "file-image.png" })).toBeTruthy();
 		fireEvent.keyDown(
-			screen.getByRole("button", { name: "Close image explorer" }),
+			screen.getByRole("button", { name: "Close image gallery" }),
 			{
 				key: "ArrowLeft",
 			},
