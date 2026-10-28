@@ -9,11 +9,6 @@ struct SongDetailView: View {
     @State private var selectedNoteTabID = ""
     @State private var editingNoteTabID: String?
     @State private var editingOriginalNote: SongNoteTab?
-    @State private var noteTabRename: SongNoteTab?
-    @State private var isRenamingNoteTab = false
-    @State private var noteTabName = ""
-    @State private var noteTabPendingDelete: SongNoteTab?
-    @State private var isDeletingNoteTab = false
     let songID: String
 
     private var song: Song? {
@@ -44,19 +39,7 @@ struct SongDetailView: View {
                     .listRowBackground(palette.surface)
 
                     Section {
-                        SongNoteTabBar(
-                            song: song,
-                            selectedID: $selectedNoteTabID,
-                            onRename: { tab in
-                                noteTabName = tab.name
-                                noteTabRename = tab
-                                isRenamingNoteTab = true
-                            },
-                            onDelete: { tab in
-                                noteTabPendingDelete = tab
-                                isDeletingNoteTab = true
-                            }
-                        )
+                        SongNoteTabBar(song: song, selectedID: $selectedNoteTabID)
                         .padding(.horizontal, 16).padding(.top, 10)
                         JournalContentView(
                             text: activeNoteTab?.content ?? "",
@@ -129,28 +112,6 @@ struct SongDetailView: View {
                 .sheet(isPresented: $isAddingToJournal) {
                     AddSongNoteView(songID: song.id, initialTab: store.preferredNoteTab(songID: song.id))
                 }
-                // `presenting` keeps the long-pressed tab. The old alert read the
-                // optional after dismissal cleared it and could rename the previous tab.
-                .alert(
-                    "Rename note tab",
-                    isPresented: $isRenamingNoteTab,
-                    presenting: noteTabRename
-                ) { tab in
-                    TextField("Tab name", text: $noteTabName)
-                    Button("Save") {
-                        store.renameNoteTab(songID: songID, tabID: tab.id, name: noteTabName)
-                    }
-                    Button("Cancel", role: .cancel) {}
-                }
-                .confirmationDialog(
-                    deleteNoteTabTitle,
-                    isPresented: $isDeletingNoteTab,
-                    titleVisibility: .visible,
-                    presenting: noteTabPendingDelete
-                ) { tab in
-                    Button("Delete tab and notes", role: .destructive) { confirmDelete(tab) }
-                    Button("Cancel", role: .cancel) {}
-                }
             } else {
                 ContentUnavailableView(
                     "Song unavailable",
@@ -160,21 +121,6 @@ struct SongDetailView: View {
             }
         }
         .persistentMiniPlayer()
-    }
-
-    private var deleteNoteTabTitle: String {
-        let name = noteTabPendingDelete?.name ?? "this tab"
-        return "Delete “\(name)” and all of its notes? This cannot be undone."
-    }
-
-    private func confirmDelete(_ tab: SongNoteTab) {
-        let tabs = store.songs.first { $0.id == songID }?.resolvedNoteTabs ?? []
-        let index = tabs.firstIndex { $0.id == tab.id } ?? 0
-        guard store.deleteNoteTab(songID: songID, tabID: tab.id) else { return }
-        guard selectedNoteTabID == tab.id else { return }
-        let remaining = tabs.filter { $0.id != tab.id }
-        let nextIndex = max(0, index - 1)
-        if remaining.indices.contains(nextIndex) { selectedNoteTabID = remaining[nextIndex].id }
     }
 
     private func sortedVersions(for song: Song) -> [AudioVersion] {

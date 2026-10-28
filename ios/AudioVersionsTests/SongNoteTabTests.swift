@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import AudioVersions
 
 @MainActor
@@ -104,6 +105,20 @@ struct SongNoteTabTests {
         #expect(tabs.first { $0.id == "song-notes" }?.content == "Current primary notes")
         #expect(tabs.first { $0.id == "master" }?.name == "Final")
         #expect(tabs.first { $0.id == "master" }?.content == "Old limiter")
+    }
+
+    @Test func renameAlertUsesThePressedTabsName() throws {
+        let untitled = SongNoteTab(id: "untitled-1", name: "Untitled 1", content: "")
+        let notes = SongNoteTab(id: "song-notes", name: "Song Notes", content: "hello")
+        let untitledAlert = NoteTabDialogs.renameAlert(for: untitled) { _, _ in }
+        let notesAlert = NoteTabDialogs.renameAlert(for: notes) { _, _ in }
+        #expect(untitledAlert.textFields?.first?.text == "Untitled 1")
+        #expect(notesAlert.textFields?.first?.text == "Song Notes")
+        untitledAlert.textFields?.first?.text = "Changed"
+        #expect(notesAlert.textFields?.first?.text == "Song Notes")
+        #expect(NoteTabDialogs.deleteAlert(for: untitled) {}.title == "Delete “Untitled 1” and all of its notes? This cannot be undone.")
+        #expect(NoteTabDialogs.deleteAlert(for: notes) {}.title?.contains("Song Notes") == true)
+        #expect(NoteTabDialogs.deleteAlert(for: notes) {}.title?.contains("Untitled 1") == false)
     }
 
     @Test func remembersEachSongsDestinationAndFallsBackWhenItIsRemoved() throws {
