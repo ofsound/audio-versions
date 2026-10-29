@@ -3,7 +3,10 @@ import { ArrowDown, ArrowUp, Play, Settings, Square } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	fitLibraryColumnWidths,
+	LIBRARY_ACTIONS_COLUMN_WIDTH,
 	LIBRARY_COLUMNS,
+	LIBRARY_FIXED_COLUMNS_WIDTH,
+	LIBRARY_PREVIEW_COLUMN_WIDTH,
 	type LibraryColumnKey,
 	type LibraryColumnWidths,
 } from "#/lib/audio-versions/library-columns";
@@ -102,7 +105,7 @@ export function LibrarySongList({
 	const widths = fitLibraryColumnWidths(requestedWidths, keys, availableWidth);
 	const columns = keys.map((key) => ({ key, ...LIBRARY_COLUMNS[key] }));
 	const minimumTableWidth =
-		96 +
+		LIBRARY_FIXED_COLUMNS_WIDTH +
 		keys.reduce(
 			(total, key) =>
 				total +
@@ -149,83 +152,83 @@ export function LibrarySongList({
 
 	const rows = useMemo(
 		() =>
-			sortedSongs.map((song) => (
-				<tr
-					key={song.id}
-					className="group cursor-pointer border-b border-[var(--color-border-plain)] bg-[var(--color-surface)] text-[var(--color-text)] last:border-b-0"
-					onClick={(event) => {
-						if ((event.target as HTMLElement).closest("a,button")) return;
-						onOpen(song.id);
-						void navigate({
-							to: "/songs/$songId",
-							params: { songId: song.id },
-						});
-					}}
-				>
-					<td className="overflow-hidden px-4 py-3 font-semibold">
-						<Link
-							to="/songs/$songId"
-							params={{ songId: song.id }}
-							aria-label={`Open ${song.title}`}
-							onClick={() => onOpen(song.id)}
-							className="block min-w-0 no-underline"
-						>
-							<span
-								className="block min-w-0 truncate text-[var(--color-text)]"
-								title={song.title}
-							>
-								{song.title}
-							</span>
-						</Link>
-					</td>
-					{showArtist ? (
-						<td
-							className="truncate px-4 py-3 text-[var(--color-text-muted)]"
-							title={song.artist}
-						>
-							{song.artist || "—"}
-						</td>
-					) : null}
-					<td
-						title={sessionDates.get(song.id)}
-						className="truncate whitespace-nowrap px-4 py-3 text-[var(--color-text-muted)]"
+			sortedSongs.map((song) => {
+				const previewFile = previewFiles.get(song.id);
+				const isPreviewing = Boolean(
+					previewFile && previewFile.id === previewFileId,
+				);
+				return (
+					<tr
+						key={song.id}
+						className="group cursor-pointer border-b border-[var(--color-border-plain)] bg-[var(--color-surface)] text-[var(--color-text)] last:border-b-0"
+						onClick={(event) => {
+							if ((event.target as HTMLElement).closest("a,button")) return;
+							onOpen(song.id);
+							void navigate({
+								to: "/songs/$songId",
+								params: { songId: song.id },
+							});
+						}}
 					>
-						{sessionDates.get(song.id) ?? "—"}
-					</td>
-					<td className="px-4 py-3 text-right tabular-nums text-[var(--color-text-muted)]">
-						{fileCounts.get(song.id) ?? 0}
-					</td>
-					<td className="px-4 py-3 text-right tabular-nums text-[var(--color-text-muted)]">
-						{markerCounts.get(song.id) ?? 0}
-					</td>
-					<td className="px-3 py-2 text-right">
-						<div className="flex items-center justify-end gap-1">
+						<td className="py-2 pl-2">
 							<button
 								type="button"
 								className="icon-button icon-button--sm"
-								disabled={!previewFiles.has(song.id)}
-								aria-label={`${previewFiles.get(song.id)?.id === previewFileId && previewFileId ? "Stop" : "Play"} preview for ${song.title}`}
+								disabled={!previewFile}
+								aria-label={`${isPreviewing ? "Stop" : "Play"} preview for ${song.title}`}
 								title={
-									previewFiles.get(song.id)?.id === previewFileId &&
-									previewFileId
+									isPreviewing
 										? "Stop and rewind"
-										: (previewFiles.get(song.id)?.title ?? "No audio files")
+										: (previewFile?.title ?? "No audio files")
 								}
 								onClick={() =>
-									onPreview(
-										previewFiles.get(song.id)?.id === previewFileId
-											? undefined
-											: previewFiles.get(song.id),
-									)
+									onPreview(isPreviewing ? undefined : previewFile)
 								}
 							>
-								{previewFiles.get(song.id)?.id === previewFileId &&
-								previewFileId ? (
+								{isPreviewing ? (
 									<Square size={12} fill="currentColor" />
 								) : (
 									<Play size={12} fill="currentColor" />
 								)}
 							</button>
+						</td>
+						<td className="overflow-hidden px-4 py-3 font-semibold">
+							<Link
+								to="/songs/$songId"
+								params={{ songId: song.id }}
+								aria-label={`Open ${song.title}`}
+								onClick={() => onOpen(song.id)}
+								className="block min-w-0 no-underline"
+							>
+								<span
+									className="block min-w-0 truncate text-[var(--color-text)]"
+									title={song.title}
+								>
+									{song.title}
+								</span>
+							</Link>
+						</td>
+						{showArtist ? (
+							<td
+								className="truncate px-4 py-3 text-[var(--color-text-muted)]"
+								title={song.artist}
+							>
+								{song.artist || "—"}
+							</td>
+						) : null}
+						<td
+							title={sessionDates.get(song.id)}
+							className="truncate whitespace-nowrap px-4 py-3 text-[var(--color-text-muted)]"
+						>
+							{sessionDates.get(song.id) ?? "—"}
+						</td>
+						<td className="px-4 py-3 text-right tabular-nums text-[var(--color-text-muted)]">
+							{fileCounts.get(song.id) ?? 0}
+						</td>
+						<td className="px-4 py-3 text-right tabular-nums text-[var(--color-text-muted)]">
+							{markerCounts.get(song.id) ?? 0}
+						</td>
+						<td className="px-3 py-2 text-right">
 							<button
 								type="button"
 								onClick={() => onEdit(song.id)}
@@ -235,11 +238,11 @@ export function LibrarySongList({
 							>
 								<Settings size={12} />
 							</button>
-						</div>
-					</td>
-					<td aria-hidden="true" />
-				</tr>
-			)),
+						</td>
+						<td aria-hidden="true" />
+					</tr>
+				);
+			}),
 		[
 			previewFiles,
 			previewFileId,
@@ -266,9 +269,11 @@ export function LibrarySongList({
 				style={{ minWidth: minimumTableWidth }}
 			>
 				<colgroup>
+					<col style={{ width: LIBRARY_PREVIEW_COLUMN_WIDTH }} />
 					{keys.map((key) => (
 						<col
 							key={key}
+							data-column-key={key}
 							style={{
 								width:
 									widths[key] ??
@@ -276,11 +281,17 @@ export function LibrarySongList({
 							}}
 						/>
 					))}
-					<col style={{ width: 96 }} />
+					<col style={{ width: LIBRARY_ACTIONS_COLUMN_WIDTH }} />
 					<col style={{ width: widths.title === undefined ? 0 : undefined }} />
 				</colgroup>
 				<thead className="sticky top-0 z-10 bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]">
 					<tr>
+						<th
+							scope="col"
+							className="border-b border-[var(--color-border-plain)]"
+						>
+							<span className="sr-only">Preview</span>
+						</th>
 						{columns.map(({ key, label, numeric }) => (
 							<th
 								key={key}
@@ -356,9 +367,9 @@ export function LibrarySongList({
 						))}
 						<th
 							scope="col"
-							className="w-24 border-b border-[var(--color-border-plain)]"
+							className="border-b border-[var(--color-border-plain)]"
 						>
-							<span className="sr-only">Actions</span>
+							<span className="sr-only">Settings</span>
 						</th>
 						<th className="border-b border-[var(--color-border-plain)]" />
 					</tr>

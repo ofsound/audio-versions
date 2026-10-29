@@ -35,7 +35,6 @@ struct ReviewPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         playerCard(version: version)
-                        OfflineDownloadControl(version: version)
                         audioRouteControls
                         annotationActions(version: version)
                         AnnotationListView(
@@ -152,7 +151,13 @@ struct ReviewPlayerView: View {
                     VersionPreviewStarButton(songID: songID, version: version)
                 }
 
-                VersionMetadataLine(version: version)
+                HStack(spacing: 8) {
+                    VersionMetadataLine(version: version)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    OfflineDownloadControl(version: version, compact: true)
+                        .font(.subheadline)
+                }
 
                 if version.annotationCount > 0 {
                     HStack(spacing: 4) {
@@ -309,17 +314,11 @@ struct ReviewPlayerView: View {
     }
 
     private var audioRouteControls: some View {
-        HStack(spacing: 16) {
-            Image(systemName: "speaker.wave.2")
-                .font(.body)
-                .foregroundStyle(palette.textSecondary)
-                .accessibilityLabel(store.outputRouteName)
-
-            AudioRoutePicker()
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Choose audio output")
-        }
-        .frame(maxWidth: .infinity)
+        AudioRoutePicker()
+            .frame(width: 44, height: 44)
+            .accessibilityLabel("Choose audio output")
+            .accessibilityValue(store.outputRouteName)
+            .frame(maxWidth: .infinity)
     }
 
     private func annotationActions(version: AudioVersion) -> some View {

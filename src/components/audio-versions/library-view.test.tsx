@@ -408,10 +408,10 @@ describe("LibraryView", () => {
 			day: "numeric",
 		})}`;
 		expect(
-			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[3].textContent,
+			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[4].textContent,
 		).toBe("2");
 		expect(
-			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[4].textContent,
+			within(screen.getAllByRole("row")[1]).getAllByRole("cell")[5].textContent,
 		).toBe("1");
 		expect(screen.getByText(sessionDateRange)).toBeTruthy();
 
@@ -422,7 +422,7 @@ describe("LibraryView", () => {
 		const filesPosition = screen
 			.getByText(sessionDateRange)
 			.compareDocumentPosition(
-				within(screen.getAllByRole("row")[1]).getAllByRole("cell")[3],
+				within(screen.getAllByRole("row")[1]).getAllByRole("cell")[4],
 			);
 		expect(datePosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(filesPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

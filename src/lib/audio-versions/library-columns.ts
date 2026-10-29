@@ -10,6 +10,13 @@ export const LIBRARY_COLUMNS = {
 	files: { label: "Files", minimum: 72, width: 88, numeric: true },
 	markers: { label: "Markers", minimum: 96, width: 112, numeric: true },
 } as const;
+
+/** Leading preview control, outside the resizable columns. */
+export const LIBRARY_PREVIEW_COLUMN_WIDTH = 40;
+/** Trailing song settings control. */
+export const LIBRARY_ACTIONS_COLUMN_WIDTH = 56;
+export const LIBRARY_FIXED_COLUMNS_WIDTH =
+	LIBRARY_PREVIEW_COLUMN_WIDTH + LIBRARY_ACTIONS_COLUMN_WIDTH;
 export type LibraryColumnKey = keyof typeof LIBRARY_COLUMNS;
 export type LibraryColumnWidths = Partial<Record<LibraryColumnKey, number>>;
 export function clampLibraryColumnWidth(
@@ -34,7 +41,7 @@ export function normalizeLibraryColumnWidths(
 	return Object.keys(widths).length ? widths : undefined;
 }
 
-/** Fit stored widths to the viewport while reserving the row's action buttons. */
+/** Fit stored widths to the viewport while reserving preview and settings controls. */
 export function fitLibraryColumnWidths(
 	widths: LibraryColumnWidths,
 	keys: LibraryColumnKey[],
@@ -47,7 +54,7 @@ export function fitLibraryColumnWidths(
 			? LIBRARY_COLUMNS.title.minimum
 			: LIBRARY_COLUMNS[key].width);
 	const total = keys.reduce((sum, key) => sum + requested(key), 0);
-	const available = availableWidth - 96;
+	const available = availableWidth - LIBRARY_FIXED_COLUMNS_WIDTH;
 	if (total <= available) return widths;
 	const minimum = keys.reduce(
 		(sum, key) => sum + LIBRARY_COLUMNS[key].minimum,

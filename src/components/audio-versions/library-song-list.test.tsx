@@ -4,6 +4,8 @@ import type { AnchorHTMLAttributes } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	fitLibraryColumnWidths,
+	LIBRARY_ACTIONS_COLUMN_WIDTH,
+	LIBRARY_PREVIEW_COLUMN_WIDTH,
 	normalizeLibraryColumnWidths,
 } from "#/lib/audio-versions/library-columns";
 import type { Song } from "#/lib/audio-versions/types";
@@ -65,7 +67,10 @@ describe("library column resizing", () => {
 		const handle = screen.getByRole("button", { name: "Resize Name column" });
 		fireEvent.pointerDown(handle, { button: 0, clientX: 400 });
 		fireEvent.pointerMove(handle, { clientX: 500 });
-		expect(container.querySelector("col")?.style.width).toBe("500px");
+		expect(
+			container.querySelector<HTMLElement>('col[data-column-key="title"]')
+				?.style.width,
+		).toBe("500px");
 		expect(change).not.toHaveBeenCalled();
 		fireEvent.pointerUp(handle, { clientX: 500 });
 		expect(change).toHaveBeenCalledOnce();
@@ -86,10 +91,16 @@ describe("library column resizing", () => {
 		const handle = screen.getByRole("button", { name: "Resize Name column" });
 		fireEvent.pointerDown(handle, { button: 0, clientX: 400 });
 		fireEvent.pointerMove(handle, { clientX: 100 });
-		expect(container.querySelector("col")?.style.width).toBe("160px");
+		expect(
+			container.querySelector<HTMLElement>('col[data-column-key="title"]')
+				?.style.width,
+		).toBe("160px");
 		fireEvent.pointerCancel(handle);
 		expect(change).not.toHaveBeenCalled();
-		expect(container.querySelector("col")?.style.width).toBe("");
+		expect(
+			container.querySelector<HTMLElement>('col[data-column-key="title"]')
+				?.style.width,
+		).toBe("");
 		expect(document.body.style.userSelect).toBe("");
 	});
 	it("supports keyboard resizing and commits the last position on window blur", () => {
@@ -109,12 +120,37 @@ describe("library column resizing", () => {
 		const keys = ["title", "sessions", "files", "markers"] as const;
 		const saved = { title: 700, sessions: 400, files: 100, markers: 150 };
 		const fitted = fitLibraryColumnWidths(saved, [...keys], 1000);
-		expect(keys.reduce((sum, key) => sum + (fitted[key] ?? 0), 96)).toBeCloseTo(
-			1000,
-		);
+		expect(
+			keys.reduce(
+				(sum, key) => sum + (fitted[key] ?? 0),
+				LIBRARY_PREVIEW_COLUMN_WIDTH + LIBRARY_ACTIONS_COLUMN_WIDTH,
+			),
+		).toBeCloseTo(1000);
 		expect(fitted.title).toBeGreaterThanOrEqual(160);
 		expect(saved.title).toBe(700);
 		expect(fitLibraryColumnWidths(saved, [...keys], 1800)).toBe(saved);
+	});
+
+	it("puts the preview control before the song title", () => {
+		view();
+		for (const title of ["Zulu", "Alpha"]) {
+			const play = screen.getByRole("button", {
+				name: `Play preview for ${title}`,
+			});
+			const link = screen.getByRole("link", { name: `Open ${title}` });
+			const row = play.closest("tr");
+			expect(row?.firstElementChild?.contains(play)).toBe(true);
+			expect(
+				Boolean(
+					play.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING,
+				),
+			).toBe(true);
+			expect(
+				link.compareDocumentPosition(
+					screen.getByRole("button", { name: `Edit settings for ${title}` }),
+				) & Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+		}
 	});
 
 	it("normalizes stored widths and ignores malformed preferences", () => {
